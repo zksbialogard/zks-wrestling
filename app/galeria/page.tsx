@@ -19,7 +19,7 @@ export default function GaleriaPage() {
             </span>
           </div>
 
-          <div className="bg-zinc-900 border border-yellow-500 rounded-3xl h-72 flex items-center justify-center">
+          <div className="border border-yellow-500 rounded-3xl h-72 flex items-center justify-center">
             <span className="text-gray-400 text-xl">
               Zdjęcie 2
             </span>
@@ -31,7 +31,7 @@ export default function GaleriaPage() {
             </span>
           </div>
 
-          <div className="bg-zinc-900 border border-yellow-500 rounded-3xl h-72 flex items-center justify-center">
+          <div className="bg-zigit --versionnc-900 border border-yellow-500 rounded-3xl h-72 flex items-center justify-center">
             <span className="text-gray-400 text-xl">
               Zdjęcie 4
             </span>
