@@ -1,5 +1,11 @@
 import "./globals.css";
-import Navbar from "../components/Navbar";
+import Navbar from "@/components/Navbar";
+
+export const metadata = {
+  title: "ZKS Białogard",
+  description: "Klub Zapaśniczy ZKS Białogard",
+  manifest: "/manifest.json",
+};
 
 export default function RootLayout({
   children,
@@ -8,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pl">
-      <body className="bg-black text-white">
+      <body>
         <Navbar />
         {children}
       </body>
