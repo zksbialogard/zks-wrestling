@@ -84,6 +84,21 @@ return (
           <Link href="/klub/o-klubie">O klubie</Link>
           <Link href="/galeria">Galeria</Link>
           <Link href="/kontakt">Kontakt</Link>
+          <div className="flex items-center gap-3">
+  <Link
+    href="/login"
+    className="px-4 py-2 border border-yellow-500 rounded-xl text-yellow-400 hover:bg-yellow-500 hover:text-black transition"
+  >
+    Zaloguj
+  </Link>
+
+  <Link
+    href="/rejestracja"
+    className="px-4 py-2 bg-yellow-500 text-black rounded-xl font-semibold hover:bg-yellow-400 transition"
+  >
+    Zarejestruj się
+  </Link>
+</div>
         </div>
 
         <div className="hidden md:block w-10"></div>
