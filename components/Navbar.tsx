@@ -12,6 +12,7 @@ export default function Navbar() {
 const [menuOpen, setMenuOpen] = useState(false);
 const [user, setUser] = useState<any>(null);
 const [role, setRole] = useState("");
+const [imie, setImie] = useState("");
 
 useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -25,8 +26,10 @@ useEffect(() => {
       console.log("DOCUMENT EXISTS:", userDoc.exists());
 
 if (userDoc.exists()) {
-  console.log("USER DATA:", userDoc.data());
-  console.log("ROLA:", userDoc.data().rola);
+  const data = userDoc.data();
+
+  setRole(data.rola || "");
+  setImie(data.imie || "");
 }
 
      if (userDoc.exists()) {
@@ -236,21 +239,24 @@ return (
 
 {user && (
   <>
-  
+    <div
+      style={{
+        color: "#facc15",
+        fontWeight: "bold",
+        marginBottom: "10px",
+      }}
+    >
+      👋 Witaj {imie}
+    </div>
+
     {role === "rodzic" && (
-  <Link
-    href="/moje-dzieci"
-    onClick={() => setMenuOpen(false)}
-  >
-    👦 Moje dzieci
-  </Link>
-)}
+      <Link href="/moje-dzieci">
+        👦 Moje dzieci
+      </Link>
+    )}
 
     {role === "admin" && (
-      <Link
-        href="/admin"
-        onClick={() => setMenuOpen(false)}
-      >
+      <Link href="/admin">
         ⚙️ Panel administratora
       </Link>
     )}
@@ -258,12 +264,11 @@ return (
     <button
       onClick={handleLogout}
       style={{
-        textAlign: "left",
-        color: "#ef4444",
-        fontWeight: "bold",
         background: "transparent",
         border: "none",
+        color: "#ef4444",
         cursor: "pointer",
+        textAlign: "left",
       }}
     >
       🚪 Wyloguj
