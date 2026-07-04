@@ -250,10 +250,22 @@ return (
     </div>
 
     {role === "rodzic" && (
-      <Link href="/moje-dzieci">
-        👦 Moje dzieci
-      </Link>
-    )}
+  <>
+    <Link
+      href="/panel-rodzica"
+      onClick={() => setMenuOpen(false)}
+    >
+      👨‍👩‍👧 Panel rodzica
+    </Link>
+
+    <Link
+      href="/moje-dzieci"
+      onClick={() => setMenuOpen(false)}
+    >
+      👦 Moje dzieci
+    </Link>
+  </>
+)}
 
     {role === "admin" && (
       <Link href="/admin">
