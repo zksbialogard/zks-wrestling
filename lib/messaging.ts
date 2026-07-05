@@ -23,28 +23,37 @@ export async function sendEmailMessage(input: {
     return { ok: true as const, simulated: true };
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [input.to],
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-    }),
-  });
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [input.to],
+        subject: input.subject,
+        html: input.html,
+        text: input.text,
+      }),
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data?.message || "Błąd wysyłki email.");
+    if (!response.ok) {
+      return {
+        ok: false as const,
+        simulated: false,
+        error: data?.message || "Błąd wysyłki email.",
+      };
+    }
+
+    return { ok: true as const, simulated: false, data };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Błąd połączenia z Resend.";
+    return { ok: false as const, simulated: false, error: message };
   }
-
-  return { ok: true as const, simulated: false, data };
 }
 
 export async function sendSmsMessage(input: { phone: string; message: string }) {
@@ -55,24 +64,33 @@ export async function sendSmsMessage(input: { phone: string; message: string }) 
     return { ok: false as const, skipped: true };
   }
 
-  const response = await fetch("https://api.smsapi.pl/sms.do", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({
-      to: normalizePhone(input.phone),
-      message: input.message,
-      format: "json",
-    }),
-  });
+  try {
+    const response = await fetch("https://api.smsapi.pl/sms.do", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        to: normalizePhone(input.phone),
+        message: input.message,
+        format: "json",
+      }),
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data?.message || "Błąd wysyłki SMS.");
+    if (!response.ok) {
+      return {
+        ok: false as const,
+        skipped: false,
+        error: data?.message || "Błąd wysyłki SMS.",
+      };
+    }
+
+    return { ok: true as const, skipped: false, data };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Błąd połączenia z SMSAPI.";
+    return { ok: false as const, skipped: false, error: message };
   }
-
-  return { ok: true as const, skipped: false, data };
 }

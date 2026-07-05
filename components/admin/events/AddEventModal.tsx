@@ -43,35 +43,6 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
         registration_deadline: registrationDeadline,
       });
 
-      if (sendEmail || sendSms || sendInApp) {
-        const result = await sendAdminNotify({
-          templateKey: "event_new",
-          variables: {
-            title,
-            location,
-            eventDate: new Date(eventDate).toLocaleDateString("pl-PL"),
-            registrationDeadline: new Date(registrationDeadline).toLocaleDateString(
-              "pl-PL"
-            ),
-            link: `${window.location.origin}/zawody/${created.id}`,
-          },
-          channels: {
-            email: sendEmail,
-            sms: sendSms,
-            inApp: sendInApp,
-            push: sendInApp,
-          },
-          type: "event",
-          link: `/zawody/${created.id}`,
-        });
-
-        toast.success(
-          `Zawody dodane. Email: ${result.emailsSent}, SMS: ${result.smsSent}, w aplikacji: ${result.inAppSent}.`
-        );
-      } else {
-        toast.success("Zawody zostały dodane.");
-      }
-
       setTitle("");
       setLocation("");
       setEventDate("");
@@ -79,6 +50,48 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
       onClose();
       await onCreated?.();
       router.refresh();
+
+      toast.success("Zawody zostały dodane.");
+
+      if (sendEmail || sendSms || sendInApp) {
+        try {
+          const result = await sendAdminNotify({
+            templateKey: "event_new",
+            variables: {
+              title,
+              location,
+              eventDate: new Date(eventDate).toLocaleDateString("pl-PL"),
+              registrationDeadline: new Date(registrationDeadline).toLocaleDateString(
+                "pl-PL"
+              ),
+              link: `${window.location.origin}/zawody/${created.id}`,
+            },
+            channels: {
+              email: sendEmail,
+              sms: sendSms,
+              inApp: sendInApp,
+              push: sendInApp,
+            },
+            type: "event",
+            link: `/zawody/${created.id}`,
+          });
+
+          toast.success(
+            `Powiadomienia: email ${result.emailsSent}, SMS ${result.smsSent}, w aplikacji ${result.inAppSent}.`
+          );
+
+          if (result.errors.length) {
+            toast.warning(
+              `Część powiadomień nie wyszła (${result.errors.length}). Sprawdź SMS/e-mail na Vercel.`
+            );
+          }
+        } catch (notifyError) {
+          console.error(notifyError);
+          toast.warning(
+            "Zawody zapisane, ale powiadomienia nie wyszły. Użyj 🔔 przy zawodach, aby wysłać ponownie."
+          );
+        }
+      }
     } catch (err) {
       console.error(err);
       const message =

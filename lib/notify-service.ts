@@ -56,20 +56,25 @@ export type NotifyResult = {
 };
 
 export async function loadParentUsers(): Promise<ParentUser[]> {
-  const snapshot = await getDocs(collection(getDb(), "users"));
+  try {
+    const snapshot = await getDocs(collection(getDb(), "users"));
 
-  return snapshot.docs
-    .map((item) => {
-      const data = item.data();
-      return {
-        uid: (data.uid as string) || item.id,
-        email: data.email as string | undefined,
-        telefon: data.telefon as string | undefined,
-        imie: data.imie as string | undefined,
-        rola: data.rola as string | undefined,
-      };
-    })
-    .filter((user) => user.email && (user.rola === "rodzic" || !user.rola));
+    return snapshot.docs
+      .map((item) => {
+        const data = item.data();
+        return {
+          uid: (data.uid as string) || item.id,
+          email: data.email as string | undefined,
+          telefon: data.telefon as string | undefined,
+          imie: data.imie as string | undefined,
+          rola: data.rola as string | undefined,
+        };
+      })
+      .filter((user) => user.email && (user.rola === "rodzic" || !user.rola));
+  } catch (error) {
+    console.error("loadParentUsers:", error);
+    return [];
+  }
 }
 
 export async function notifyParents(input: {
@@ -113,13 +118,18 @@ export async function notifyParents(input: {
   for (const parent of parents) {
     try {
       if (input.channels.email && parent.email) {
-        await sendEmailMessage({
+        const emailResult = await sendEmailMessage({
           to: parent.email,
           subject: rendered.subject,
           html: rendered.html,
           text: rendered.text,
         });
-        result.emailsSent += 1;
+
+        if (emailResult.ok) {
+          result.emailsSent += 1;
+        } else if ("error" in emailResult && emailResult.error) {
+          result.errors.push(`${parent.email}: ${emailResult.error}`);
+        }
       }
 
       if (input.channels.sms && parent.telefon) {
@@ -130,6 +140,8 @@ export async function notifyParents(input: {
 
         if (smsResult.ok) {
           result.smsSent += 1;
+        } else if ("error" in smsResult && smsResult.error) {
+          result.errors.push(`${parent.telefon}: ${smsResult.error}`);
         }
       }
 
