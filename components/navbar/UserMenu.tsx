@@ -4,6 +4,7 @@ import Link from "next/link";
 import { LayoutDashboard, LogOut } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { GuestAuthTiles, LoggedInAuthTiles } from "./AuthTiles";
 
 interface UserMenuProps {
   onLogout: () => void;
@@ -14,16 +15,13 @@ export default function UserMenu({ onLogout }: UserMenuProps) {
 
   if (!user || !profile) {
     return (
-      <div className="hidden items-center gap-2 lg:flex">
-        <Link href="/login" className="zks-btn-outline px-4 py-2.5 text-xs">
-          Zaloguj się
-        </Link>
-        <Link href="/rejestracja" className="zks-btn-primary px-4 py-2.5 text-xs">
-          Zarejestruj się
-        </Link>
+      <div className="hidden lg:block">
+        <GuestAuthTiles />
       </div>
     );
   }
+
+  const panelLabel = profile.rola === "admin" ? "Panel admina" : "Panel rodzica";
 
   return (
     <div className="hidden items-center gap-3 lg:flex">
@@ -32,7 +30,7 @@ export default function UserMenu({ onLogout }: UserMenuProps) {
         className="zks-btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-xs"
       >
         <LayoutDashboard className="h-4 w-4" />
-        {profile.rola === "admin" ? "Panel admina" : "Panel rodzica"}
+        {panelLabel}
       </Link>
 
       <div className="text-right">

@@ -4,9 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import ClubLogo from "@/components/ui/ClubLogo";
 import { AnimatePresence, motion } from "framer-motion";
-import { LayoutDashboard, LogIn, LogOut, UserPlus, X } from "lucide-react";
+import { X } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { GuestAuthTiles, LoggedInAuthTiles } from "./AuthTiles";
 import { publicLinks } from "./navLinks";
 
 type MobileMenuProps = {
@@ -16,6 +17,11 @@ type MobileMenuProps = {
 export default function MobileMenu({ onLogout }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
   const { user, profile, panelHref } = useAuth();
+
+  const closeMenu = () => setOpen(false);
+
+  const panelLabel =
+    profile?.rola === "admin" ? "Panel admina" : "Panel rodzica";
 
   return (
     <div className="lg:hidden">
@@ -49,15 +55,15 @@ export default function MobileMenu({ onLogout }: MobileMenuProps) {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
               className="fixed inset-0 z-[55] bg-black/80 backdrop-blur-md"
-              onClick={() => setOpen(false)}
+              onClick={closeMenu}
             />
 
             <motion.div
-              initial={{ x: "-100%" }}
+              initial={{ x: "100%" }}
               animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
+              exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 320, damping: 32 }}
-              className="fixed inset-y-0 left-0 z-[58] flex w-full max-w-sm flex-col border-r border-zks-gold-mid/20 bg-zks-black shadow-[20px_0_60px_rgba(247,209,84,0.08)]"
+              className="fixed inset-y-0 right-0 z-[58] flex w-full max-w-sm flex-col border-l border-zks-gold-mid/20 bg-zks-black shadow-[-20px_0_60px_rgba(247,209,84,0.08)]"
             >
               <div className="flex items-center justify-between border-b border-zks-gold-mid/15 px-6 py-5">
                 <div className="flex items-center gap-3">
@@ -75,7 +81,7 @@ export default function MobileMenu({ onLogout }: MobileMenuProps) {
                 <button
                   type="button"
                   aria-label="Zamknij menu"
-                  onClick={() => setOpen(false)}
+                  onClick={closeMenu}
                   className="rounded-lg p-2 text-zks-gold-mid transition hover:bg-zks-charcoal hover:text-zks-gold-bright"
                 >
                   <X className="h-5 w-5" />
@@ -83,17 +89,6 @@ export default function MobileMenu({ onLogout }: MobileMenuProps) {
               </div>
 
               <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-6">
-                {user && profile && (
-                  <Link
-                    href={panelHref}
-                    onClick={() => setOpen(false)}
-                    className="zks-btn-primary mb-4 flex items-center justify-center gap-2 py-3.5 text-sm"
-                  >
-                    <LayoutDashboard className="h-4 w-4" />
-                    {profile.rola === "admin" ? "Panel admina" : "Panel rodzica"}
-                  </Link>
-                )}
-
                 {publicLinks.map((link, index) => (
                   <motion.div
                     key={link.href}
@@ -103,7 +98,7 @@ export default function MobileMenu({ onLogout }: MobileMenuProps) {
                   >
                     <Link
                       href={link.href}
-                      onClick={() => setOpen(false)}
+                      onClick={closeMenu}
                       className="group flex items-center rounded-xl px-4 py-4 font-[family-name:var(--font-heading)] text-base font-medium uppercase tracking-wide text-zks-text transition hover:bg-zks-charcoal hover:text-zks-gold-bright"
                     >
                       <span className="mr-3 h-1.5 w-1.5 rounded-full bg-zks-gold-mid opacity-0 transition group-hover:opacity-100" />
@@ -113,39 +108,18 @@ export default function MobileMenu({ onLogout }: MobileMenuProps) {
                 ))}
               </nav>
 
-              <div className="space-y-3 border-t border-zks-gold-mid/15 p-6">
+              <div className="border-t border-zks-gold-mid/15 p-6">
                 {user && profile ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpen(false);
-                      onLogout();
-                    }}
-                    className="zks-btn-outline flex w-full items-center justify-center gap-2 py-3.5 text-sm text-red-300"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Wyloguj
-                  </button>
+                  <LoggedInAuthTiles
+                    panelHref={panelHref}
+                    panelLabel={panelLabel}
+                    userName={profile.imie}
+                    userRole={profile.rola}
+                    onLogout={onLogout}
+                    onNavigate={closeMenu}
+                  />
                 ) : (
-                  <>
-                    <Link
-                      href="/login"
-                      onClick={() => setOpen(false)}
-                      className="zks-btn-outline flex w-full items-center justify-center gap-2 py-3.5 text-sm"
-                    >
-                      <LogIn className="h-4 w-4" />
-                      Zaloguj
-                    </Link>
-
-                    <Link
-                      href="/rejestracja"
-                      onClick={() => setOpen(false)}
-                      className="zks-btn-primary flex w-full items-center justify-center gap-2 py-3.5 text-sm"
-                    >
-                      <UserPlus className="h-4 w-4" />
-                      Zarejestruj się
-                    </Link>
-                  </>
+                  <GuestAuthTiles onNavigate={closeMenu} compact />
                 )}
               </div>
             </motion.div>
