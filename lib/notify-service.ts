@@ -14,6 +14,7 @@ import {
   createNotificationRecord,
   getMessageTemplate,
 } from "./notifications-db";
+import { listParentUsersFromDb, upsertParentUsers } from "./parent-users-db";
 
 const firebaseConfig = {
   apiKey:
@@ -106,15 +107,21 @@ async function loadParentUsersViaRest(): Promise<ParentUser[]> {
 }
 
 export async function loadParentUsers(): Promise<ParentUser[]> {
+  const fromSupabase = await listParentUsersFromDb();
+  if (fromSupabase.length) {
+    return fromSupabase;
+  }
+
   const restUsers = await loadParentUsersViaRest();
   if (restUsers.length) {
+    await upsertParentUsers(restUsers);
     return restUsers;
   }
 
   try {
     const snapshot = await getDocs(collection(getDb(), "users"));
 
-    return snapshot.docs
+    const sdkUsers = snapshot.docs
       .map((item) => {
         const data = item.data();
         return {
@@ -122,10 +129,17 @@ export async function loadParentUsers(): Promise<ParentUser[]> {
           email: data.email as string | undefined,
           telefon: data.telefon as string | undefined,
           imie: data.imie as string | undefined,
+          nazwisko: data.nazwisko as string | undefined,
           rola: data.rola as string | undefined,
         };
       })
       .filter((user) => user.email && (user.rola === "rodzic" || !user.rola));
+
+    if (sdkUsers.length) {
+      await upsertParentUsers(sdkUsers);
+    }
+
+    return sdkUsers;
   } catch (error) {
     console.error("loadParentUsers:", error);
     return [];
