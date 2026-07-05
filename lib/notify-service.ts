@@ -123,19 +123,25 @@ export async function loadParentUsers(): Promise<ParentUser[]> {
   try {
     const snapshot = await getDocs(collection(getDb(), "users"));
 
-    const sdkUsers = snapshot.docs
-      .map((item) => {
-        const data = item.data();
-        return {
-          uid: (data.uid as string) || item.id,
-          email: data.email as string | undefined,
-          telefon: data.telefon as string | undefined,
-          imie: data.imie as string | undefined,
-          nazwisko: data.nazwisko as string | undefined,
-          rola: data.rola as string | undefined,
-        };
-      })
-      .filter((user) => user.email && (user.rola === "rodzic" || !user.rola));
+    const sdkUsers: ParentUser[] = [];
+
+    for (const item of snapshot.docs) {
+      const data = item.data();
+      const email = data.email as string | undefined;
+      const rola = data.rola as string | undefined;
+
+      if (!email || !(rola === "rodzic" || !rola)) {
+        continue;
+      }
+
+      sdkUsers.push({
+        uid: (data.uid as string) || item.id,
+        email,
+        telefon: data.telefon as string | undefined,
+        imie: data.imie as string | undefined,
+        rola,
+      });
+    }
 
     if (sdkUsers.length) {
       await upsertParentUsers(sdkUsers);
