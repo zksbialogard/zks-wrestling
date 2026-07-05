@@ -4,8 +4,12 @@ const DEFAULT_SUPABASE_URL = "https://ubvgiglzteunqgxmezkt.supabase.co";
 const DEFAULT_SUPABASE_ANON_KEY =
   "sb_publishable_Z3bExNGFkGBwNoS8GNYA5Q_zktBkUw0";
 
-function resolveSupabaseUrl(raw?: string) {
-  const value = raw?.trim();
+function cleanEnvValue(raw?: string) {
+  return raw?.trim().replace(/^["']|["']$/g, "") || "";
+}
+
+export function resolveSupabaseUrl(raw?: string) {
+  const value = cleanEnvValue(raw);
 
   if (!value) {
     return DEFAULT_SUPABASE_URL;
@@ -25,37 +29,48 @@ function resolveSupabaseUrl(raw?: string) {
     }
   }
 
-  console.warn(
-    "Invalid NEXT_PUBLIC_SUPABASE_URL, using default project URL:",
-    value
-  );
-
   return DEFAULT_SUPABASE_URL;
 }
 
 function resolveSupabaseAnonKey(raw?: string) {
-  const value = raw?.trim();
+  const value = cleanEnvValue(raw);
   return value || DEFAULT_SUPABASE_ANON_KEY;
 }
 
-const supabaseUrl = resolveSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
-const supabaseAnonKey = resolveSupabaseAnonKey(
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+let anonClient: SupabaseClient | null = null;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+function getAnonClient() {
+  if (!anonClient) {
+    anonClient = createClient(
+      resolveSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL),
+      resolveSupabaseAnonKey(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+    );
+  }
+
+  return anonClient;
+}
+
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, property, receiver) {
+    return Reflect.get(getAnonClient(), property, receiver);
+  },
+});
 
 export function createSupabaseAdmin(): SupabaseClient {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const serviceRoleKey = cleanEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY);
 
   if (!serviceRoleKey) {
     throw new Error("SUPABASE_SERVICE_ROLE_KEY_MISSING");
   }
 
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
+  return createClient(
+    resolveSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL),
+    serviceRoleKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
 }
