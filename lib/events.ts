@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { auth } from "./firebase";
 
 export type Event = {
   id: string;
@@ -8,40 +8,20 @@ export type Event = {
   registration_deadline: string;
 };
 
-// ==========================
-// Pobierz wszystkie zawody
-// ==========================
+async function getAuthHeader() {
+  const user = auth.currentUser;
 
-export async function getEvents() {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .order("event_date", { ascending: true });
+  if (!user) {
+    throw new Error("Musisz być zalogowany jako administrator.");
+  }
 
-  if (error) throw error;
+  const token = await user.getIdToken();
 
-  return data as Event[];
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
 }
-
-// ==========================
-// Pobierz jedne zawody
-// ==========================
-
-export async function getEvent(id: string) {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error) throw error;
-
-  return data as Event;
-}
-
-// ==========================
-// Dodaj zawody
-// ==========================
 
 export async function createEvent(data: {
   title: string;
@@ -49,18 +29,22 @@ export async function createEvent(data: {
   event_date: string;
   registration_deadline: string;
 }) {
-  const { error } = await supabase
-    .from("events")
-    .insert([data]);
+  const headers = await getAuthHeader();
 
-  if (error) throw error;
+  const response = await fetch("/api/admin/events", {
+    method: "POST",
+    headers,
+    body: JSON.stringify(data),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "Nie udało się dodać zawodów.");
+  }
 
   return true;
 }
-
-// ==========================
-// Aktualizuj zawody
-// ==========================
 
 export async function updateEvent(
   id: string,
@@ -71,27 +55,36 @@ export async function updateEvent(
     registration_deadline: string;
   }
 ) {
-  const { error } = await supabase
-    .from("events")
-    .update(data)
-    .eq("id", id);
+  const headers = await getAuthHeader();
 
-  if (error) throw error;
+  const response = await fetch(`/api/admin/events/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify(data),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "Nie udało się zaktualizować zawodów.");
+  }
 
   return true;
 }
 
-// ==========================
-// Usuń zawody
-// ==========================
-
 export async function deleteEvent(id: string) {
-  const { error } = await supabase
-    .from("events")
-    .delete()
-    .eq("id", id);
+  const headers = await getAuthHeader();
 
-  if (error) throw error;
+  const response = await fetch(`/api/admin/events/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers,
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "Nie udało się usunąć zawodów.");
+  }
 
   return true;
 }

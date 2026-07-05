@@ -66,7 +66,9 @@ export default function AddEventModal({ open, onClose }: Props) {
       router.refresh();
     } catch (err) {
       console.error(err);
-      toast.error("Nie udało się dodać zawodów.");
+      const message =
+        err instanceof Error ? err.message : "Nie udało się dodać zawodów.";
+      toast.error(message);
     } finally {
       setLoading(false);
     }

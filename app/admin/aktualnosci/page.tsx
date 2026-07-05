@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
 
@@ -21,6 +21,7 @@ export default function AdminAktualnosciPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const loadNews = async () => {
     setLoading(true);
@@ -73,6 +74,7 @@ export default function AdminAktualnosciPage() {
     setEditingId(item.id);
     setTitle(item.title);
     setContent(item.content);
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const removeNews = async (id: string) => {
@@ -97,7 +99,7 @@ export default function AdminAktualnosciPage() {
         description="Dodawaj, edytuj i usuwaj komunikaty widoczne dla rodziców i na stronie klubu."
       />
 
-      <form onSubmit={saveNews} className="zks-card mb-8 space-y-4 p-6">
+      <form ref={formRef} onSubmit={saveNews} className="zks-card mb-8 space-y-4 p-6">
         <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold uppercase text-white">
           {editingId ? "Edytuj aktualność" : "Nowa aktualność"}
         </h2>
@@ -160,11 +162,11 @@ export default function AdminAktualnosciPage() {
               )}
               <p className="mt-4 whitespace-pre-wrap text-sm text-zks-text">{item.content}</p>
 
-              <div className="mt-5 flex flex-wrap gap-2">
+              <div className="mt-5 flex flex-wrap gap-2 border-t border-zks-gold-mid/15 pt-4">
                 <button
                   type="button"
                   onClick={() => startEdit(item)}
-                  className="zks-btn-outline px-4 py-2 text-xs"
+                  className="zks-btn-outline inline-flex items-center gap-2 px-4 py-2 text-xs"
                 >
                   Edytuj
                 </button>

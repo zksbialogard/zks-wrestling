@@ -47,7 +47,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           error:
-            "Edycja wpisów z Supabase wymaga SUPABASE_SERVICE_ROLE_KEY w .env.local.",
+            "Edycja wpisów z Supabase wymaga SUPABASE_SERVICE_ROLE_KEY (Vercel → Environment Variables).",
         },
         { status: 503 }
       );
@@ -95,7 +95,7 @@ export async function DELETE(request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           error:
-            "Usuwanie wpisów z Supabase wymaga SUPABASE_SERVICE_ROLE_KEY w .env.local.",
+            "Usuwanie wpisów z Supabase wymaga SUPABASE_SERVICE_ROLE_KEY (Vercel → Environment Variables).",
         },
         { status: 503 }
       );

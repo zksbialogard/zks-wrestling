@@ -38,8 +38,10 @@ export default function EventRow({ event, entries = 0, onEdit }: Props) {
       await deleteEvent(event.id);
       toast.success("Zawody zostały usunięte.");
       router.refresh();
-    } catch {
-      toast.error("Nie udało się usunąć zawodów.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Nie udało się usunąć zawodów.";
+      toast.error(message);
     }
   };
 
@@ -83,10 +85,10 @@ export default function EventRow({ event, entries = 0, onEdit }: Props) {
           <button
             type="button"
             onClick={() => onEdit(event)}
-            className="rounded-lg border border-zks-gold-mid/30 p-2.5 text-zks-gold-bright transition hover:border-zks-gold-mid"
-            aria-label="Edytuj"
+            className="zks-btn-outline inline-flex items-center gap-2 px-4 py-2 text-xs"
           >
             <Pencil className="h-4 w-4" />
+            Edytuj
           </button>
 
           <button
@@ -101,10 +103,10 @@ export default function EventRow({ event, entries = 0, onEdit }: Props) {
           <button
             type="button"
             onClick={remove}
-            className="rounded-lg border border-red-500/40 p-2.5 text-red-400 transition hover:bg-red-500/10"
-            aria-label="Usuń"
+            className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 px-4 py-2 text-xs text-red-400 transition hover:bg-red-500/10"
           >
             <Trash2 className="h-4 w-4" />
+            Usuń
           </button>
         </div>
       </div>

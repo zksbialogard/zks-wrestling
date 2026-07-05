@@ -61,7 +61,9 @@ export default function EditEventModal({ open, event, onClose }: Props) {
       router.refresh();
     } catch (err) {
       console.error(err);
-      toast.error("Nie udało się zapisać zmian.");
+      const message =
+        err instanceof Error ? err.message : "Nie udało się zapisać zmian.";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
