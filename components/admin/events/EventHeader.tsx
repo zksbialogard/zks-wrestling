@@ -5,7 +5,7 @@ import { CalendarPlus } from "lucide-react";
 
 import AddEventModal from "./AddEventModal";
 
-export default function EventHeader() {
+export default function EventHeader({ onCreated }: { onCreated?: () => void | Promise<void> }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -50,6 +50,7 @@ export default function EventHeader() {
       <AddEventModal
         open={open}
         onClose={() => setOpen(false)}
+        onCreated={onCreated}
       />
     </>
   );

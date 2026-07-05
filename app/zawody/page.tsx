@@ -2,20 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 
-interface EventType {
-  id: string;
-  name: string;
-  city: string;
-  date: string;
-  registrationDeadline: string;
-  active?: boolean;
-}
+import { fetchEvents, type Event } from "@/lib/events";
 
 export default function ZawodyPage() {
-  const [events, setEvents] = useState<EventType[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,18 +15,8 @@ export default function ZawodyPage() {
 
   const loadEvents = async () => {
     try {
-      const snapshot = await getDocs(collection(db, "events"));
-
-      const data = snapshot.docs.map((document) => ({
-        id: document.id,
-        ...(document.data() as Omit<EventType, "id">),
-      }));
-
-      const activeEvents = data.filter(
-        (event) => event.active !== false
-      );
-
-      setEvents(activeEvents);
+      const data = await fetchEvents();
+      setEvents(data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -44,18 +25,14 @@ export default function ZawodyPage() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white p-6">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-5xl font-bold text-yellow-400 text-center mb-10">
-          Zawody
-        </h1>
+    <main className="min-h-screen bg-black p-6 text-white">
+      <div className="mx-auto max-w-5xl">
+        <h1 className="mb-10 text-center text-5xl font-bold text-yellow-400">Zawody</h1>
 
         {loading ? (
-          <div className="text-center">
-            Ładowanie zawodów...
-          </div>
+          <div className="text-center">Ładowanie zawodów...</div>
         ) : events.length === 0 ? (
-          <div className="bg-zinc-900 border border-yellow-500 rounded-3xl p-8 text-center">
+          <div className="rounded-3xl border border-yellow-500 bg-zinc-900 p-8 text-center">
             Brak dostępnych zawodów.
           </div>
         ) : (
@@ -63,28 +40,27 @@ export default function ZawodyPage() {
             {events.map((event) => (
               <div
                 key={event.id}
-                className="bg-zinc-900 border border-yellow-500 rounded-3xl p-6"
+                className="rounded-3xl border border-yellow-500 bg-zinc-900 p-6"
               >
-                <h2 className="text-3xl font-bold text-yellow-400 mb-4">
-                  {event.name}
-                </h2>
+                <h2 className="mb-4 text-3xl font-bold text-yellow-400">{event.title}</h2>
 
                 <p>
-                  <strong>Miasto:</strong> {event.city}
+                  <strong>Miejsce:</strong> {event.location}
                 </p>
 
                 <p>
-                  <strong>Data zawodów:</strong> {event.date}
+                  <strong>Data zawodów:</strong>{" "}
+                  {new Date(event.event_date).toLocaleDateString("pl-PL")}
                 </p>
 
                 <p>
                   <strong>Termin zgłoszeń:</strong>{" "}
-                  {event.registrationDeadline}
+                  {new Date(event.registration_deadline).toLocaleDateString("pl-PL")}
                 </p>
 
                 <Link
                   href={`/zawody/${event.id}`}
-                  className="inline-block mt-5 bg-yellow-500 text-black px-6 py-3 rounded-xl font-bold"
+                  className="mt-5 inline-block rounded-xl bg-yellow-500 px-6 py-3 font-bold text-black"
                 >
                   Zgłoś dziecko
                 </Link>

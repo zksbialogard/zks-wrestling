@@ -2,26 +2,22 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+
+import { fetchEvents, type Event } from "@/lib/events";
 
 export default function NajblizszeZawodyPage() {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "events"));
-
-        const data = querySnapshot.docs.map((doc) => ({
-  id: doc.id,
-  ...doc.data(),
-}));
-
-console.log("EVENTS:", data);
-setEvents(data);
+        const data = await fetchEvents();
+        setEvents(data);
       } catch (error) {
         console.error("Błąd pobierania zawodów:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -30,47 +26,48 @@ setEvents(data);
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-7xl font-bold text-yellow-400 mb-6">
+      <section className="mx-auto max-w-7xl px-6 py-20">
+        <div className="mb-16 text-center">
+          <h1 className="mb-6 text-5xl font-bold text-yellow-400 md:text-7xl">
             Najbliższe zawody
           </h1>
 
-          <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto">
-            Lista najbliższych zawodów i turniejów, w których planowany jest
-            udział zawodników ZKS Białogard.
+          <p className="mx-auto max-w-3xl text-lg text-gray-300 md:text-xl">
+            Lista najbliższych zawodów i turniejów, w których planowany jest udział
+            zawodników ZKS Białogard.
           </p>
         </div>
 
         <div className="space-y-8">
-          {events.length === 0 ? (
-            <div className="bg-zinc-900 border border-yellow-500 rounded-3xl p-8 text-center">
-              <p className="text-gray-300">
-                Brak zawodów w bazie danych.
-              </p>
+          {loading ? (
+            <div className="rounded-3xl border border-yellow-500 bg-zinc-900 p-8 text-center text-gray-300">
+              Ładowanie zawodów...
+            </div>
+          ) : events.length === 0 ? (
+            <div className="rounded-3xl border border-yellow-500 bg-zinc-900 p-8 text-center">
+              <p className="text-gray-300">Brak zawodów w bazie danych.</p>
             </div>
           ) : (
             events.map((event) => (
               <div
                 key={event.id}
-                className="bg-zinc-900 border border-yellow-500 rounded-3xl p-8"
+                className="rounded-3xl border border-yellow-500 bg-zinc-900 p-8"
               >
-                <h2 className="text-3xl font-bold text-yellow-400 mb-4">
-                  {event.name}
-                </h2>
+                <h2 className="mb-4 text-3xl font-bold text-yellow-400">{event.title}</h2>
 
                 <div className="space-y-3 text-gray-300">
                   <p>
-                    <strong>Data:</strong> {event.date}
+                    <strong>Data:</strong>{" "}
+                    {new Date(event.event_date).toLocaleDateString("pl-PL")}
                   </p>
 
                   <p>
-                    <strong>Miejsce:</strong> {event.city}
+                    <strong>Miejsce:</strong> {event.location}
                   </p>
 
                   <p>
                     <strong>Termin zgłoszeń:</strong>{" "}
-                    {event.registrationDeadline}
+                    {new Date(event.registration_deadline).toLocaleDateString("pl-PL")}
                   </p>
                 </div>
               </div>
@@ -80,10 +77,10 @@ setEvents(data);
 
         <div className="mt-16 text-center">
           <Link
-            href="/zawody/kalendarz-startow"
-            className="inline-block bg-yellow-500 text-black font-bold px-8 py-4 rounded-2xl hover:bg-yellow-400 transition"
+            href="/zawody"
+            className="inline-block rounded-2xl bg-yellow-500 px-8 py-4 font-bold text-black transition hover:bg-yellow-400"
           >
-            Zobacz pełny kalendarz startów
+            Zobacz wszystkie zawody
           </Link>
         </div>
       </section>

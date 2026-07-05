@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { getAdminFromRequest } from "@/lib/verify-admin";
@@ -63,6 +64,11 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    revalidatePath("/");
+    revalidatePath("/zawody");
+    revalidatePath("/zawody/najblizsze-zawody");
+    revalidatePath("/admin/zawody");
+
     return NextResponse.json({ ok: true, data });
   } catch (error) {
     console.error(error);
@@ -89,6 +95,11 @@ export async function DELETE(request: Request, context: RouteContext) {
       console.error("Supabase events delete error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    revalidatePath("/");
+    revalidatePath("/zawody");
+    revalidatePath("/zawody/najblizsze-zawody");
+    revalidatePath("/admin/zawody");
 
     return NextResponse.json({ ok: true });
   } catch (error) {

@@ -1,16 +1,10 @@
-import EventHeader from "@/components/admin/events/EventHeader";
-import EventFilters from "@/components/admin/events/EventFilters";
-import EventsTable from "@/components/admin/events/EventsTable";
+import AdminEventsPage from "@/components/admin/events/AdminEventsPage";
 import { getEvents } from "@/lib/events-server";
+
+export const dynamic = "force-dynamic";
 
 export default async function EventsPage() {
   const events = await getEvents();
 
-  return (
-    <div className="space-y-8">
-      <EventHeader />
-      <EventFilters />
-      <EventsTable events={events} />
-    </div>
-  );
+  return <AdminEventsPage initialEvents={events} />;
 }

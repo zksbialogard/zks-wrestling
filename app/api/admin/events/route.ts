@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { getAdminFromRequest } from "@/lib/verify-admin";
@@ -56,6 +57,11 @@ export async function POST(request: Request) {
       console.error("Supabase events insert error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    revalidatePath("/");
+    revalidatePath("/zawody");
+    revalidatePath("/zawody/najblizsze-zawody");
+    revalidatePath("/admin/zawody");
 
     return NextResponse.json({ ok: true, data });
   } catch (error) {

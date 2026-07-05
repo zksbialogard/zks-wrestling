@@ -26,9 +26,10 @@ interface Props {
   event: EventItem;
   entries?: number;
   onEdit: (event: EventItem) => void;
+  onDeleted: (id: string) => void;
 }
 
-export default function EventRow({ event, entries = 0, onEdit }: Props) {
+export default function EventRow({ event, entries = 0, onEdit, onDeleted }: Props) {
   const router = useRouter();
 
   const remove = async () => {
@@ -36,6 +37,7 @@ export default function EventRow({ event, entries = 0, onEdit }: Props) {
 
     try {
       await deleteEvent(event.id);
+      onDeleted(event.id);
       toast.success("Zawody zostały usunięte.");
       router.refresh();
     } catch (error) {

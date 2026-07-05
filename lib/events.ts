@@ -1,4 +1,5 @@
 import { auth } from "./firebase";
+import { supabase } from "./supabase";
 
 export type Event = {
   id: string;
@@ -7,6 +8,20 @@ export type Event = {
   event_date: string;
   registration_deadline: string;
 };
+
+export async function fetchEvents(): Promise<Event[]> {
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .order("event_date", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data || [];
+}
 
 async function getAuthHeader() {
   const user = auth.currentUser;

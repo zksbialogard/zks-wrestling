@@ -11,9 +11,10 @@ import { notifyParentsAboutEvent } from "@/lib/notify-event";
 type Props = {
   open: boolean;
   onClose: () => void;
+  onCreated?: () => void | Promise<void>;
 };
 
-export default function AddEventModal({ open, onClose }: Props) {
+export default function AddEventModal({ open, onClose, onCreated }: Props) {
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [eventDate, setEventDate] = useState("");
@@ -63,6 +64,7 @@ export default function AddEventModal({ open, onClose }: Props) {
       setEventDate("");
       setRegistrationDeadline("");
       onClose();
+      await onCreated?.();
       router.refresh();
     } catch (err) {
       console.error(err);

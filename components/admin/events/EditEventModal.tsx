@@ -18,9 +18,10 @@ type Props = {
   open: boolean;
   event: EventData | null;
   onClose: () => void;
+  onUpdated: (event: EventData) => void;
 };
 
-export default function EditEventModal({ open, event, onClose }: Props) {
+export default function EditEventModal({ open, event, onClose, onUpdated }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
@@ -50,6 +51,14 @@ export default function EditEventModal({ open, event, onClose }: Props) {
       setLoading(true);
 
       await updateEvent(event.id, {
+        title,
+        location,
+        event_date: eventDate,
+        registration_deadline: registrationDeadline,
+      });
+
+      onUpdated({
+        id: event.id,
         title,
         location,
         event_date: eventDate,

@@ -2,14 +2,22 @@
 
 import { useState } from "react";
 
+import type { Event } from "@/lib/events";
+
 import EditEventModal from "./EditEventModal";
 import EventRow, { EventItem } from "./EventRow";
 
 interface EventsTableProps {
   events: EventItem[];
+  onDeleted: (id: string) => void;
+  onUpdated: (event: Event) => void;
 }
 
-export default function EventsTable({ events }: EventsTableProps) {
+export default function EventsTable({
+  events,
+  onDeleted,
+  onUpdated,
+}: EventsTableProps) {
   const [editing, setEditing] = useState<EventItem | null>(null);
 
   if (!events.length) {
@@ -32,6 +40,7 @@ export default function EventsTable({ events }: EventsTableProps) {
             key={event.id}
             event={event}
             onEdit={(item) => setEditing(item)}
+            onDeleted={onDeleted}
           />
         ))}
       </div>
@@ -40,6 +49,7 @@ export default function EventsTable({ events }: EventsTableProps) {
         open={Boolean(editing)}
         event={editing}
         onClose={() => setEditing(null)}
+        onUpdated={onUpdated}
       />
     </>
   );
