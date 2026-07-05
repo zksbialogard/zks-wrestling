@@ -108,15 +108,17 @@ export async function sendAdminNotify(input: {
 }
 
 export function formatNotifyResultMessage(result: {
-  totalParents: number;
+  totalParents?: number;
   emailsSent: number;
   smsSent: number;
   inAppSent: number;
   pushSent?: number;
-  errors: string[];
-  warnings: string[];
+  errors?: string[];
+  warnings?: string[];
 }) {
-  return `Rodziców: ${result.totalParents} · w aplikacji ${result.inAppSent}${result.pushSent ? ` · push ${result.pushSent}` : ""}${result.emailsSent || result.smsSent ? ` · email ${result.emailsSent} · SMS ${result.smsSent}` : ""}`;
+  const totalParents = result.totalParents ?? 0;
+
+  return `Rodziców: ${totalParents} · w aplikacji ${result.inAppSent}${result.pushSent ? ` · push ${result.pushSent}` : ""}${result.emailsSent || result.smsSent ? ` · email ${result.emailsSent} · SMS ${result.smsSent}` : ""}`;
 }
 
 export async function savePushPreference(enabled: boolean) {

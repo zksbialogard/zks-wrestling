@@ -78,12 +78,13 @@ export async function createEvent(data: {
     error?: string;
     data?: Event;
     notifyResult?: {
+      totalParents: number;
       emailsSent: number;
       smsSent: number;
       inAppSent: number;
-      totalParents?: number;
+      pushSent: number;
       errors: string[];
-      warnings?: string[];
+      warnings: string[];
     };
   };
 
