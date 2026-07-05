@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Event } from "@/lib/events";
 
 import EditEventModal from "./EditEventModal";
+import NotifyEventModal from "./NotifyEventModal";
 import EventRow, { EventItem } from "./EventRow";
 
 interface EventsTableProps {
@@ -19,6 +20,7 @@ export default function EventsTable({
   onUpdated,
 }: EventsTableProps) {
   const [editing, setEditing] = useState<EventItem | null>(null);
+  const [notifying, setNotifying] = useState<EventItem | null>(null);
 
   if (!events.length) {
     return (
@@ -40,6 +42,7 @@ export default function EventsTable({
             key={event.id}
             event={event}
             onEdit={(item) => setEditing(item)}
+            onNotify={(item) => setNotifying(item)}
             onDeleted={onDeleted}
           />
         ))}
@@ -50,6 +53,12 @@ export default function EventsTable({
         event={editing}
         onClose={() => setEditing(null)}
         onUpdated={onUpdated}
+      />
+
+      <NotifyEventModal
+        open={Boolean(notifying)}
+        event={notifying}
+        onClose={() => setNotifying(null)}
       />
     </>
   );

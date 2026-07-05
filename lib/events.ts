@@ -58,7 +58,7 @@ export async function createEvent(data: {
     throw new Error(result.error || "Nie udało się dodać zawodów.");
   }
 
-  return true;
+  return result.data as Event;
 }
 
 export async function updateEvent(

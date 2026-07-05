@@ -1,5 +1,6 @@
 import {
   Baby,
+  Bell,
   CalendarDays,
   ClipboardList,
   Newspaper,
@@ -48,6 +49,13 @@ export default function DashboardGrid() {
           icon={CalendarDays}
           title="Zawody"
           description="Informacje o nadchodzących zawodach i obozach klubowych."
+        />
+
+        <DashboardCard
+          href="/panel-rodzica/powiadomienia"
+          icon={Bell}
+          title="Powiadomienia"
+          description="Komunikaty od klubu: zawody, zgłoszenia i ważne informacje."
         />
 
         <DashboardCard

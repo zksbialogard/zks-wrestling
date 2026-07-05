@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Bell,
   Baby,
   CalendarDays,
   ClipboardList,
@@ -20,6 +21,7 @@ const links = [
   { href: "/panel-rodzica/moje-dzieci", label: "Dzieci", icon: Baby },
   { href: "/zawody", label: "Zawody", icon: CalendarDays },
   { href: "/aktualnosci", label: "News", icon: Newspaper },
+  { href: "/panel-rodzica/powiadomienia", label: "Powiadomienia", icon: Bell },
   { href: "/panel-rodzica/moje-zgloszenia", label: "Zgłoszenia", icon: ClipboardList },
   { href: "/panel-rodzica/wyniki", label: "Wyniki", icon: Trophy },
   { href: "/panel-rodzica/profil", label: "Profil", icon: User },

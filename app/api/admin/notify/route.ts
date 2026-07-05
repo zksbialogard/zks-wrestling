@@ -1,0 +1,58 @@
+import { NextResponse } from "next/server";
+
+import { notifyParents, type NotifyChannels } from "@/lib/notify-service";
+import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
+import { type TemplateKey } from "@/lib/message-templates";
+import { getAdminFromRequest } from "@/lib/verify-admin";
+
+type NotifyBody = {
+  templateKey: TemplateKey;
+  variables: Record<string, string>;
+  channels?: NotifyChannels;
+  type?: string;
+  link?: string;
+  targetUid?: string;
+};
+
+export async function POST(request: Request) {
+  try {
+    const admin = await getAdminFromRequest(request);
+
+    if (!admin) {
+      return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+    }
+
+    await seedDefaultTemplatesIfEmpty();
+
+    const body = (await request.json()) as NotifyBody;
+
+    if (!body.templateKey || !body.variables) {
+      return NextResponse.json(
+        { error: "Brak szablonu lub zmiennych wiadomości." },
+        { status: 400 }
+      );
+    }
+
+    const result = await notifyParents({
+      templateKey: body.templateKey,
+      variables: body.variables,
+      channels: {
+        email: body.channels?.email ?? true,
+        sms: body.channels?.sms ?? false,
+        inApp: body.channels?.inApp ?? true,
+        push: body.channels?.push ?? false,
+      },
+      type: body.type,
+      link: body.link,
+      targetUid: body.targetUid,
+    });
+
+    return NextResponse.json({ ok: true, result });
+  } catch (error) {
+    console.error(error);
+    const message =
+      error instanceof Error ? error.message : "Nie udało się wysłać powiadomień.";
+
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

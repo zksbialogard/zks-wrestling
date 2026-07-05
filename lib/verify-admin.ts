@@ -68,6 +68,37 @@ export async function verifyAdminToken(idToken: string) {
   return user;
 }
 
+export async function getUserFromRequest(request: Request) {
+  const authHeader = request.headers.get("authorization");
+
+  if (!authHeader?.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token = authHeader.slice(7);
+  const user = await verifyFirebaseToken(token);
+
+  if (!user) {
+    return null;
+  }
+
+  const snapshot = await getDocs(
+    query(collection(getDb(), "users"), where("uid", "==", user.localId))
+  );
+
+  if (snapshot.empty) {
+    return null;
+  }
+
+  const profile = snapshot.docs[0].data();
+
+  return {
+    uid: user.localId,
+    email: user.email,
+    profile,
+  };
+}
+
 export async function getAdminFromRequest(request: Request) {
   const authHeader = request.headers.get("authorization");
 

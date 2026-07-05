@@ -26,10 +26,17 @@ interface Props {
   event: EventItem;
   entries?: number;
   onEdit: (event: EventItem) => void;
+  onNotify: (event: EventItem) => void;
   onDeleted: (id: string) => void;
 }
 
-export default function EventRow({ event, entries = 0, onEdit, onDeleted }: Props) {
+export default function EventRow({
+  event,
+  entries = 0,
+  onEdit,
+  onNotify,
+  onDeleted,
+}: Props) {
   const router = useRouter();
 
   const remove = async () => {
@@ -48,7 +55,7 @@ export default function EventRow({ event, entries = 0, onEdit, onDeleted }: Prop
   };
 
   const notify = () => {
-    toast.info("Powiadomienia push/SMS — w kolejnym kroku integracji.");
+    onNotify(event);
   };
 
   return (

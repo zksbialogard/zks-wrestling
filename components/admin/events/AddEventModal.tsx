@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CalendarPlus, Loader2, X } from "lucide-react";
 
 import { createEvent } from "@/lib/events";
-import { notifyParentsAboutEvent } from "@/lib/notify-event";
+import { sendAdminNotify } from "@/lib/notifications-client";
 
 type Props = {
   open: boolean;
@@ -21,6 +21,7 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
   const [registrationDeadline, setRegistrationDeadline] = useState("");
   const [sendEmail, setSendEmail] = useState(true);
   const [sendSms, setSendSms] = useState(false);
+  const [sendInApp, setSendInApp] = useState(true);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -35,25 +36,37 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
     try {
       setLoading(true);
 
-      await createEvent({
+      const created = await createEvent({
         title,
         location,
         event_date: eventDate,
         registration_deadline: registrationDeadline,
       });
 
-      if (sendEmail || sendSms) {
-        const result = await notifyParentsAboutEvent({
-          title,
-          location,
-          eventDate,
-          registrationDeadline,
-          sendEmail,
-          sendSms,
+      if (sendEmail || sendSms || sendInApp) {
+        const result = await sendAdminNotify({
+          templateKey: "event_new",
+          variables: {
+            title,
+            location,
+            eventDate: new Date(eventDate).toLocaleDateString("pl-PL"),
+            registrationDeadline: new Date(registrationDeadline).toLocaleDateString(
+              "pl-PL"
+            ),
+            link: `${window.location.origin}/zawody/${created.id}`,
+          },
+          channels: {
+            email: sendEmail,
+            sms: sendSms,
+            inApp: sendInApp,
+            push: sendInApp,
+          },
+          type: "event",
+          link: `/zawody/${created.id}`,
         });
 
         toast.success(
-          `Zawody dodane. Email: ${result.emailsSent}, SMS: ${result.smsSent}.`
+          `Zawody dodane. Email: ${result.emailsSent}, SMS: ${result.smsSent}, w aplikacji: ${result.inAppSent}.`
         );
       } else {
         toast.success("Zawody zostały dodane.");
@@ -155,6 +168,16 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
               className="accent-zks-gold"
             />
             Powiadom rodziców SMS
+          </label>
+
+          <label className="flex items-center gap-3 text-sm text-zks-text">
+            <input
+              type="checkbox"
+              checked={sendInApp}
+              onChange={() => setSendInApp(!sendInApp)}
+              className="accent-zks-gold"
+            />
+            Powiadomienie w aplikacji (centrum powiadomień rodzica)
           </label>
         </div>
 

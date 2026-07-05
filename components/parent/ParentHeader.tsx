@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import ClubLogo from "@/components/ui/ClubLogo";
+import NotificationBadgeLink from "./NotificationBadgeLink";
 
 export default function ParentHeader() {
   const router = useRouter();
@@ -28,14 +29,18 @@ export default function ParentHeader() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="zks-btn-outline hidden items-center gap-2 px-4 py-2.5 text-xs sm:inline-flex"
-        >
-          <LogOut className="h-4 w-4" />
-          Wyloguj
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationBadgeLink />
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="zks-btn-outline hidden items-center gap-2 px-4 py-2.5 text-xs sm:inline-flex"
+          >
+            <LogOut className="h-4 w-4" />
+            Wyloguj
+          </button>
+        </div>
       </div>
     </header>
   );
