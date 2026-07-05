@@ -1,20 +1,33 @@
 {
-  "name": "ZKS Białogard",
-  "short_name": "ZKS",
+  "name": "ZKS Białogard — Manager",
+  "short_name": "ZKS Manager",
+  "description": "Oficjalna aplikacja klubowa ZKS Białogard — zawody, aktualności, panel rodzica i admina.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#000000",
-  "theme_color": "#facc15",
+  "theme_color": "#000000",
+  "lang": "pl",
+  "categories": ["sports", "lifestyle"],
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/logo-shield.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/logo-shield.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-shield.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

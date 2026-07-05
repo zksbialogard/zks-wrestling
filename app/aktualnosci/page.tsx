@@ -1,71 +1,31 @@
-"use client";
+import { getNews } from "@/lib/news";
 
-import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-
-interface NewsItem {
-  id: string;
-  title: string;
-  content: string;
-  createdAt?: any;
-}
-
-export default function AktualnosciPage() {
-  const [news, setNews] = useState<NewsItem[]>([]);
-
-  useEffect(() => {
-    const loadNews = async () => {
-      const snapshot = await getDocs(collection(db, "news"));
-
-      const data = snapshot.docs.map((item) => ({
-        id: item.id,
-        ...(item.data() as Omit<NewsItem, "id">),
-      }));
-
-      data.sort((a: any, b: any) => {
-        const aTime = a.createdAt?.seconds || 0;
-        const bTime = b.createdAt?.seconds || 0;
-
-        return bTime - aTime;
-      });
-
-      setNews(data);
-    };
-
-    loadNews();
-  }, []);
+export default async function AktualnosciPage() {
+  const news = await getNews();
 
   return (
-    <main className="min-h-screen bg-black text-white p-6">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-5xl font-bold text-yellow-400 mb-10">
+    <main className="min-h-screen bg-zks-black px-4 pb-16 pt-28 text-white sm:px-6">
+      <div className="mx-auto max-w-5xl">
+        <h1 className="font-[family-name:var(--font-heading)] text-4xl font-bold uppercase text-white">
           Aktualności
         </h1>
 
-        <div className="space-y-6">
-          {news.map((item) => (
-            <div
-              key={item.id}
-              className="bg-zinc-900 border border-yellow-500 rounded-3xl p-6"
-            >
-              <h2 className="text-3xl font-bold text-yellow-400 mb-2">
-                {item.title}
-              </h2>
-
-              {item.createdAt?.seconds && (
-                <p className="text-gray-500 mb-4">
-                  {new Date(
-                    item.createdAt.seconds * 1000
-                  ).toLocaleDateString("pl-PL")}
-                </p>
-              )}
-
-              <p className="text-gray-300 whitespace-pre-wrap">
-                {item.content}
-              </p>
-            </div>
-          ))}
+        <div className="mt-8 space-y-4">
+          {news.length === 0 ? (
+            <div className="zks-card p-6 text-zks-text-muted">Brak aktualności.</div>
+          ) : (
+            news.map((item) => (
+              <article key={item.id} className="zks-card p-6">
+                <h2 className="text-2xl font-bold text-zks-gold-bright">{item.title}</h2>
+                {item.created_at && (
+                  <p className="mt-1 text-xs text-zks-text-muted">
+                    {new Date(item.created_at).toLocaleDateString("pl-PL")}
+                  </p>
+                )}
+                <p className="mt-4 whitespace-pre-wrap text-zks-text">{item.content}</p>
+              </article>
+            ))
+          )}
         </div>
       </div>
     </main>

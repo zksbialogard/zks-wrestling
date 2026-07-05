@@ -1,42 +1,33 @@
 import Link from "next/link";
+import { LucideIcon } from "lucide-react";
 
 interface Props {
   href: string;
-  icon: string;
+  icon: LucideIcon;
   title: string;
   description: string;
 }
 
 export default function DashboardCard({
   href,
-  icon,
+  icon: Icon,
   title,
   description,
 }: Props) {
   return (
     <Link
       href={href}
-      className="
-      bg-zinc-900
-      border
-      border-yellow-500
-      rounded-3xl
-      p-8
-      hover:border-yellow-300
-      hover:scale-[1.02]
-      transition
-      block
-      "
+      className="zks-card group block p-6 transition hover:-translate-y-1 hover:border-zks-gold-mid/50 hover:shadow-gold-glow-sm"
     >
-      <div className="text-6xl mb-6">
-        {icon}
+      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-lg border border-zks-gold-mid/30 bg-zks-gold/10 transition group-hover:shadow-gold-glow-sm">
+        <Icon className="h-6 w-6 text-zks-gold-bright" />
       </div>
 
-      <h2 className="text-3xl font-bold text-yellow-400">
+      <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white">
         {title}
       </h2>
 
-      <p className="text-gray-400 mt-3">
+      <p className="mt-2 text-sm leading-relaxed text-zks-text-muted">
         {description}
       </p>
     </Link>

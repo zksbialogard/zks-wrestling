@@ -3,11 +3,15 @@
 import { useEffect, useState } from "react";
 import {
   collection,
-  getDocs,
   deleteDoc,
   doc,
+  getDocs,
   updateDoc,
 } from "firebase/firestore";
+import { toast } from "sonner";
+import { Check, Trash2, X } from "lucide-react";
+
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { db } from "@/lib/firebase";
 
 interface Registration {
@@ -22,288 +26,154 @@ interface Registration {
   eventId: string;
 }
 
-interface EventData {
-  id: string;
-  name: string;
-}
-
 export default function AdminZgloszeniaPage() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [events, setEvents] = useState<Record<string, string>>({});
-
-  const [showPending, setShowPending] = useState(true);
-  const [showApproved, setShowApproved] = useState(false);
-  const [showRejected, setShowRejected] = useState(false);
-
-  const pendingRegistrations = registrations.filter(
-    (reg) => reg.status === "pending"
-  );
-
-  const approvedRegistrations = registrations.filter(
-    (reg) => reg.status === "approved"
-  );
-
-  const rejectedRegistrations = registrations.filter(
-    (reg) => reg.status === "rejected"
-  );
+  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
 
   const loadRegistrations = async () => {
-    const registrationsSnapshot = await getDocs(
-      collection(db, "registrations")
-    );
-
-    const registrationsData = registrationsSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
+    const registrationsSnapshot = await getDocs(collection(db, "registrations"));
+    const registrationsData = registrationsSnapshot.docs.map((item) => ({
+      id: item.id,
+      ...(item.data() as Omit<Registration, "id">),
     })) as Registration[];
 
     setRegistrations(registrationsData);
 
     const eventsSnapshot = await getDocs(collection(db, "events"));
-
-const eventMap: Record<string, string> = {};
-
-eventsSnapshot.forEach((doc) => {
-  eventMap[doc.id] = doc.data().name || "Bez nazwy";
-});
-
-setEvents(eventMap);
-    console.log("EVENT MAP:", eventMap);
+    const eventMap: Record<string, string> = {};
+    eventsSnapshot.forEach((item) => {
+      eventMap[item.id] = item.data().name || item.data().title || "Bez nazwy";
+    });
+    setEvents(eventMap);
   };
 
   useEffect(() => {
     loadRegistrations();
   }, []);
 
- const getEventName = (eventId: string) => {
-  return events[eventId] ?? "Nieznane zawody";
-};
- 
+  const getEventName = (eventId: string) => events[eventId] ?? "Nieznane zawody";
 
-const approveRegistration = async (id: string) => {
-  await updateDoc(doc(db, "registrations", id), {
-    status: "approved",
-  });
+  const approveRegistration = async (id: string) => {
+    await updateDoc(doc(db, "registrations", id), { status: "approved" });
+    toast.success("Zgłoszenie zaakceptowane.");
+    loadRegistrations();
+  };
 
-  loadRegistrations();
-};
+  const rejectRegistration = async (id: string) => {
+    await updateDoc(doc(db, "registrations", id), { status: "rejected" });
+    toast.success("Zgłoszenie odrzucone.");
+    loadRegistrations();
+  };
 
-const rejectRegistration = async (id: string) => {
-  await updateDoc(doc(db, "registrations", id), {
-    status: "rejected",
-  });
+  const deleteRegistration = async (id: string) => {
+    if (!confirm("Usunąć zgłoszenie?")) return;
+    await deleteDoc(doc(db, "registrations", id));
+    toast.success("Zgłoszenie usunięte.");
+    loadRegistrations();
+  };
 
-  loadRegistrations();
-};
+  const filtered = registrations.filter((reg) =>
+    filter === "all" ? true : reg.status === filter
+  );
 
-const deleteRegistration = async (id: string) => {
-  if (!confirm("Usunąć zgłoszenie?")) return;
+  const counts = {
+    pending: registrations.filter((r) => r.status === "pending").length,
+    approved: registrations.filter((r) => r.status === "approved").length,
+    rejected: registrations.filter((r) => r.status === "rejected").length,
+  };
 
-  await deleteDoc(doc(db, "registrations", id));
-  loadRegistrations();
-};
+  return (
+    <>
+      <AdminPageHeader
+        title="Zgłoszenia"
+        description="Akceptuj, odrzucaj i usuwaj zgłoszenia na zawody."
+      />
 
-return (
-  <div className="p-6 text-white">
-    <h1 className="text-4xl font-bold text-yellow-400  text-center mb-6">
-      Panel zgłoszeń
-    </h1>
-
-    <div className="grid grid-cols-3 gap-3 mb-8">
-      <div className="bg-yellow-500 shadow-x1 text-black rounded-xl p-3  text-center font-bold shadow-lg">
-        <div className="text-2xl">
-          {pendingRegistrations.length}
-        </div>
-        <div>Oczekujące</div>
+      <div className="mb-6 grid grid-cols-3 gap-3">
+        {[
+          { label: "Oczekujące", value: counts.pending, color: "text-zks-gold-bright" },
+          { label: "Zaakceptowane", value: counts.approved, color: "text-green-400" },
+          { label: "Odrzucone", value: counts.rejected, color: "text-red-400" },
+        ].map((stat) => (
+          <div key={stat.label} className="zks-card p-4 text-center">
+            <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+            <div className="text-xs uppercase tracking-wide text-zks-text-muted">{stat.label}</div>
+          </div>
+        ))}
       </div>
 
-      <div className="bg-green-600 shadow-x1 rounded-xl p-3 text-center font-bold shadow-lg">
-        <div className="text-2xl">
-          {approvedRegistrations.length}
-        </div>
-        <div>Zaakceptowane</div>
+      <div className="mb-6 flex flex-wrap gap-2">
+        {(["all", "pending", "approved", "rejected"] as const).map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => setFilter(item)}
+            className={`rounded-lg px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
+              filter === item
+                ? "bg-zks-gold text-zks-black"
+                : "border border-zks-gold-mid/30 text-zks-text"
+            }`}
+          >
+            {item === "all"
+              ? "Wszystkie"
+              : item === "pending"
+                ? "Oczekujące"
+                : item === "approved"
+                  ? "Zaakceptowane"
+                  : "Odrzucone"}
+          </button>
+        ))}
       </div>
 
-      <div className="bg-red-600 shadow-x1 rounded-xl p-3 text-center font-bold shadow-lg">
-        <div className="text-2xl">
-          {rejectedRegistrations.length}
-        </div>
-        <div>Odrzucone</div>
-      </div>
-    </div>
+      {filtered.length === 0 ? (
+        <div className="zks-card p-6 text-zks-text-muted">Brak zgłoszeń w tej kategorii.</div>
+      ) : (
+        <div className="space-y-4">
+          {filtered.map((reg) => (
+            <div key={reg.id} className="zks-card p-6">
+              <h2 className="text-xl font-bold text-white">
+                {reg.childName} {reg.childSurname}
+              </h2>
+              <p className="mt-2 text-sm text-zks-gold-bright">{getEventName(reg.eventId)}</p>
 
-    {/* OCZEKUJĄCE */}
-
-    <div className="mb-8">
-      <h2
-        onClick={() => setShowPending(!showPending)}
-        className="bg-zinc-900 border border-yellow-500 rounded-xl p-3 cursor-pointer font-bold text-2xl mb-3"
-      >
-
-        {showPending ? "▼" : "▶"} 📋 Oczekujące (
-        {pendingRegistrations.length})
-      </h2>
-
-      {showPending && (
-        <>
-          {pendingRegistrations.length === 0 ? (
-            <p>Brak oczekujących zgłoszeń.</p>
-          ) : (
-            pendingRegistrations.map((reg) => (
-              <div
-                key={reg.id}
-                className="bg-zinc-900 border-2 border-yellow-500 rounded-xl p-4 mb-4 shadow-lg shadow-yellow-500/10"
-              >
-                <h2 className="text-2xl font-bold text-yellow-400">
-                  {reg.childName} {reg.childSurname}
-                </h2>
-
-                <p className="text-yellow-300 font-semibold mb-2">
-                  🏆 {getEventName(reg.eventId)}
-                </p>
-
+              <div className="mt-4 grid gap-1 text-sm text-zks-text sm:grid-cols-2">
                 <p>Rok urodzenia: {reg.childBirthYear}</p>
                 <p>Płeć: {reg.childGender}</p>
-                <p>Kategoria wagowa: {reg.childWeight} kg</p>
-                <p>Telefon rodzica: {reg.parentPhone}</p>
-
-                <p className="font-bold mt-2 text-orange-400">
-                  ⏳ Oczekuje
-                </p>
-
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <button
-                    onClick={() => approveRegistration(reg.id)}
-                    className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold"
-                  >
-                    ✅ Akceptuj
-                  </button>
-
-                  <button
-                    onClick={() => rejectRegistration(reg.id)}
-                    className="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-lg font-bold"
-                  >
-                    ❌ Odrzuć
-                  </button>
-
-                  <button
-                    onClick={() => deleteRegistration(reg.id)}
-                    className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-bold"
-                  >
-                    🗑 Usuń
-                  </button>
-                </div>
+                <p>Waga: {reg.childWeight} kg</p>
+                <p>Telefon: {reg.parentPhone}</p>
               </div>
-            ))
-          )}
-        </>
-      )}
-    </div>
 
-    {/* ZAAKCEPTOWANE */}
-
-    <div className="mb-8">
-      <h2
-        onClick={() => setShowApproved(!showApproved)}
-        className="bg-zinc-900 border border-green-500 rounded-xl p-3 cursor-pointer font-bold text-2xl mb-3"
-      >
-        {showApproved ? "▼" : "▶"} ✅ Zaakceptowane (
-        {approvedRegistrations.length})
-      </h2>
-
-      {showApproved && (
-        <>
-          {approvedRegistrations.length === 0 ? (
-            <p>Brak zaakceptowanych zgłoszeń.</p>
-          ) : (
-            approvedRegistrations.map((reg) => (
-              <div
-                key={reg.id}
-                className="bg-zinc-900 border-2 border-green-500 rounded-xl p-4 mb-4 shadow-lg shadow-green-500/20"
-              >
-                <h2 className="text-2xl font-bold text-green-400">
-                  {reg.childName} {reg.childSurname}
-                </h2>
-
-                <p className="text-green-300 font-semibold mb-2">
-                  🏆 {getEventName(reg.eventId)}
-                </p>
-                <p className="text-xs text-gray-400">
-                  ID zawodów: {reg.eventId}
-                </p>
-
-                <p>Rok urodzenia: {reg.childBirthYear}</p>
-                <p>Płeć: {reg.childGender}</p>
-                <p>Kategoria wagowa: {reg.childWeight} kg</p>
-                <p>Telefon rodzica: {reg.parentPhone}</p>
-
-                <p className="font-bold mt-2 text-green-400 text-lg">
-                  ✅ Zaakceptowane
-                </p>
-
+              <div className="mt-5 flex flex-wrap gap-2">
                 <button
-                  onClick={() => deleteRegistration(reg.id)}
-                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg mt-3 font-bold"
+                  type="button"
+                  onClick={() => approveRegistration(reg.id)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-xs font-bold text-white"
                 >
-                  🗑 Usuń
+                  <Check className="h-4 w-4" />
+                  Akceptuj
+                </button>
+                <button
+                  type="button"
+                  onClick={() => rejectRegistration(reg.id)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-yellow-600 px-4 py-2 text-xs font-bold text-black"
+                >
+                  <X className="h-4 w-4" />
+                  Odrzuć
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteRegistration(reg.id)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 px-4 py-2 text-xs text-red-400"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Usuń
                 </button>
               </div>
-            ))
-          )}
-        </>
+            </div>
+          ))}
+        </div>
       )}
-    </div>
-
-    {/* ODRZUCONE */}
-
-    <div>
-      <h2
-        onClick={() => setShowRejected(!showRejected)}
-        className="bg-zinc-900 border border-red-500 rounded-xl p-3 cursor-pointer font-bold text-2xl mb-3"
-      >
-        {showRejected ? "▼" : "▶"} ❌ Odrzucone (
-        {rejectedRegistrations.length})
-      </h2>
-
-      {showRejected && (
-        <>
-          {rejectedRegistrations.length === 0 ? (
-            <p>Brak odrzuconych zgłoszeń.</p>
-          ) : (
-            rejectedRegistrations.map((reg) => (
-              <div
-                key={reg.id}
-                className="bg-zinc-900 border-2 border-red-500 rounded-xl p-4 mb-4 shadow-lg shadow-red-500/20"
-              >
-                <h2 className="text-2xl font-bold text-red-400">
-                  {reg.childName} {reg.childSurname}
-                </h2>
-
-                <p className="text-red-300 font-semibold mb-2">
-                  🏆 {getEventName(reg.eventId)}
-                </p>
-
-                <p>Rok urodzenia: {reg.childBirthYear}</p>
-                <p>Płeć: {reg.childGender}</p>
-                <p>Kategoria wagowa: {reg.childWeight} kg</p>
-                <p>Telefon rodzica: {reg.parentPhone}</p>
-
-                <p className="font-bold mt-2 text-red-400">
-                  ❌ Odrzucone
-                </p>
-
-                <button
-                  onClick={() => deleteRegistration(reg.id)}
-                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg mt-3 font-bold"
-                >
-                  🗑 Usuń
-                </button>
-              </div>
-            ))
-          )}
-        </>
-      )}
-    </div>
-  </div>
-);
+    </>
+  );
 }

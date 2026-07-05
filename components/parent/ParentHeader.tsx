@@ -1,42 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
+import { LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+import { useAuth } from "@/components/auth/AuthProvider";
+import ClubLogo from "@/components/ui/ClubLogo";
 
 export default function ParentHeader() {
-  const [name, setName] = useState("");
+  const router = useRouter();
+  const { profile, logout } = useAuth();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) return;
-
-      const snap = await getDoc(doc(db, "users", user.uid));
-
-      if (snap.exists()) {
-        setName(snap.data().imie || "");
-      }
-    });
-
-    return unsubscribe;
-  }, []);
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
+  };
 
   return (
-    <header className="border-b border-yellow-500 bg-zinc-950">
+    <header className="border-b border-zks-gold-mid/20 bg-zks-black/95 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
+        <div className="flex items-center gap-3">
+          <ClubLogo size={44} glow />
+          <div>
+            <p className="zks-label text-[10px]">Panel rodzica</p>
+            <h1 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white sm:text-2xl">
+              Witaj, {profile?.imie || "Rodzicu"}
+            </h1>
+          </div>
+        </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-
-        <h1 className="text-5xl font-bold text-yellow-400">
-          Panel Rodzica
-        </h1>
-
-        <p className="text-gray-400 mt-2">
-          Witaj {name || "Rodzicu"} 👋
-        </p>
-
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="zks-btn-outline hidden items-center gap-2 px-4 py-2.5 text-xs sm:inline-flex"
+        >
+          <LogOut className="h-4 w-4" />
+          Wyloguj
+        </button>
       </div>
-
     </header>
   );
 }

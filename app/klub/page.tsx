@@ -1,3 +1,5 @@
-export default function Home() {
-  return <h1>OK</h1>;
+import { redirect } from "next/navigation";
+
+export default function KlubPage() {
+  redirect("/klub/o-klubie");
 }

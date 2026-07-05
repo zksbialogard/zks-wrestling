@@ -1,101 +1,120 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
+import { toast } from "sonner";
 
-export default function LoginPage() {
+import AuthLayout from "@/components/auth/AuthLayout";
+import AuthField from "@/components/auth/AuthField";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { auth } from "@/lib/firebase";
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user, profile, ready, refreshProfile } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const login = async () => {
+  const nextPath = searchParams.get("next");
+
+  useEffect(() => {
+    if (!ready || !user || !profile) return;
+
+    const destination =
+      nextPath ||
+      (profile.rola === "admin" ? "/admin" : "/panel-rodzica");
+
+    router.replace(destination);
+  }, [ready, user, profile, nextPath, router]);
+
+  const login = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!email || !password) {
+      toast.error("Uzupełnij email i hasło.");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const userCredential =
-        await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-
-      const userSnapshot = await getDocs(
-        query(
-          collection(db, "users"),
-          where(
-            "uid",
-            "==",
-            userCredential.user.uid
-          )
-        )
-      );
-
-      if (userSnapshot.empty) {
-        alert("Nie znaleziono użytkownika.");
-        return;
-      }
-
-      const userData =
-        userSnapshot.docs[0].data();
-
-      if (userData.rola === "admin") {
-        router.push("/admin");
-      } else {
-        router.push("/moje-dzieci");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Błędny login lub hasło");
+      await signInWithEmailAndPassword(auth, email, password);
+      await refreshProfile();
+      toast.success("Zalogowano pomyślnie.");
+    } catch {
+      toast.error("Błędny email lub hasło.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-black text-white flex items-center justify-center">
-      <div className="bg-zinc-900 p-8 rounded-3xl border border-yellow-500 w-full max-w-md">
-
-        <h1 className="text-4xl font-bold text-yellow-400 mb-8 text-center">
-          Logowanie
-        </h1>
-
-        <div className="space-y-4">
-
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
-            className="w-full p-4 rounded-xl bg-black border border-yellow-500"
-          />
-
-          <input
-            type="password"
-            placeholder="Hasło"
-            value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
-            className="w-full p-4 rounded-xl bg-black border border-yellow-500"
-          />
-
-          <button
-            onClick={login}
-            className="w-full bg-yellow-500 text-black font-bold py-4 rounded-xl"
+    <AuthLayout
+      title="Logowanie"
+      subtitle="Sesja jest zapisywana — nie wyloguje Cię po zamknięciu aplikacji."
+      footer={
+        <p className="text-center text-sm text-zks-text-muted">
+          Nie masz konta?{" "}
+          <Link
+            href="/rejestracja"
+            className="font-semibold text-zks-gold-bright transition hover:text-zks-gold"
           >
-            Zaloguj
-          </button>
+            Zarejestruj się
+          </Link>
+        </p>
+      }
+    >
+      <form onSubmit={login} className="space-y-5">
+        <AuthField
+          label="Email"
+          type="email"
+          name="email"
+          autoComplete="email"
+          placeholder="twoj@email.pl"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
+        <AuthField
+          label="Hasło"
+          type="password"
+          name="password"
+          autoComplete="current-password"
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <div className="text-right">
+          <Link
+            href="/zapomnialem-hasla"
+            className="text-sm text-zks-gold-mid transition hover:text-zks-gold-bright"
+          >
+            Zapomniałem hasła
+          </Link>
         </div>
 
-      </div>
-    </main>
+        <button
+          type="submit"
+          disabled={loading}
+          className="zks-btn-primary w-full py-3.5 text-sm disabled:opacity-60"
+        >
+          {loading ? "Logowanie..." : "Zaloguj się"}
+        </button>
+      </form>
+    </AuthLayout>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zks-black" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -1,9 +1,84 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
+@custom-variant dark (&:is(.dark *));
+
+/* ─── ZKS Białogard — Manager · design tokens ─── */
 :root {
-  --background: #050505;
-  --foreground: #ffffff;
-  --gold: #facc15;
+  /* Tło */
+  --zks-black: #000000;
+  --zks-black-soft: #050505;
+  --zks-charcoal: #0a0a0a;
+  --zks-card: #121212;
+
+  /* Złoto (mockup + logo) */
+  --zks-gold-bright: #f7d154;
+  --zks-gold-highlight: #ffe17b;
+  --zks-gold: #d4af37;
+  --zks-gold-mid: #c5a059;
+  --zks-gold-deep: #8a6d3b;
+  --zks-gold-bronze: #8b6b23;
+  --zks-gold-shadow: #3d2b1f;
+
+  /* Tekst */
+  --zks-white: #ffffff;
+  --zks-text: #e0e0e0;
+  --zks-text-muted: #a3a3a3;
+
+  /* Gradienty */
+  --zks-gradient-gold: linear-gradient(
+    135deg,
+    var(--zks-gold-bright) 0%,
+    var(--zks-gold) 45%,
+    var(--zks-gold-deep) 100%
+  );
+  --zks-gradient-gold-text: linear-gradient(
+    to right,
+    var(--zks-gold-bright),
+    var(--zks-gold),
+    var(--zks-gold-deep)
+  );
+
+  /* Cienie / glow */
+  --zks-glow: 0 0 30px rgba(247, 209, 84, 0.35);
+  --zks-glow-sm: 0 0 20px rgba(247, 209, 84, 0.2);
+  --zks-glow-lg: 0 0 50px rgba(247, 209, 84, 0.45);
+
+  /* shadcn — mapowanie na paletę klubu */
+  --gold: var(--zks-gold);
+  --background: var(--zks-black);
+  --foreground: var(--zks-white);
+  --card: var(--zks-charcoal);
+  --card-foreground: var(--zks-white);
+  --popover: var(--zks-charcoal);
+  --popover-foreground: var(--zks-white);
+  --primary: var(--zks-gold);
+  --primary-foreground: var(--zks-black);
+  --secondary: var(--zks-card);
+  --secondary-foreground: var(--zks-text);
+  --muted: var(--zks-card);
+  --muted-foreground: var(--zks-text-muted);
+  --accent: var(--zks-gold-mid);
+  --accent-foreground: var(--zks-black);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: rgba(197, 160, 89, 0.25);
+  --input: rgba(197, 160, 89, 0.15);
+  --ring: var(--zks-gold-mid);
+  --chart-1: var(--zks-gold-bright);
+  --chart-2: var(--zks-gold);
+  --chart-3: var(--zks-gold-mid);
+  --chart-4: var(--zks-gold-deep);
+  --chart-5: var(--zks-gold-bronze);
+  --radius: 0.625rem;
+  --sidebar: var(--zks-charcoal);
+  --sidebar-foreground: var(--zks-white);
+  --sidebar-primary: var(--zks-gold);
+  --sidebar-primary-foreground: var(--zks-black);
+  --sidebar-accent: var(--zks-card);
+  --sidebar-accent-foreground: var(--zks-gold-bright);
+  --sidebar-border: rgba(197, 160, 89, 0.2);
+  --sidebar-ring: var(--zks-gold-mid);
 }
 
 * {
@@ -17,29 +92,35 @@ body {
   width: 100%;
   min-height: 100%;
   overflow-x: hidden;
-  background: #000000;
-  color: #ffffff;
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--zks-black);
+  color: var(--zks-white);
+  font-family: var(--font-sans), "Inter", system-ui, sans-serif;
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
   position: relative;
-  background: #000000;
+  background: var(--zks-black);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-
-  background-image: url("/logo.png");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 700px;
-
-  opacity: 0.04;
-
+  background:
+    radial-gradient(
+      ellipse at 70% 35%,
+      rgba(212, 175, 55, 0.06) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 20% 80%,
+      rgba(212, 175, 55, 0.03) 0%,
+      transparent 45%
+    );
   pointer-events: none;
   z-index: 0;
 }
@@ -47,6 +128,18 @@ body::before {
 main {
   position: relative;
   z-index: 1;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading), "Oswald", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 a {
@@ -57,4 +150,176 @@ a {
 img {
   max-width: 100%;
   height: auto;
+}
+
+/* ─── Klasy pomocnicze marki ─── */
+.text-gradient-gold {
+  background: var(--zks-gradient-gold-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-gradient-gold {
+  background: var(--zks-gradient-gold);
+}
+
+.border-gold {
+  border-color: rgba(197, 160, 89, 0.35);
+}
+
+.shadow-gold-glow {
+  box-shadow: var(--zks-glow);
+}
+
+.shadow-gold-glow-sm {
+  box-shadow: var(--zks-glow-sm);
+}
+
+.zks-label {
+  font-family: var(--font-heading), "Oswald", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--zks-gold-mid);
+}
+
+.zks-card {
+  background: var(--zks-charcoal);
+  border: 1px solid rgba(197, 160, 89, 0.25);
+  border-radius: var(--radius);
+  box-shadow: var(--zks-glow-sm);
+}
+
+.zks-btn-primary {
+  background: var(--zks-gradient-gold);
+  color: var(--zks-black);
+  font-family: var(--font-heading), "Oswald", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+  box-shadow: var(--zks-glow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.zks-btn-primary:hover {
+  box-shadow: var(--zks-glow-lg);
+  transform: translateY(-2px);
+}
+
+.zks-btn-outline {
+  background: transparent;
+  color: var(--zks-white);
+  border: 1px solid var(--zks-gold-mid);
+  font-family: var(--font-heading), "Oswald", sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+  transition: background 0.2s, color 0.2s;
+}
+
+.zks-btn-outline:hover {
+  background: var(--zks-gold);
+  color: var(--zks-black);
+}
+
+@theme inline {
+  --font-heading: var(--font-heading);
+  --font-sans: var(--font-sans);
+
+  --color-zks-black: var(--zks-black);
+  --color-zks-black-soft: var(--zks-black-soft);
+  --color-zks-charcoal: var(--zks-charcoal);
+  --color-zks-card: var(--zks-card);
+  --color-zks-gold-bright: var(--zks-gold-bright);
+  --color-zks-gold: var(--zks-gold);
+  --color-zks-gold-mid: var(--zks-gold-mid);
+  --color-zks-gold-deep: var(--zks-gold-deep);
+  --color-zks-gold-bronze: var(--zks-gold-bronze);
+  --color-zks-text: var(--zks-text);
+  --color-zks-text-muted: var(--zks-text-muted);
+  --color-gold: var(--zks-gold);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+.dark {
+  --background: var(--zks-black);
+  --foreground: var(--zks-white);
+  --card: var(--zks-charcoal);
+  --card-foreground: var(--zks-white);
+  --popover: var(--zks-charcoal);
+  --popover-foreground: var(--zks-white);
+  --primary: var(--zks-gold);
+  --primary-foreground: var(--zks-black);
+  --secondary: var(--zks-card);
+  --secondary-foreground: var(--zks-text);
+  --muted: var(--zks-card);
+  --muted-foreground: var(--zks-text-muted);
+  --accent: var(--zks-gold-mid);
+  --accent-foreground: var(--zks-black);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: rgba(197, 160, 89, 0.25);
+  --input: rgba(197, 160, 89, 0.15);
+  --ring: var(--zks-gold-mid);
+  --sidebar: var(--zks-charcoal);
+  --sidebar-foreground: var(--zks-white);
+  --sidebar-primary: var(--zks-gold);
+  --sidebar-primary-foreground: var(--zks-black);
+  --sidebar-accent: var(--zks-card);
+  --sidebar-accent-foreground: var(--zks-gold-bright);
+  --sidebar-border: rgba(197, 160, 89, 0.2);
+  --sidebar-ring: var(--zks-gold-mid);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }
