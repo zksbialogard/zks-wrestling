@@ -16,6 +16,7 @@ type TileLinkProps = {
   subtitle: string;
   variant?: "gold" | "outline" | "danger";
   onClick?: () => void;
+  className?: string;
 };
 
 function AuthTile({
@@ -25,6 +26,7 @@ function AuthTile({
   subtitle,
   variant = "outline",
   onClick,
+  className = "p-4",
 }: TileLinkProps) {
   const iconWrap =
     variant === "gold"
@@ -42,7 +44,7 @@ function AuthTile({
     <Link
       href={href}
       onClick={onClick}
-      className={`zks-card group flex flex-col items-center gap-2.5 p-4 text-center transition ${cardHover}`}
+      className={`zks-card group flex flex-col items-center gap-2.5 text-center transition ${cardHover} ${className}`}
     >
       <div
         className={`flex h-12 w-12 items-center justify-center rounded-xl border transition group-hover:scale-105 ${iconWrap}`}
@@ -95,14 +97,17 @@ type GuestAuthTilesProps = {
 };
 
 export function GuestAuthTiles({ onNavigate, compact = false }: GuestAuthTilesProps) {
+  const tilePadding = compact ? "p-3" : "p-4";
+
   return (
-    <div className={`grid gap-3 ${compact ? "grid-cols-2" : "grid-cols-2 sm:max-w-xs"}`}>
+    <div className={`grid grid-cols-3 gap-2 sm:gap-3 ${compact ? "" : "sm:max-w-md"}`}>
       <AuthTile
         href="/login"
         icon={LogIn}
         title="Zaloguj się"
-        subtitle="Wejdź do panelu"
+        subtitle="Wejdź do konta"
         onClick={onNavigate}
+        className={tilePadding}
       />
       <AuthTile
         href="/rejestracja"
@@ -111,6 +116,15 @@ export function GuestAuthTiles({ onNavigate, compact = false }: GuestAuthTilesPr
         subtitle="Dołącz do klubu"
         variant="gold"
         onClick={onNavigate}
+        className={tilePadding}
+      />
+      <AuthTile
+        href="/panel-rodzica"
+        icon={LayoutDashboard}
+        title="Mój Panel"
+        subtitle="Panel rodzica"
+        onClick={onNavigate}
+        className={tilePadding}
       />
     </div>
   );
@@ -148,8 +162,8 @@ export function LoggedInAuthTiles({
         <AuthTile
           href={panelHref}
           icon={LayoutDashboard}
-          title={panelLabel}
-          subtitle="Zarządzaj kontem"
+          title="Mój Panel"
+          subtitle={panelLabel}
           variant="gold"
           onClick={onNavigate}
         />
