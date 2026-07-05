@@ -55,7 +55,62 @@ export type NotifyResult = {
   errors: string[];
 };
 
+async function loadParentUsersViaRest(): Promise<ParentUser[]> {
+  try {
+    const response = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/users?pageSize=300`,
+      {
+        headers: {
+          "X-Goog-Api-Key": firebaseConfig.apiKey,
+        },
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Firestore REST users error:", response.status);
+      return [];
+    }
+
+    const data = (await response.json()) as {
+      documents?: Array<{
+        name: string;
+        fields?: Record<string, { stringValue?: string }>;
+      }>;
+    };
+
+    return (data.documents || [])
+      .map((document) => {
+        const fields = document.fields || {};
+        const uid = fields.uid?.stringValue || document.name.split("/").pop() || "";
+        const email = fields.email?.stringValue;
+        const rola = fields.rola?.stringValue;
+
+        if (!email || !(rola === "rodzic" || !rola)) {
+          return null;
+        }
+
+        return {
+          uid,
+          email,
+          telefon: fields.telefon?.stringValue,
+          imie: fields.imie?.stringValue,
+          rola,
+        } satisfies ParentUser;
+      })
+      .filter((user): user is ParentUser => Boolean(user));
+  } catch (error) {
+    console.error("loadParentUsersViaRest:", error);
+    return [];
+  }
+}
+
 export async function loadParentUsers(): Promise<ParentUser[]> {
+  const restUsers = await loadParentUsersViaRest();
+  if (restUsers.length) {
+    return restUsers;
+  }
+
   try {
     const snapshot = await getDocs(collection(getDb(), "users"));
 
@@ -85,22 +140,8 @@ export async function notifyParents(input: {
   link?: string;
   targetUid?: string;
 }): Promise<NotifyResult> {
-  const template = await getMessageTemplate(input.templateKey);
-  const rendered = {
-    subject: renderTemplate(template.subject, input.variables),
-    text: renderTemplate(template.body_text, input.variables),
-    html: renderTemplate(template.body_html, input.variables),
-    sms: renderTemplate(template.sms_text, input.variables),
-    pushTitle: renderTemplate(template.push_title, input.variables),
-    pushBody: renderTemplate(template.push_body, input.variables),
-  };
-
-  const parents = input.targetUid
-    ? (await loadParentUsers()).filter((user) => user.uid === input.targetUid)
-    : await loadParentUsers();
-
   const result: NotifyResult = {
-    totalParents: parents.length,
+    totalParents: 0,
     emailsSent: 0,
     smsSent: 0,
     inAppSent: 0,
@@ -108,66 +149,96 @@ export async function notifyParents(input: {
     errors: [],
   };
 
-  const activeChannels = [
-    input.channels.email ? "email" : null,
-    input.channels.sms ? "sms" : null,
-    input.channels.inApp !== false ? "in_app" : null,
-    input.channels.push ? "push" : null,
-  ].filter(Boolean) as string[];
+  try {
+    const template = await getMessageTemplate(input.templateKey);
+    const rendered = {
+      subject: renderTemplate(template.subject, input.variables),
+      text: renderTemplate(template.body_text, input.variables),
+      html: renderTemplate(template.body_html, input.variables),
+      sms: renderTemplate(template.sms_text, input.variables),
+      pushTitle: renderTemplate(template.push_title, input.variables),
+      pushBody: renderTemplate(template.push_body, input.variables),
+    };
 
-  for (const parent of parents) {
-    try {
-      if (input.channels.email && parent.email) {
-        const emailResult = await sendEmailMessage({
-          to: parent.email,
-          subject: rendered.subject,
-          html: rendered.html,
-          text: rendered.text,
-        });
+    const allParents = await loadParentUsers();
+    const parents = input.targetUid
+      ? allParents.filter((user) => user.uid === input.targetUid)
+      : allParents;
 
-        if (emailResult.ok) {
-          result.emailsSent += 1;
-        } else if ("error" in emailResult && emailResult.error) {
-          result.errors.push(`${parent.email}: ${emailResult.error}`);
-        }
-      }
+    result.totalParents = parents.length;
 
-      if (input.channels.sms && parent.telefon) {
-        const smsResult = await sendSmsMessage({
-          phone: parent.telefon,
-          message: rendered.sms,
-        });
-
-        if (smsResult.ok) {
-          result.smsSent += 1;
-        } else if ("error" in smsResult && smsResult.error) {
-          result.errors.push(`${parent.telefon}: ${smsResult.error}`);
-        }
-      }
-
-      if (input.channels.inApp !== false) {
-        const created = await createNotificationRecord({
-          user_uid: parent.uid,
-          type: input.type || input.templateKey,
-          title: rendered.pushTitle,
-          body: rendered.pushBody,
-          link: input.link,
-          channels: activeChannels,
-        });
-
-        if (created) {
-          result.inAppSent += 1;
-        }
-      }
-
-      if (input.channels.push) {
-        result.pushSent += 1;
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Nieznany błąd powiadomienia.";
-      result.errors.push(`${parent.email || parent.uid}: ${message}`);
+    if (!parents.length) {
+      result.errors.push(
+        "Nie znaleziono rodziców w Firebase. Powiadomienia w aplikacji wymagają kont rodziców."
+      );
+      return result;
     }
+
+    const activeChannels = [
+      input.channels.email ? "email" : null,
+      input.channels.sms ? "sms" : null,
+      input.channels.inApp !== false ? "in_app" : null,
+      input.channels.push ? "push" : null,
+    ].filter(Boolean) as string[];
+
+    for (const parent of parents) {
+      try {
+        if (input.channels.email && parent.email) {
+          const emailResult = await sendEmailMessage({
+            to: parent.email,
+            subject: rendered.subject,
+            html: rendered.html,
+            text: rendered.text,
+          });
+
+          if (emailResult.ok) {
+            result.emailsSent += 1;
+          } else if ("error" in emailResult && emailResult.error) {
+            result.errors.push(`${parent.email}: ${emailResult.error}`);
+          }
+        }
+
+        if (input.channels.sms && parent.telefon) {
+          const smsResult = await sendSmsMessage({
+            phone: parent.telefon,
+            message: rendered.sms,
+          });
+
+          if (smsResult.ok) {
+            result.smsSent += 1;
+          } else if ("error" in smsResult && smsResult.error) {
+            result.errors.push(`${parent.telefon}: ${smsResult.error}`);
+          }
+        }
+
+        if (input.channels.inApp !== false) {
+          const created = await createNotificationRecord({
+            user_uid: parent.uid,
+            type: input.type || input.templateKey,
+            title: rendered.pushTitle,
+            body: rendered.pushBody,
+            link: input.link,
+            channels: activeChannels,
+          });
+
+          if (created) {
+            result.inAppSent += 1;
+          }
+        }
+
+        if (input.channels.push) {
+          result.pushSent += 1;
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Nieznany błąd powiadomienia.";
+        result.errors.push(`${parent.email || parent.uid}: ${message}`);
+      }
+    }
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Nie udało się wysłać powiadomień.";
+    result.errors.push(message);
   }
 
   return result;

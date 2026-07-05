@@ -53,6 +53,16 @@ export async function POST(request: Request) {
     const message =
       error instanceof Error ? error.message : "Nie udało się wysłać powiadomień.";
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({
+      ok: true,
+      result: {
+        totalParents: 0,
+        emailsSent: 0,
+        smsSent: 0,
+        inAppSent: 0,
+        pushSent: 0,
+        errors: [message],
+      },
+    });
   }
 }
