@@ -4,6 +4,7 @@ import {
   deleteDoc,
   doc,
   getDocs,
+  getDocsFromServer,
   orderBy,
   query,
   serverTimestamp,
@@ -20,11 +21,14 @@ export type FirebaseNewsItem = {
   source: "firebase";
 };
 
-export async function getFirebaseNews(): Promise<FirebaseNewsItem[]> {
+export async function getFirebaseNews(options?: {
+  fromServer?: boolean;
+}): Promise<FirebaseNewsItem[]> {
   try {
-    const snapshot = await getDocs(
-      query(collection(db, "news"), orderBy("createdAt", "desc"))
-    );
+    const newsQuery = query(collection(db, "news"), orderBy("createdAt", "desc"));
+    const snapshot = options?.fromServer
+      ? await getDocsFromServer(newsQuery)
+      : await getDocs(newsQuery);
 
     return snapshot.docs.map((item) => {
       const data = item.data();

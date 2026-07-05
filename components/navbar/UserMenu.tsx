@@ -14,12 +14,14 @@ export default function UserMenu({ onLogout }: UserMenuProps) {
 
   if (!user || !profile) {
     return (
-      <Link
-        href="/rejestracja"
-        className="zks-btn-outline hidden px-5 py-2.5 text-xs lg:inline-flex"
-      >
-        Dołącz do ZKS
-      </Link>
+      <div className="hidden items-center gap-2 lg:flex">
+        <Link href="/login" className="zks-btn-outline px-4 py-2.5 text-xs">
+          Zaloguj się
+        </Link>
+        <Link href="/rejestracja" className="zks-btn-primary px-4 py-2.5 text-xs">
+          Zarejestruj się
+        </Link>
+      </div>
     );
   }
 

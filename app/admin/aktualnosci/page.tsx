@@ -23,15 +23,26 @@ export default function AdminAktualnosciPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const loadNews = async () => {
-    setLoading(true);
-    const data = await getNews();
+  const loadNews = async (options?: { showLoading?: boolean; fresh?: boolean }) => {
+    const showLoading = options?.showLoading ?? false;
+
+    if (showLoading) {
+      setLoading(true);
+    }
+
+    const data = await getNews({
+      fresh: options?.fresh ?? showLoading,
+      includeFirebase: true,
+    });
     setNews(data);
-    setLoading(false);
+
+    if (showLoading) {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadNews();
+    loadNews({ showLoading: true, fresh: true });
   }, []);
 
   const resetForm = () => {
@@ -53,6 +64,11 @@ export default function AdminAktualnosciPage() {
     try {
       if (editingId) {
         await updateNews(editingId, { title, content });
+        setNews((prev) =>
+          prev.map((item) =>
+            item.id === editingId ? { ...item, title, content } : item
+          )
+        );
         toast.success("Aktualność zaktualizowana.");
       } else {
         await createNews({ title, content });
@@ -60,7 +76,7 @@ export default function AdminAktualnosciPage() {
       }
 
       resetForm();
-      await loadNews();
+      await loadNews({ fresh: true });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Nie udało się zapisać aktualności.";
@@ -82,9 +98,10 @@ export default function AdminAktualnosciPage() {
 
     try {
       await deleteNews(id);
+      setNews((prev) => prev.filter((item) => item.id !== id));
       toast.success("Aktualność usunięta.");
       if (editingId === id) resetForm();
-      await loadNews();
+      await loadNews({ fresh: true });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Nie udało się usunąć aktualności.";

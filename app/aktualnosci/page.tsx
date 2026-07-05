@@ -1,7 +1,9 @@
 import { getNews } from "@/lib/news";
 
+export const dynamic = "force-dynamic";
+
 export default async function AktualnosciPage() {
-  const news = await getNews();
+  const news = await getNews({ fresh: true });
 
   return (
     <main className="min-h-screen bg-zks-black px-4 pb-16 pt-28 text-white sm:px-6">

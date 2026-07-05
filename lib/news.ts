@@ -25,7 +25,20 @@ async function getAuthHeader() {
   };
 }
 
-export async function getNews(): Promise<NewsItem[]> {
+function sortNewsByDate(items: NewsItem[]) {
+  return [...items].sort((a, b) => {
+    const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return bTime - aTime;
+  });
+}
+
+export async function getNews(options?: {
+  fresh?: boolean;
+  includeFirebase?: boolean;
+}): Promise<NewsItem[]> {
+  const fromServer = options?.fresh ?? typeof window === "undefined";
+
   const { data, error } = await supabase
     .from("aktualnosci")
     .select("*")
@@ -38,17 +51,23 @@ export async function getNews(): Promise<NewsItem[]> {
         source: "supabase" as const,
       }));
 
-  const firebaseNews = (await getFirebaseNews()).map((item) => ({
+  if (!error && !options?.includeFirebase) {
+    return supabaseNews;
+  }
+
+  const firebaseNews = (
+    await getFirebaseNews({ fromServer })
+  ).map((item) => ({
     ...item,
     id: `fb_${item.id}`,
     source: "firebase" as const,
   }));
 
-  return [...supabaseNews, ...firebaseNews].sort((a, b) => {
-    const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
-    const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
-    return bTime - aTime;
-  });
+  if (error) {
+    return sortNewsByDate(firebaseNews);
+  }
+
+  return sortNewsByDate([...supabaseNews, ...firebaseNews]);
 }
 
 export async function createNews(data: { title: string; content: string }) {

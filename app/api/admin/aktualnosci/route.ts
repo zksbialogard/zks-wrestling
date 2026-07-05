@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 import {
   createFirebaseNews,
@@ -43,10 +44,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
+      revalidatePath("/aktualnosci");
+      revalidatePath("/");
       return NextResponse.json({ ok: true, data, source: "supabase" });
     }
 
     await createFirebaseNews({ title, content });
+    revalidatePath("/aktualnosci");
+    revalidatePath("/");
     return NextResponse.json({
       ok: true,
       source: "firebase",

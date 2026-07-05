@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 import {
   deleteFirebaseNews,
@@ -40,6 +41,8 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (isFirebaseId(id)) {
       await updateFirebaseNews(id.replace(/^fb_/, ""), { title, content });
+      revalidatePath("/aktualnosci");
+      revalidatePath("/");
       return NextResponse.json({ ok: true, source: "firebase" });
     }
 
@@ -66,6 +69,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    revalidatePath("/aktualnosci");
+    revalidatePath("/");
     return NextResponse.json({ ok: true, data, source: "supabase" });
   } catch (error) {
     console.error(error);
@@ -88,6 +93,8 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     if (isFirebaseId(id)) {
       await deleteFirebaseNews(id.replace(/^fb_/, ""));
+      revalidatePath("/aktualnosci");
+      revalidatePath("/");
       return NextResponse.json({ ok: true, source: "firebase" });
     }
 
@@ -109,6 +116,8 @@ export async function DELETE(request: Request, context: RouteContext) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    revalidatePath("/aktualnosci");
+    revalidatePath("/");
     return NextResponse.json({ ok: true, source: "supabase" });
   } catch (error) {
     console.error(error);

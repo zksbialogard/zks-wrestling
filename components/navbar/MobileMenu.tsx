@@ -143,7 +143,7 @@ export default function MobileMenu({ onLogout }: MobileMenuProps) {
                       className="zks-btn-primary flex w-full items-center justify-center gap-2 py-3.5 text-sm"
                     >
                       <UserPlus className="h-4 w-4" />
-                      Dołącz do ZKS
+                      Zarejestruj się
                     </Link>
                   </>
                 )}

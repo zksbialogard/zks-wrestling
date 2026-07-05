@@ -10,8 +10,10 @@ import Footer from "@/components/home/Footer";
 
 import { getNews } from "@/lib/news";
 
+export const dynamic = "force-dynamic";
+
 async function getAktualnosci() {
-  const news = await getNews();
+  const news = await getNews({ fresh: true });
   return news.slice(0, 4);
 }
 
