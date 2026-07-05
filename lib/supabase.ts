@@ -21,10 +21,17 @@ export function resolveSupabaseUrl(raw?: string) {
 
   for (const candidate of candidates) {
     try {
-      const url = new URL(candidate);
+      const parsed = new URL(candidate);
 
-      if (url.protocol === "http:" || url.protocol === "https:") {
-        return url.toString().replace(/\/$/, "");
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        continue;
+      }
+
+      // Tylko origin — bez /rest/v1, /auth/v1 itd. (częsty błąd w Vercel env)
+      const origin = parsed.origin;
+
+      if (origin.includes(".supabase.co")) {
+        return origin;
       }
     } catch {
       continue;

@@ -22,6 +22,10 @@ function parseSupabaseError(body: string, status: number) {
       return "Niepoprawny SUPABASE_SERVICE_ROLE_KEY na Vercel (skopiuj secret service_role, nie publishable).";
     }
 
+    if (parsed.message?.includes("Invalid path specified")) {
+      return "Niepoprawny NEXT_PUBLIC_SUPABASE_URL na Vercel. Ustaw dokładnie: https://ubvgiglzteunqgxmezkt.supabase.co (bez /rest/v1 na końcu).";
+    }
+
     return parsed.message || parsed.hint || `Supabase HTTP ${status}`;
   } catch {
     return body || `Supabase HTTP ${status}`;
