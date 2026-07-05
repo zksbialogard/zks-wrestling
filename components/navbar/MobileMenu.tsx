@@ -113,8 +113,8 @@ export default function MobileMenu({ onLogout }: MobileMenuProps) {
                   <LoggedInAuthTiles
                     panelHref={panelHref}
                     panelLabel={panelLabel}
-                    userName={profile.imie}
-                    userRole={profile.rola}
+                    userName={profile.imie ?? user.email ?? "Użytkownik"}
+                    userRole={profile.rola ?? "rodzic"}
                     onLogout={onLogout}
                     onNavigate={closeMenu}
                   />
