@@ -38,6 +38,16 @@ async function getAuthHeader() {
   };
 }
 
+function mapClientError(error: unknown) {
+  const message = error instanceof Error ? error.message : "Nie udało się dodać zawodów.";
+
+  if (message.includes("fetch failed") || message.includes("Failed to fetch")) {
+    return "Brak połączenia z serwerem. Sprawdź deploy na Vercel i zmienne Supabase, potem odśwież stronę.";
+  }
+
+  return message;
+}
+
 export async function createEvent(data: {
   title: string;
   location: string;
@@ -52,11 +62,17 @@ export async function createEvent(data: {
 }) {
   const headers = await getAuthHeader();
 
-  const response = await fetch("/api/admin/events", {
-    method: "POST",
-    headers,
-    body: JSON.stringify(data),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch("/api/admin/events", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    throw new Error(mapClientError(error));
+  }
 
   let result: {
     error?: string;

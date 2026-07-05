@@ -8,6 +8,8 @@ function cleanEnvValue(raw?: string) {
   return raw?.trim().replace(/^["']|["']$/g, "") || "";
 }
 
+export { cleanEnvValue };
+
 export function resolveSupabaseUrl(raw?: string) {
   const value = cleanEnvValue(raw);
 

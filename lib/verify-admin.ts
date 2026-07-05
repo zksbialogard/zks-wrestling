@@ -122,19 +122,24 @@ export async function verifyFirebaseToken(idToken: string) {
 }
 
 export async function verifyAdminToken(idToken: string) {
-  const user = await verifyFirebaseToken(idToken);
+  try {
+    const user = await verifyFirebaseToken(idToken);
 
-  if (!user) {
+    if (!user) {
+      return null;
+    }
+
+    const profile = await getUserProfileViaRest(user.localId);
+
+    if (!profile || profile.rola !== "admin") {
+      return null;
+    }
+
+    return user;
+  } catch (error) {
+    console.error("verifyAdminToken:", error);
     return null;
   }
-
-  const profile = await getUserProfileViaRest(user.localId);
-
-  if (!profile || profile.rola !== "admin") {
-    return null;
-  }
-
-  return user;
 }
 
 export async function getUserFromRequest(request: Request) {

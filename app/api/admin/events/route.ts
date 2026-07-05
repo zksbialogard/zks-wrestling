@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 
 import { notifyParents } from "@/lib/notify-service";
 import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
-import { createSupabaseAdmin, resolveSupabaseUrl } from "@/lib/supabase";
+import { supabaseRestInsert, testSupabaseConnection } from "@/lib/supabase-rest";
 import { getAdminFromRequest } from "@/lib/verify-admin";
 
 type EventPayload = {
@@ -45,21 +45,50 @@ function mapServerError(error: unknown, context: string) {
   const message = error instanceof Error ? error.message : "Nieznany błąd";
 
   if (message.includes("fetch failed") || message.includes("ECONNREFUSED")) {
-    return `${context}: brak połączenia z Supabase. Na Vercel ustaw NEXT_PUBLIC_SUPABASE_URL=https://ubvgiglzteunqgxmezkt.supabase.co oraz SUPABASE_SERVICE_ROLE_KEY (secret z Supabase → Settings → API), potem Redeploy.`;
+    return `${context}: brak połączenia z Supabase. Sprawdź NEXT_PUBLIC_SUPABASE_URL=https://ubvgiglzteunqgxmezkt.supabase.co oraz SUPABASE_SERVICE_ROLE_KEY (secret service_role) na Vercel, potem Redeploy.`;
   }
 
   if (
     message.includes("SUPABASE_SERVICE_ROLE_KEY_MISSING") ||
     message.includes("Brak SUPABASE_SERVICE_ROLE_KEY")
   ) {
-    return "Brak SUPABASE_SERVICE_ROLE_KEY na Vercel. Dodaj secret service_role w Settings → Environment Variables i zrób Redeploy.";
+    return "Brak SUPABASE_SERVICE_ROLE_KEY na Vercel. Dodaj secret service_role w Environment Variables i zrób Redeploy.";
   }
 
-  if (message.includes("Invalid API key")) {
+  if (message.includes("Invalid API key") || message.includes("Niepoprawny SUPABASE_SERVICE_ROLE_KEY")) {
     return "Niepoprawny SUPABASE_SERVICE_ROLE_KEY na Vercel. Skopiuj ponownie secret service_role z Supabase (nie publishable/anon).";
   }
 
-  return message;
+  if (message.includes("Niepoprawny NEXT_PUBLIC_SUPABASE_URL")) {
+    return message;
+  }
+
+  return `${context}: ${message}`;
+}
+
+export async function GET(request: Request) {
+  const admin = await getAdminFromRequest(request);
+
+  if (!admin) {
+    return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+  }
+
+  if (!hasSupabaseAdminKey()) {
+    return NextResponse.json(
+      { ok: false, error: "Brak SUPABASE_SERVICE_ROLE_KEY na Vercel." },
+      { status: 500 }
+    );
+  }
+
+  try {
+    const result = await testSupabaseConnection();
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json(
+      { ok: false, error: mapServerError(error, "Test Supabase") },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: Request) {
@@ -91,40 +120,16 @@ export async function POST(request: Request) {
       );
     }
 
-    let supabase;
-
-    try {
-      supabase = createSupabaseAdmin();
-    } catch (error) {
-      return NextResponse.json(
-        { error: mapServerError(error, "Konfiguracja Supabase") },
-        { status: 500 }
-      );
-    }
-
     let data;
-    let error;
 
     try {
-      const result = await supabase
-        .from("events")
-        .insert([payload])
-        .select("*")
-        .single();
-
-      data = result.data;
-      error = result.error;
+      data = await supabaseRestInsert("events", payload);
     } catch (insertError) {
-      console.error("Supabase events insert exception:", insertError, resolveSupabaseUrl());
+      console.error("Supabase events insert:", insertError);
       return NextResponse.json(
         { error: mapServerError(insertError, "Nie udało się dodać zawodów") },
         { status: 500 }
       );
-    }
-
-    if (error) {
-      console.error("Supabase events insert error:", error, resolveSupabaseUrl());
-      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     revalidatePath("/");
