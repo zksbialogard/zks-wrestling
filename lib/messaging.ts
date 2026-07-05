@@ -19,8 +19,12 @@ export async function sendEmailMessage(input: {
     process.env.EMAIL_FROM || "ZKS Białogard <onboarding@resend.dev>";
 
   if (!resendKey) {
-    console.warn("RESEND_API_KEY brak — email symulowany:", input.to, input.subject);
-    return { ok: true as const, simulated: true };
+    console.warn("RESEND_API_KEY brak — email nie wysłany:", input.to, input.subject);
+    return {
+      ok: false as const,
+      simulated: true,
+      error: "Brak RESEND_API_KEY na Vercel.",
+    };
   }
 
   try {
@@ -78,7 +82,19 @@ export async function sendSmsMessage(input: { phone: string; message: string }) 
       }),
     });
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      error?: number | string;
+      message?: string;
+      count?: number;
+    };
+
+    if (data?.error) {
+      return {
+        ok: false as const,
+        skipped: false,
+        error: data.message || `SMSAPI błąd ${data.error}`,
+      };
+    }
 
     if (!response.ok) {
       return {

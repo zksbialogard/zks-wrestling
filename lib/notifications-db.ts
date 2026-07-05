@@ -1,4 +1,5 @@
 import { createSupabaseAdmin } from "./supabase";
+import { supabaseRestInsertMany } from "./supabase-rest";
 import {
   DEFAULT_TEMPLATES,
   getDefaultTemplate,
@@ -73,30 +74,50 @@ export async function countUnreadNotifications(userUid: string) {
 }
 
 export async function createNotificationRecord(input: NotificationInsert) {
-  if (!hasServiceRole()) {
-    return null;
+  const created = await createNotificationRecordsBulk([input]);
+  return created.records[0] || null;
+}
+
+export async function createNotificationRecordsBulk(inputs: NotificationInsert[]) {
+  if (!inputs.length) {
+    return { created: 0, records: [] as NotificationRecord[], errors: [] as string[] };
   }
 
-  const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("notifications")
-    .insert({
+  if (!hasServiceRole()) {
+    return {
+      created: 0,
+      records: [],
+      errors: ["Brak SUPABASE_SERVICE_ROLE_KEY — powiadomienia nie zostały zapisane."],
+    };
+  }
+
+  try {
+    const rows = inputs.map((input) => ({
       user_uid: input.user_uid,
       type: input.type,
       title: input.title,
       body: input.body,
       link: input.link || null,
       channels: input.channels || [],
-    })
-    .select("*")
-    .single();
+    }));
 
-  if (error) {
-    console.error("createNotificationRecord:", error);
-    return null;
+    const records = await supabaseRestInsertMany("notifications", rows);
+
+    return {
+      created: records.length,
+      records: records as NotificationRecord[],
+      errors: [] as string[],
+    };
+  } catch (error) {
+    console.error("createNotificationRecordsBulk:", error);
+    const message = error instanceof Error ? error.message : "Błąd zapisu powiadomień.";
+
+    return {
+      created: 0,
+      records: [],
+      errors: [message],
+    };
   }
-
-  return data as NotificationRecord;
 }
 
 export async function markNotificationRead(id: string, userUid: string) {

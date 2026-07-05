@@ -1,5 +1,13 @@
 import { createSupabaseAdmin } from "./supabase";
-import type { ParentUser } from "./notify-service";
+
+export type ParentUser = {
+  uid: string;
+  email?: string;
+  telefon?: string;
+  imie?: string;
+  nazwisko?: string;
+  rola?: string;
+};
 
 function hasServiceRole() {
   return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());

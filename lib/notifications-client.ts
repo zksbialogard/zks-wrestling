@@ -103,7 +103,20 @@ export async function sendAdminNotify(input: {
     inAppSent: number;
     pushSent: number;
     errors: string[];
+    warnings: string[];
   };
+}
+
+export function formatNotifyResultMessage(result: {
+  totalParents: number;
+  emailsSent: number;
+  smsSent: number;
+  inAppSent: number;
+  pushSent?: number;
+  errors: string[];
+  warnings: string[];
+}) {
+  return `Rodziców: ${result.totalParents} · w aplikacji ${result.inAppSent}${result.pushSent ? ` · push ${result.pushSent}` : ""}${result.emailsSent || result.smsSent ? ` · email ${result.emailsSent} · SMS ${result.smsSent}` : ""}`;
 }
 
 export async function savePushPreference(enabled: boolean) {

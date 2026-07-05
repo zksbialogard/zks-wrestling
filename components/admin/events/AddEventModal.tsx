@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CalendarPlus, Loader2, X } from "lucide-react";
 
 import { createEvent } from "@/lib/events";
+import { formatNotifyResultMessage } from "@/lib/notifications-client";
 
 type Props = {
   open: boolean;
@@ -59,12 +60,14 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
       toast.success("Zawody zostały dodane.");
 
       if (notifyResult) {
-        toast.success(
-          `Powiadomienia: email ${notifyResult.emailsSent}, SMS ${notifyResult.smsSent}, w aplikacji ${notifyResult.inAppSent}.`
-        );
+        toast.success(formatNotifyResultMessage(notifyResult));
+
+        if (notifyResult.warnings?.length) {
+          toast.warning(notifyResult.warnings.slice(0, 3).join(" "));
+        }
 
         if (notifyResult.errors.length) {
-          toast.warning(notifyResult.errors[0]);
+          toast.error(notifyResult.errors.slice(0, 3).join(" "));
         }
       }
     } catch (err) {

@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
-import { sendAdminNotify } from "@/lib/notifications-client";
+import { sendAdminNotify, formatNotifyResultMessage } from "@/lib/notifications-client";
+import { syncParentsFromFirebaseToSupabase } from "@/lib/parents-admin-client";
 import type { EventItem } from "./EventRow";
 
 type Props = {
@@ -22,7 +23,7 @@ const TEMPLATE_OPTIONS = [
 export default function NotifyEventModal({ open, event, onClose }: Props) {
   const [templateKey, setTemplateKey] =
     useState<(typeof TEMPLATE_OPTIONS)[number]["key"]>("event_reminder");
-  const [sendEmail, setSendEmail] = useState(true);
+  const [sendEmail, setSendEmail] = useState(false);
   const [sendSms, setSendSms] = useState(false);
   const [sendInApp, setSendInApp] = useState(true);
   const [customMessage, setCustomMessage] = useState("");
@@ -39,6 +40,8 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
     try {
       setLoading(true);
 
+      const syncedCount = await syncParentsFromFirebaseToSupabase();
+
       const result = await sendAdminNotify({
         templateKey,
         variables: {
@@ -53,18 +56,22 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
           email: sendEmail,
           sms: sendSms,
           inApp: sendInApp,
-          push: sendInApp,
+          push: false,
         },
         type: "event",
         link: `/zawody/${event!.id}`,
       });
 
       toast.success(
-        `Wysłano: email ${result.emailsSent}, SMS ${result.smsSent}, w aplikacji ${result.inAppSent}.`
+        `${formatNotifyResultMessage(result)} (zsynchronizowano ${syncedCount} rodziców)`
       );
 
+      if (result.warnings.length) {
+        toast.warning(result.warnings.slice(0, 3).join(" "));
+      }
+
       if (result.errors.length) {
-        toast.warning(`Część wysyłek nie powiodła się (${result.errors.length}).`);
+        toast.error(result.errors.slice(0, 3).join(" "));
       }
 
       onClose();
@@ -156,7 +163,7 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
               onChange={() => setSendInApp(!sendInApp)}
               className="accent-zks-gold"
             />
-            Powiadomienie w aplikacji (centrum powiadomień)
+            Powiadomienie w aplikacji + push na telefon (jak w normalnej aplikacji)
           </label>
         </div>
 

@@ -81,7 +81,9 @@ export async function createEvent(data: {
       emailsSent: number;
       smsSent: number;
       inAppSent: number;
+      totalParents?: number;
       errors: string[];
+      warnings?: string[];
     };
   };
 

@@ -9,10 +9,13 @@ import {
   fetchNotifications,
   markAllNotificationsAsRead,
   markNotificationAsRead,
-  requestBrowserNotificationPermission,
-  showBrowserNotification,
   type NotificationItem,
 } from "@/lib/notifications-client";
+import {
+  getWebPushStatus,
+  subscribeToWebPush,
+  unsubscribeFromWebPush,
+} from "@/lib/push-client";
 
 export default function ParentNotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -23,9 +26,15 @@ export default function ParentNotificationsPage() {
   useEffect(() => {
     loadNotifications();
 
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setPushEnabled(Notification.permission === "granted");
+    async function loadPushStatus() {
+      const status = await getWebPushStatus();
+      setPushEnabled(status.subscribed);
     }
+
+    loadPushStatus();
+
+    const interval = window.setInterval(loadNotifications, 60000);
+    return () => window.clearInterval(interval);
   }, []);
 
   async function loadNotifications() {
@@ -34,12 +43,6 @@ export default function ParentNotificationsPage() {
       const result = await fetchNotifications();
       setNotifications(result.notifications);
       setUnreadCount(result.unreadCount);
-
-      const latestUnread = result.notifications.find((item) => !item.read_at);
-
-      if (latestUnread) {
-        showBrowserNotification(latestUnread.title, latestUnread.body, latestUnread.link);
-      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Nie udało się pobrać powiadomień.";
@@ -86,13 +89,24 @@ export default function ParentNotificationsPage() {
   }
 
   async function enablePush() {
-    const enabled = await requestBrowserNotificationPermission();
-    setPushEnabled(enabled);
+    try {
+      await subscribeToWebPush();
+      setPushEnabled(true);
+      toast.success("Powiadomienia push włączone — dostaniesz je na telefon.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Nie udało się włączyć powiadomień push.";
+      toast.error(message);
+    }
+  }
 
-    if (enabled) {
-      toast.success("Powiadomienia push w przeglądarce włączone.");
-    } else {
-      toast.error("Brak zgody na powiadomienia w przeglądarce.");
+  async function disablePush() {
+    try {
+      await unsubscribeFromWebPush();
+      setPushEnabled(false);
+      toast.success("Powiadomienia push wyłączone.");
+    } catch (error) {
+      toast.error("Nie udało się wyłączyć powiadomień push.");
     }
   }
 
@@ -109,13 +123,21 @@ export default function ParentNotificationsPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {!pushEnabled && (
+          {!pushEnabled ? (
             <button
               type="button"
               onClick={enablePush}
               className="zks-btn-outline px-4 py-2.5 text-xs"
             >
               Włącz powiadomienia push
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={disablePush}
+              className="zks-btn-outline px-4 py-2.5 text-xs"
+            >
+              Wyłącz powiadomienia push
             </button>
           )}
 

@@ -8,13 +8,21 @@ import {
   where,
 } from "firebase/firestore";
 
+import { fetchParentUsersFromFirestore } from "./firebase-parents";
 import { sendEmailMessage, sendSmsMessage } from "./messaging";
 import { renderTemplate, type TemplateKey } from "./message-templates";
 import {
-  createNotificationRecord,
+  createNotificationRecordsBulk,
   getMessageTemplate,
 } from "./notifications-db";
-import { listParentUsersFromDb, upsertParentUsers } from "./parent-users-db";
+import {
+  listParentUsersFromDb,
+  upsertParentUsers,
+  type ParentUser,
+} from "./parent-users-db";
+import { sendWebPushToUsers } from "./web-push-service";
+
+export type { ParentUser };
 
 const firebaseConfig = {
   apiKey:
@@ -32,14 +40,6 @@ function getDb() {
   return getFirestore(app);
 }
 
-export type ParentUser = {
-  uid: string;
-  email?: string;
-  telefon?: string;
-  imie?: string;
-  rola?: string;
-};
-
 export type NotifyChannels = {
   email?: boolean;
   sms?: boolean;
@@ -54,104 +54,93 @@ export type NotifyResult = {
   inAppSent: number;
   pushSent: number;
   errors: string[];
+  warnings: string[];
 };
 
-async function loadParentUsersViaRest(): Promise<ParentUser[]> {
-  try {
-    const response = await fetch(
-      `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/users?pageSize=300`,
-      {
-        headers: {
-          "X-Goog-Api-Key": firebaseConfig.apiKey,
-        },
-        cache: "no-store",
-      }
-    );
+function mergeParentUsers(...lists: ParentUser[][]) {
+  const merged = new Map<string, ParentUser>();
 
-    if (!response.ok) {
-      console.error("Firestore REST users error:", response.status);
-      return [];
-    }
+  for (const list of lists) {
+    for (const user of list) {
+      const existing = merged.get(user.uid);
 
-    const data = (await response.json()) as {
-      documents?: Array<{
-        name: string;
-        fields?: Record<string, { stringValue?: string }>;
-      }>;
-    };
-
-    const users: ParentUser[] = [];
-
-    for (const document of data.documents || []) {
-      const fields = document.fields || {};
-      const uid = fields.uid?.stringValue || document.name.split("/").pop() || "";
-      const email = fields.email?.stringValue;
-      const rola = fields.rola?.stringValue;
-
-      if (!email || !(rola === "rodzic" || !rola)) {
+      if (!existing) {
+        merged.set(user.uid, user);
         continue;
       }
 
-      users.push({
-        uid,
-        email,
-        telefon: fields.telefon?.stringValue,
-        imie: fields.imie?.stringValue,
-        rola,
+      merged.set(user.uid, {
+        ...existing,
+        ...user,
+        email: user.email || existing.email,
+        telefon: user.telefon || existing.telefon,
+        imie: user.imie || existing.imie,
+        rola: user.rola || existing.rola,
       });
     }
-
-    return users;
-  } catch (error) {
-    console.error("loadParentUsersViaRest:", error);
-    return [];
   }
+
+  return Array.from(merged.values());
 }
 
-export async function loadParentUsers(): Promise<ParentUser[]> {
-  const fromSupabase = await listParentUsersFromDb();
-  if (fromSupabase.length) {
-    return fromSupabase;
-  }
-
-  const restUsers = await loadParentUsersViaRest();
-  if (restUsers.length) {
-    await upsertParentUsers(restUsers);
-    return restUsers;
-  }
-
+async function loadParentUsersFromFirestoreSdk(): Promise<ParentUser[]> {
   try {
     const snapshot = await getDocs(collection(getDb(), "users"));
-
-    const sdkUsers: ParentUser[] = [];
+    const parents: ParentUser[] = [];
 
     for (const item of snapshot.docs) {
       const data = item.data();
-      const email = data.email as string | undefined;
+      const uid = (data.uid as string) || item.id;
       const rola = data.rola as string | undefined;
 
-      if (!email || !(rola === "rodzic" || !rola)) {
+      if (rola !== "rodzic" || !uid) {
         continue;
       }
 
-      sdkUsers.push({
-        uid: (data.uid as string) || item.id,
-        email,
+      parents.push({
+        uid,
+        email: data.email as string | undefined,
         telefon: data.telefon as string | undefined,
         imie: data.imie as string | undefined,
         rola,
       });
     }
 
-    if (sdkUsers.length) {
-      await upsertParentUsers(sdkUsers);
-    }
-
-    return sdkUsers;
+    return parents;
   } catch (error) {
-    console.error("loadParentUsers:", error);
+    console.error("loadParentUsersFromFirestoreSdk:", error);
     return [];
   }
+}
+
+export async function loadParentUsers(): Promise<ParentUser[]> {
+  const fromSupabase = await listParentUsersFromDb();
+  let fromFirestore = await fetchParentUsersFromFirestore();
+
+  if (!fromFirestore.length) {
+    fromFirestore = await loadParentUsersFromFirestoreSdk();
+  }
+
+  const parents = mergeParentUsers(fromSupabase, fromFirestore);
+
+  if (parents.length) {
+    await upsertParentUsers(parents);
+  }
+
+  return parents;
+}
+
+export async function syncAllParentsToSupabase() {
+  const parents = await loadParentUsers();
+  return {
+    count: parents.length,
+    parents: parents.map((parent) => ({
+      uid: parent.uid,
+      email: parent.email,
+      imie: parent.imie,
+      telefon: parent.telefon,
+    })),
+  };
 }
 
 export async function notifyParents(input: {
@@ -169,6 +158,7 @@ export async function notifyParents(input: {
     inAppSent: 0,
     pushSent: 0,
     errors: [],
+    warnings: [],
   };
 
   try {
@@ -191,7 +181,7 @@ export async function notifyParents(input: {
 
     if (!parents.length) {
       result.errors.push(
-        "Nie znaleziono rodziców w Firebase. Powiadomienia w aplikacji wymagają kont rodziców."
+        "Nie znaleziono rodziców z rolą „rodzic” w Firebase. Sprawdź Admin → Rodzice."
       );
       return result;
     }
@@ -203,6 +193,50 @@ export async function notifyParents(input: {
       input.channels.push ? "push" : null,
     ].filter(Boolean) as string[];
 
+    const inAppOnly =
+      input.channels.inApp !== false &&
+      !input.channels.email &&
+      !input.channels.sms;
+
+    if (inAppOnly) {
+      const bulk = await createNotificationRecordsBulk(
+        parents.map((parent) => ({
+          user_uid: parent.uid,
+          type: input.type || input.templateKey,
+          title: rendered.pushTitle,
+          body: rendered.pushBody,
+          link: input.link,
+          channels: activeChannels,
+        }))
+      );
+
+      result.inAppSent = bulk.created;
+      result.errors.push(...bulk.errors);
+
+      const pushResult = await sendWebPushToUsers(
+        parents.map((parent) => parent.uid),
+        {
+          title: rendered.pushTitle,
+          body: rendered.pushBody,
+          url: input.link || "/panel-rodzica/powiadomienia",
+        }
+      );
+
+      result.pushSent = pushResult.sent;
+
+      if (pushResult.errors.length) {
+        result.warnings.push(...pushResult.errors.slice(0, 2));
+      }
+
+      if (bulk.created < parents.length) {
+        result.warnings.push(
+          `Zapisano ${bulk.created} z ${parents.length} powiadomień w aplikacji.`
+        );
+      }
+
+      return result;
+    }
+
     for (const parent of parents) {
       try {
         if (input.channels.email && parent.email) {
@@ -213,8 +247,12 @@ export async function notifyParents(input: {
             text: rendered.text,
           });
 
-          if (emailResult.ok) {
+          if (emailResult.ok && !emailResult.simulated) {
             result.emailsSent += 1;
+          } else if (emailResult.simulated) {
+            result.warnings.push(
+              `${parent.email}: brak RESEND_API_KEY — email nie wysłany.`
+            );
           } else if ("error" in emailResult && emailResult.error) {
             result.errors.push(`${parent.email}: ${emailResult.error}`);
           }
@@ -228,28 +266,30 @@ export async function notifyParents(input: {
 
           if (smsResult.ok) {
             result.smsSent += 1;
+          } else if (smsResult.skipped) {
+            result.warnings.push(`${parent.telefon}: brak SMSAPI_TOKEN.`);
           } else if ("error" in smsResult && smsResult.error) {
             result.errors.push(`${parent.telefon}: ${smsResult.error}`);
           }
         }
 
         if (input.channels.inApp !== false) {
-          const created = await createNotificationRecord({
-            user_uid: parent.uid,
-            type: input.type || input.templateKey,
-            title: rendered.pushTitle,
-            body: rendered.pushBody,
-            link: input.link,
-            channels: activeChannels,
-          });
+          const bulk = await createNotificationRecordsBulk([
+            {
+              user_uid: parent.uid,
+              type: input.type || input.templateKey,
+              title: rendered.pushTitle,
+              body: rendered.pushBody,
+              link: input.link,
+              channels: activeChannels,
+            },
+          ]);
 
-          if (created) {
+          if (bulk.created) {
             result.inAppSent += 1;
+          } else if (bulk.errors.length) {
+            result.errors.push(`${parent.imie || parent.uid}: ${bulk.errors[0]}`);
           }
-        }
-
-        if (input.channels.push) {
-          result.pushSent += 1;
         }
       } catch (error) {
         const message =

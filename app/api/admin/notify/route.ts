@@ -62,6 +62,7 @@ export async function POST(request: Request) {
         inAppSent: 0,
         pushSent: 0,
         errors: [message],
+        warnings: [],
       },
     });
   }

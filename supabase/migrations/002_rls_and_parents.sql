@@ -12,6 +12,7 @@ create table if not exists public.parent_users (
 
 alter table public.parent_users enable row level security;
 
+drop policy if exists "parent_users_service_only" on public.parent_users;
 create policy "parent_users_service_only"
   on public.parent_users
   for all

@@ -81,6 +81,38 @@ export async function supabaseRestInsert<T extends Record<string, unknown>>(
   return rows[0];
 }
 
+export async function supabaseRestInsertMany<T extends Record<string, unknown>>(
+  table: string,
+  rows: T[]
+): Promise<T[]> {
+  if (!rows.length) {
+    return [];
+  }
+
+  const url = resolveSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const key = getServiceRoleKey();
+
+  const response = await fetch(`${url}/rest/v1/${table}`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify(rows),
+    cache: "no-store",
+  });
+
+  const body = await response.text();
+
+  if (!response.ok) {
+    throw new Error(parseSupabaseError(body, response.status));
+  }
+
+  return JSON.parse(body) as T[];
+}
+
 export async function testSupabaseConnection() {
   const url = resolveSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const key = getServiceRoleKey();
