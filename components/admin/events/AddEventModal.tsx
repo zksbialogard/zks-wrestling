@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { CalendarPlus, Loader2, X } from "lucide-react";
 
 import { createEvent } from "@/lib/events";
-import { sendAdminNotify } from "@/lib/notifications-client";
 
 type Props = {
   open: boolean;
@@ -19,9 +18,9 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
   const [location, setLocation] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [registrationDeadline, setRegistrationDeadline] = useState("");
-  const [sendEmail, setSendEmail] = useState(true);
+  const [sendEmail, setSendEmail] = useState(false);
   const [sendSms, setSendSms] = useState(false);
-  const [sendInApp, setSendInApp] = useState(true);
+  const [sendInApp, setSendInApp] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -36,11 +35,17 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
     try {
       setLoading(true);
 
-      const created = await createEvent({
+      const { event: created, notifyResult } = await createEvent({
         title,
         location,
         event_date: eventDate,
         registration_deadline: registrationDeadline,
+        notify: {
+          email: sendEmail,
+          sms: sendSms,
+          inApp: sendInApp,
+          push: sendInApp,
+        },
       });
 
       setTitle("");
@@ -53,43 +58,13 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
 
       toast.success("Zawody zostały dodane.");
 
-      if (sendEmail || sendSms || sendInApp) {
-        try {
-          const result = await sendAdminNotify({
-            templateKey: "event_new",
-            variables: {
-              title,
-              location,
-              eventDate: new Date(eventDate).toLocaleDateString("pl-PL"),
-              registrationDeadline: new Date(registrationDeadline).toLocaleDateString(
-                "pl-PL"
-              ),
-              link: `${window.location.origin}/zawody/${created.id}`,
-            },
-            channels: {
-              email: sendEmail,
-              sms: sendSms,
-              inApp: sendInApp,
-              push: sendInApp,
-            },
-            type: "event",
-            link: `/zawody/${created.id}`,
-          });
+      if (notifyResult) {
+        toast.success(
+          `Powiadomienia: email ${notifyResult.emailsSent}, SMS ${notifyResult.smsSent}, w aplikacji ${notifyResult.inAppSent}.`
+        );
 
-          toast.success(
-            `Powiadomienia: email ${result.emailsSent}, SMS ${result.smsSent}, w aplikacji ${result.inAppSent}.`
-          );
-
-          if (result.errors.length) {
-            toast.warning(
-              `Część powiadomień nie wyszła (${result.errors.length}). Sprawdź SMS/e-mail na Vercel.`
-            );
-          }
-        } catch (notifyError) {
-          console.error(notifyError);
-          toast.warning(
-            "Zawody zapisane, ale powiadomienia nie wyszły. Użyj 🔔 przy zawodach, aby wysłać ponownie."
-          );
+        if (notifyResult.errors.length) {
+          toast.warning(notifyResult.errors[0]);
         }
       }
     } catch (err) {

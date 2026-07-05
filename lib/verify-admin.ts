@@ -1,12 +1,3 @@
-import { initializeApp, getApps } from "firebase/app";
-import {
-  collection,
-  getDocs,
-  getFirestore,
-  query,
-  where,
-} from "firebase/firestore";
-
 const firebaseConfig = {
   apiKey:
     process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
@@ -18,30 +9,116 @@ const firebaseConfig = {
   appId: "1:897189660264:web:c337a84238c4d7e80f1ddd",
 };
 
-function getDb() {
-  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-  return getFirestore(app);
+type FirestoreField = {
+  stringValue?: string;
+  booleanValue?: boolean;
+  integerValue?: string;
+};
+
+type UserProfile = {
+  uid?: string;
+  email?: string;
+  rola?: string;
+  imie?: string;
+  nazwisko?: string;
+  telefon?: string;
+  [key: string]: unknown;
+};
+
+function parseFirestoreFields(
+  fields: Record<string, FirestoreField> | undefined
+): UserProfile {
+  if (!fields) {
+    return {};
+  }
+
+  const profile: UserProfile = {};
+
+  for (const [key, value] of Object.entries(fields)) {
+    if (value.stringValue !== undefined) {
+      profile[key] = value.stringValue;
+    } else if (value.booleanValue !== undefined) {
+      profile[key] = value.booleanValue;
+    } else if (value.integerValue !== undefined) {
+      profile[key] = Number(value.integerValue);
+    }
+  }
+
+  return profile;
+}
+
+async function getUserProfileViaRest(uid: string): Promise<UserProfile | null> {
+  try {
+    const response = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents:runQuery`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": firebaseConfig.apiKey,
+        },
+        body: JSON.stringify({
+          structuredQuery: {
+            from: [{ collectionId: "users" }],
+            where: {
+              fieldFilter: {
+                field: { fieldPath: "uid" },
+                op: "EQUAL",
+                value: { stringValue: uid },
+              },
+            },
+            limit: 1,
+          },
+        }),
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Firestore REST profile error:", response.status);
+      return null;
+    }
+
+    const rows = (await response.json()) as Array<{
+      document?: { fields?: Record<string, FirestoreField> };
+    }>;
+
+    const document = rows.find((row) => row.document)?.document;
+
+    if (!document?.fields) {
+      return null;
+    }
+
+    return parseFirestoreFields(document.fields);
+  } catch (error) {
+    console.error("getUserProfileViaRest:", error);
+    return null;
+  }
 }
 
 export async function verifyFirebaseToken(idToken: string) {
-  const apiKey = firebaseConfig.apiKey;
+  try {
+    const response = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseConfig.apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+        cache: "no-store",
+      }
+    );
 
-  const response = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken }),
+    const data = await response.json();
+
+    if (!response.ok || !data.users?.[0]) {
+      return null;
     }
-  );
 
-  const data = await response.json();
-
-  if (!response.ok || !data.users?.[0]) {
+    return data.users[0] as { localId: string; email?: string };
+  } catch (error) {
+    console.error("verifyFirebaseToken:", error);
     return null;
   }
-
-  return data.users[0] as { localId: string; email?: string };
 }
 
 export async function verifyAdminToken(idToken: string) {
@@ -51,17 +128,9 @@ export async function verifyAdminToken(idToken: string) {
     return null;
   }
 
-  const snapshot = await getDocs(
-    query(collection(getDb(), "users"), where("uid", "==", user.localId))
-  );
+  const profile = await getUserProfileViaRest(user.localId);
 
-  if (snapshot.empty) {
-    return null;
-  }
-
-  const profile = snapshot.docs[0].data();
-
-  if (profile.rola !== "admin") {
+  if (!profile || profile.rola !== "admin") {
     return null;
   }
 
@@ -82,15 +151,11 @@ export async function getUserFromRequest(request: Request) {
     return null;
   }
 
-  const snapshot = await getDocs(
-    query(collection(getDb(), "users"), where("uid", "==", user.localId))
-  );
+  const profile = await getUserProfileViaRest(user.localId);
 
-  if (snapshot.empty) {
+  if (!profile) {
     return null;
   }
-
-  const profile = snapshot.docs[0].data();
 
   return {
     uid: user.localId,
@@ -100,12 +165,17 @@ export async function getUserFromRequest(request: Request) {
 }
 
 export async function getAdminFromRequest(request: Request) {
-  const authHeader = request.headers.get("authorization");
+  try {
+    const authHeader = request.headers.get("authorization");
 
-  if (!authHeader?.startsWith("Bearer ")) {
+    if (!authHeader?.startsWith("Bearer ")) {
+      return null;
+    }
+
+    const token = authHeader.slice(7);
+    return await verifyAdminToken(token);
+  } catch (error) {
+    console.error("getAdminFromRequest:", error);
     return null;
   }
-
-  const token = authHeader.slice(7);
-  return verifyAdminToken(token);
 }

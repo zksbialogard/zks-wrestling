@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
-import { createSupabaseAdmin } from "@/lib/supabase";
+import { notifyParents } from "@/lib/notify-service";
+import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
+import { createSupabaseAdmin, resolveSupabaseUrl } from "@/lib/supabase";
 import { getAdminFromRequest } from "@/lib/verify-admin";
 
 type EventPayload = {
@@ -9,6 +11,13 @@ type EventPayload = {
   location: string;
   event_date: string;
   registration_deadline: string;
+};
+
+type NotifyPayload = {
+  email?: boolean;
+  sms?: boolean;
+  inApp?: boolean;
+  push?: boolean;
 };
 
 function validatePayload(body: unknown): EventPayload | null {
@@ -28,6 +37,31 @@ function validatePayload(body: unknown): EventPayload | null {
   };
 }
 
+function hasSupabaseAdminKey() {
+  return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
+}
+
+function mapServerError(error: unknown, context: string) {
+  const message = error instanceof Error ? error.message : "Nieznany błąd";
+
+  if (message.includes("fetch failed") || message.includes("ECONNREFUSED")) {
+    return `${context}: brak połączenia z Supabase. Na Vercel ustaw NEXT_PUBLIC_SUPABASE_URL=https://ubvgiglzteunqgxmezkt.supabase.co oraz SUPABASE_SERVICE_ROLE_KEY (secret z Supabase → Settings → API), potem Redeploy.`;
+  }
+
+  if (
+    message.includes("SUPABASE_SERVICE_ROLE_KEY_MISSING") ||
+    message.includes("Brak SUPABASE_SERVICE_ROLE_KEY")
+  ) {
+    return "Brak SUPABASE_SERVICE_ROLE_KEY na Vercel. Dodaj secret service_role w Settings → Environment Variables i zrób Redeploy.";
+  }
+
+  if (message.includes("Invalid API key")) {
+    return "Niepoprawny SUPABASE_SERVICE_ROLE_KEY na Vercel. Skopiuj ponownie secret service_role z Supabase (nie publishable/anon).";
+  }
+
+  return message;
+}
+
 export async function POST(request: Request) {
   try {
     const admin = await getAdminFromRequest(request);
@@ -38,6 +72,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const payload = validatePayload(body);
+    const notify = (body.notify || {}) as NotifyPayload;
 
     if (!payload) {
       return NextResponse.json(
@@ -46,15 +81,49 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("events")
-      .insert([payload])
-      .select("*")
-      .single();
+    if (!hasSupabaseAdminKey()) {
+      return NextResponse.json(
+        {
+          error:
+            "Brak SUPABASE_SERVICE_ROLE_KEY na Vercel. Dodaj klucz service_role w Environment Variables i zrób Redeploy.",
+        },
+        { status: 500 }
+      );
+    }
+
+    let supabase;
+
+    try {
+      supabase = createSupabaseAdmin();
+    } catch (error) {
+      return NextResponse.json(
+        { error: mapServerError(error, "Konfiguracja Supabase") },
+        { status: 500 }
+      );
+    }
+
+    let data;
+    let error;
+
+    try {
+      const result = await supabase
+        .from("events")
+        .insert([payload])
+        .select("*")
+        .single();
+
+      data = result.data;
+      error = result.error;
+    } catch (insertError) {
+      console.error("Supabase events insert exception:", insertError, resolveSupabaseUrl());
+      return NextResponse.json(
+        { error: mapServerError(insertError, "Nie udało się dodać zawodów") },
+        { status: 500 }
+      );
+    }
 
     if (error) {
-      console.error("Supabase events insert error:", error);
+      console.error("Supabase events insert error:", error, resolveSupabaseUrl());
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -63,12 +132,50 @@ export async function POST(request: Request) {
     revalidatePath("/zawody/najblizsze-zawody");
     revalidatePath("/admin/zawody");
 
-    return NextResponse.json({ ok: true, data });
+    let notifyResult = null;
+
+    if (notify.email || notify.sms || notify.inApp || notify.push) {
+      try {
+        await seedDefaultTemplatesIfEmpty();
+        notifyResult = await notifyParents({
+          templateKey: "event_new",
+          variables: {
+            title: payload.title,
+            location: payload.location,
+            eventDate: new Date(payload.event_date).toLocaleDateString("pl-PL"),
+            registrationDeadline: new Date(
+              payload.registration_deadline
+            ).toLocaleDateString("pl-PL"),
+            link: `/zawody/${data.id}`,
+          },
+          channels: {
+            email: Boolean(notify.email),
+            sms: Boolean(notify.sms),
+            inApp: notify.inApp !== false,
+            push: Boolean(notify.push),
+          },
+          type: "event",
+          link: `/zawody/${data.id}`,
+        });
+      } catch (notifyError) {
+        console.error("Notify after event create:", notifyError);
+        notifyResult = {
+          totalParents: 0,
+          emailsSent: 0,
+          smsSent: 0,
+          inAppSent: 0,
+          pushSent: 0,
+          errors: [mapServerError(notifyError, "Powiadomienia")],
+        };
+      }
+    }
+
+    return NextResponse.json({ ok: true, data, notifyResult });
   } catch (error) {
     console.error(error);
-    const message =
-      error instanceof Error ? error.message : "Nie udało się dodać zawodów.";
-
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: mapServerError(error, "Nie udało się dodać zawodów") },
+      { status: 500 }
+    );
   }
 }

@@ -80,26 +80,28 @@ async function loadParentUsersViaRest(): Promise<ParentUser[]> {
       }>;
     };
 
-    return (data.documents || [])
-      .map((document) => {
-        const fields = document.fields || {};
-        const uid = fields.uid?.stringValue || document.name.split("/").pop() || "";
-        const email = fields.email?.stringValue;
-        const rola = fields.rola?.stringValue;
+    const users: ParentUser[] = [];
 
-        if (!email || !(rola === "rodzic" || !rola)) {
-          return null;
-        }
+    for (const document of data.documents || []) {
+      const fields = document.fields || {};
+      const uid = fields.uid?.stringValue || document.name.split("/").pop() || "";
+      const email = fields.email?.stringValue;
+      const rola = fields.rola?.stringValue;
 
-        return {
-          uid,
-          email,
-          telefon: fields.telefon?.stringValue,
-          imie: fields.imie?.stringValue,
-          rola,
-        } satisfies ParentUser;
-      })
-      .filter((user): user is ParentUser => Boolean(user));
+      if (!email || !(rola === "rodzic" || !rola)) {
+        continue;
+      }
+
+      users.push({
+        uid,
+        email,
+        telefon: fields.telefon?.stringValue,
+        imie: fields.imie?.stringValue,
+        rola,
+      });
+    }
+
+    return users;
   } catch (error) {
     console.error("loadParentUsersViaRest:", error);
     return [];

@@ -43,6 +43,12 @@ export async function createEvent(data: {
   location: string;
   event_date: string;
   registration_deadline: string;
+  notify?: {
+    email?: boolean;
+    sms?: boolean;
+    inApp?: boolean;
+    push?: boolean;
+  };
 }) {
   const headers = await getAuthHeader();
 
@@ -52,13 +58,31 @@ export async function createEvent(data: {
     body: JSON.stringify(data),
   });
 
-  const result = await response.json();
+  let result: {
+    error?: string;
+    data?: Event;
+    notifyResult?: {
+      emailsSent: number;
+      smsSent: number;
+      inAppSent: number;
+      errors: string[];
+    };
+  };
+
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error("Serwer zwrócił niepoprawną odpowiedź. Sprawdź deploy na Vercel.");
+  }
 
   if (!response.ok) {
     throw new Error(result.error || "Nie udało się dodać zawodów.");
   }
 
-  return result.data as Event;
+  return {
+    event: result.data as Event,
+    notifyResult: result.notifyResult || null,
+  };
 }
 
 export async function updateEvent(
