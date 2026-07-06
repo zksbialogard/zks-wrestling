@@ -48,7 +48,7 @@ export async function listTrainingExceptionsForGroup(
 export async function createTrainingException(
   input: TrainingExceptionInsert
 ): Promise<TrainingException> {
-  return supabaseRestInsert("training_exceptions", {
+  const row = await supabaseRestInsert("training_exceptions", {
     group_id: input.group_id,
     session_date: input.session_date,
     status: input.status,
@@ -58,4 +58,6 @@ export async function createTrainingException(
     new_end: input.new_end || null,
     message: input.message,
   });
+
+  return row as TrainingException;
 }
