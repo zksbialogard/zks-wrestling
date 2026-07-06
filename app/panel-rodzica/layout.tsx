@@ -21,7 +21,7 @@ export default function ParentLayout({
         <div className="mx-auto flex max-w-7xl">
           <ParentNav />
           <section className="min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8">
-            <PushPrompt />
+            <PushPrompt role="rodzic" />
             <TrainingGroupBanner />
             {children}
           </section>

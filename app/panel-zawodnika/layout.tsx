@@ -20,7 +20,7 @@ export default function AthleteLayout({
         <div className="mx-auto flex max-w-7xl">
           <AthleteNav />
           <section className="min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8">
-            <PushPrompt />
+            <PushPrompt role="zawodnik" />
             {children}
           </section>
         </div>

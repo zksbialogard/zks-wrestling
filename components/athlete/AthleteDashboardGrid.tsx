@@ -14,6 +14,8 @@ import {
   isTrainingGroupId,
 } from "@/lib/training-groups";
 
+import PushOnboardingDashboardCard from "@/components/notifications/PushOnboardingDashboardCard";
+
 export default function AthleteDashboardGrid() {
   const { profile, user, ready, loadingProfile } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -83,6 +85,8 @@ export default function AthleteDashboardGrid() {
           Twój panel zawodnika — treningi, zawody i komunikaty od klubu.
         </p>
       </div>
+
+      <PushOnboardingDashboardCard role="zawodnik" />
 
       {loading ? (
         <div className="zks-card flex items-center gap-3 p-5 text-zks-text-muted">

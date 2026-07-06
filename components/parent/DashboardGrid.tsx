@@ -36,6 +36,7 @@ import { isTrainingGroupId, type TrainingGroupId } from "@/lib/training-groups";
 
 import DashboardCard from "./DashboardCard";
 import DashboardStatCard from "./DashboardStatCard";
+import PushOnboardingDashboardCard from "@/components/notifications/PushOnboardingDashboardCard";
 
 type DashboardStats = {
   pendingRegistrations: number;
@@ -170,6 +171,8 @@ export default function DashboardGrid() {
           zawodników.
         </p>
       </div>
+
+      <PushOnboardingDashboardCard role="rodzic" />
 
       {loading ? (
         <div className="zks-card flex items-center gap-3 p-5 text-zks-text-muted">

@@ -127,7 +127,7 @@ export default function ParentProfilePage() {
         </div>
       </div>
 
-      <PushSettingsCard />
+      <PushSettingsCard role="rodzic" />
 
       <form onSubmit={save} className="zks-card space-y-5 p-5 sm:max-w-2xl sm:p-6">
         <h3 className="font-[family-name:var(--font-heading)] text-lg font-bold uppercase text-white">
