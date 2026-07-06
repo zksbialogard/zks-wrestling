@@ -32,7 +32,7 @@ export async function listParentUsersFromDb(): Promise<ParentUser[]> {
   return (data || []).map((item) => ({
     uid: item.uid,
     email: item.email,
-    telefon: item.telefon || undefined,
+    telefon: item.telefon ? String(item.telefon).trim() : undefined,
     imie: item.imie || undefined,
     rola: item.rola || undefined,
   }));

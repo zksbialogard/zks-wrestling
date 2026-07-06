@@ -24,8 +24,7 @@ const TEMPLATE_OPTIONS = [
 export default function NotifyEventModal({ open, event, onClose }: Props) {
   const [templateKey, setTemplateKey] =
     useState<(typeof TEMPLATE_OPTIONS)[number]["key"]>("event_reminder");
-  const [sendEmail, setSendEmail] = useState(false);
-  const [sendSms, setSendSms] = useState(false);
+  const [sendSms, setSendSms] = useState(true);
   const [sendInApp, setSendInApp] = useState(true);
   const [customMessage, setCustomMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,7 +54,6 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
             message: customMessage || `Zmiana dotycząca zawodów ${event!.title}.`,
           },
           channels: {
-            email: sendEmail,
             sms: sendSms,
             inApp: sendInApp,
             push: false,
@@ -142,21 +140,11 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
           <label className="flex items-center gap-3 text-sm text-zks-text">
             <input
               type="checkbox"
-              checked={sendEmail}
-              onChange={() => setSendEmail(!sendEmail)}
-              className="accent-zks-gold"
-            />
-            E-mail do rodziców (wymaga RESEND_API_KEY)
-          </label>
-
-          <label className="flex items-center gap-3 text-sm text-zks-text">
-            <input
-              type="checkbox"
               checked={sendSms}
               onChange={() => setSendSms(!sendSms)}
               className="accent-zks-gold"
             />
-            SMS (wymaga SMSAPI_TOKEN)
+            SMS do rodziców
           </label>
 
           <label className="flex items-center gap-3 text-sm text-zks-text">

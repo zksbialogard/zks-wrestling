@@ -1,16 +1,28 @@
 import { NextResponse } from "next/server";
 
-import { getEmailFromAddress, isEmailConfigured } from "@/lib/messaging";
+import {
+  getEmailFromAddress,
+  getResendSandboxTestEmail,
+  isEmailConfigured,
+  isResendSandboxMode,
+} from "@/lib/messaging";
 import { getAdminFromRequest } from "@/lib/verify-admin";
 
 export async function GET() {
+  const sandbox = isResendSandboxMode();
+  const sandboxTestTo = getResendSandboxTestEmail();
+
   return NextResponse.json({
     ok: true,
     configured: isEmailConfigured(),
     from: getEmailFromAddress(),
-    hint: isEmailConfigured()
-      ? "E-mail gotowy. Użyj „Wyślij test” w Szablony."
-      : "Dodaj RESEND_API_KEY i EMAIL_FROM na Vercel, potem Redeploy.",
+    sandbox,
+    sandboxTestTo,
+    hint: !isEmailConfigured()
+      ? "Dodaj RESEND_API_KEY i EMAIL_FROM na Vercel, potem Redeploy."
+      : sandbox
+        ? `Tryb testowy — wysyłka tylko na ${sandboxTestTo}.`
+        : "E-mail gotowy do wysyłki do rodziców.",
   });
 }
 
@@ -23,11 +35,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const to = body.to || admin.email;
+    const sandbox = isResendSandboxMode();
+    const sandboxTestTo = getResendSandboxTestEmail();
+    const requestedTo = typeof body.to === "string" ? body.to.trim() : "";
+    const to = sandbox ? sandboxTestTo : requestedTo || admin.email;
 
     if (!to) {
       return NextResponse.json(
-        { error: "Brak adresu e-mail administratora." },
+        { error: "Brak adresu e-mail do wysyłki testu." },
         { status: 400 }
       );
     }
@@ -37,8 +52,8 @@ export async function POST(request: Request) {
     const result = await sendEmailMessage({
       to,
       subject: "ZKS Białogard — test e-mail z aplikacji",
-      html: `<p>To jest testowa wiadomość z <strong>ZKS Manager</strong>.</p><p>Jeśli ją widzisz, Resend działa poprawnie.</p>`,
-      text: "To jest testowa wiadomość z ZKS Manager. Jeśli ją widzisz, Resend działa poprawnie.",
+      html: `<p>To jest testowa wiadomość z <strong>ZKS Manager</strong>.</p><p>Jeśli ją widzisz, wysyłka e-mail działa poprawnie.</p>`,
+      text: "To jest testowa wiadomość z ZKS Manager. Jeśli ją widzisz, wysyłka e-mail działa poprawnie.",
     });
 
     if (!result.ok) {
@@ -53,8 +68,8 @@ export async function POST(request: Request) {
       simulated: result.simulated,
       to,
       message: result.simulated
-        ? "Brak RESEND_API_KEY — email nie wysłany."
-        : "Testowy e-mail wysłany.",
+        ? "Brak RESEND_API_KEY — e-mail nie wysłany."
+        : `Test wysłany na ${to}. Sprawdź skrzynkę i folder SPAM.`,
     });
   } catch (error) {
     console.error(error);

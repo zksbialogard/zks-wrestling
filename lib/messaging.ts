@@ -1,11 +1,89 @@
-export function normalizePhone(phone: string) {
-  const digits = phone.replace(/\D/g, "");
+export function coercePhoneValue(value: unknown) {
+  if (value == null || value === "") {
+    return "";
+  }
+
+  return String(value).trim();
+}
+
+export function normalizePhone(phone: string | unknown) {
+  const digits = coercePhoneValue(phone).replace(/\D/g, "");
 
   if (digits.length === 9) {
     return `48${digits}`;
   }
 
+  if (digits.length === 10 && digits.startsWith("0")) {
+    return `48${digits.slice(1)}`;
+  }
+
+  if (digits.length === 11 && digits.startsWith("48")) {
+    return digits;
+  }
+
   return digits;
+}
+
+export function isValidPolishPhone(phone: string | unknown) {
+  const normalized = normalizePhone(phone);
+  return /^48\d{9}$/.test(normalized);
+}
+
+function getSmsApiToken() {
+  return (
+    process.env.SMSAPI_TOKEN?.trim() ||
+    process.env.SMSAPI_KEY?.trim() ||
+    process.env.SMS_API_TOKEN?.trim() ||
+    ""
+  );
+}
+
+export function isSmsConfigured() {
+  return Boolean(getSmsApiToken());
+}
+
+export function getSmsSenderName() {
+  return process.env.SMSAPI_FROM?.trim() || "";
+}
+
+function truncateSmsMessage(message: string) {
+  const maxLength = 640;
+  const trimmed = message.trim();
+
+  if (trimmed.length <= maxLength) {
+    return trimmed;
+  }
+
+  return `${trimmed.slice(0, maxLength - 1)}…`;
+}
+
+function parseSmsApiError(data: unknown) {
+  if (!data || typeof data !== "object") {
+    return "Błąd wysyłki SMS.";
+  }
+
+  const payload = data as {
+    error?: number | string;
+    message?: string;
+    list?: Array<{ error?: number | string; message?: string; number?: string }>;
+  };
+
+  if (payload.list?.length) {
+    const first = payload.list.find((item) => item.error);
+    if (first?.message) {
+      return first.message;
+    }
+  }
+
+  if (payload.message) {
+    return payload.message;
+  }
+
+  if (payload.error) {
+    return `SMSAPI błąd ${payload.error}`;
+  }
+
+  return "Błąd wysyłki SMS.";
 }
 
 export function isEmailConfigured() {
@@ -14,6 +92,14 @@ export function isEmailConfigured() {
 
 export function getEmailFromAddress() {
   return process.env.EMAIL_FROM?.trim() || "ZKS Białogard <onboarding@resend.dev>";
+}
+
+export function isResendSandboxMode() {
+  return getEmailFromAddress().includes("onboarding@resend.dev");
+}
+
+export function getResendSandboxTestEmail() {
+  return process.env.RESEND_SANDBOX_TO?.trim() || "zksbialogard@wp.pl";
 }
 
 export async function sendEmailMessage(input: {
@@ -74,12 +160,35 @@ export async function sendEmailMessage(input: {
   }
 }
 
-export async function sendSmsMessage(input: { phone: string; message: string }) {
-  const token = process.env.SMSAPI_TOKEN;
+export async function sendSmsMessage(input: { phone: string | unknown; message: string }) {
+  const token = getSmsApiToken();
 
   if (!token) {
     console.warn("SMSAPI_TOKEN brak — SMS pominięty:", input.phone);
     return { ok: false as const, skipped: true };
+  }
+
+  const rawPhone = coercePhoneValue(input.phone);
+  const to = normalizePhone(rawPhone);
+
+  if (!isValidPolishPhone(rawPhone)) {
+    return {
+      ok: false as const,
+      skipped: false,
+      error: `Niepoprawny numer telefonu: ${rawPhone || "(pusty)"}`,
+    };
+  }
+
+  const message = truncateSmsMessage(input.message);
+  const params = new URLSearchParams({
+    to,
+    message,
+    format: "json",
+  });
+
+  const sender = getSmsSenderName();
+  if (sender) {
+    params.set("from", sender);
   }
 
   try {
@@ -89,24 +198,22 @@ export async function sendSmsMessage(input: { phone: string; message: string }) 
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({
-        to: normalizePhone(input.phone),
-        message: input.message,
-        format: "json",
-      }),
+      body: params,
     });
 
     const data = (await response.json()) as {
       error?: number | string;
       message?: string;
       count?: number;
+      list?: Array<{ error?: number | string; message?: string }>;
     };
 
-    if (data?.error) {
+    const listError = data.list?.find((item) => item.error);
+    if (data.error || listError?.error) {
       return {
         ok: false as const,
         skipped: false,
-        error: data.message || `SMSAPI błąd ${data.error}`,
+        error: parseSmsApiError(data),
       };
     }
 
@@ -114,7 +221,7 @@ export async function sendSmsMessage(input: { phone: string; message: string }) 
       return {
         ok: false as const,
         skipped: false,
-        error: data?.message || "Błąd wysyłki SMS.",
+        error: parseSmsApiError(data),
       };
     }
 

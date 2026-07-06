@@ -1,4 +1,4 @@
-import type { ParentUser } from "./parent-users-db";
+import { coercePhoneValue } from "./messaging";
 
 const firebaseConfig = {
   apiKey:
@@ -9,7 +9,16 @@ const firebaseConfig = {
 
 type FirestoreField = {
   stringValue?: string;
+  integerValue?: string;
 };
+
+function readField(fields: Record<string, FirestoreField>, key: string) {
+  const value = fields[key];
+  if (!value) return undefined;
+  if (value.stringValue !== undefined) return value.stringValue;
+  if (value.integerValue !== undefined) return value.integerValue;
+  return undefined;
+}
 
 function parseParentFromDocument(document: {
   name: string;
@@ -25,9 +34,9 @@ function parseParentFromDocument(document: {
 
   return {
     uid,
-    email: fields.email?.stringValue,
-    telefon: fields.telefon?.stringValue,
-    imie: fields.imie?.stringValue,
+    email: readField(fields, "email"),
+    telefon: coercePhoneValue(readField(fields, "telefon")) || undefined,
+    imie: readField(fields, "imie"),
     rola,
   };
 }

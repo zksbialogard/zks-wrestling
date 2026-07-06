@@ -38,8 +38,8 @@ export async function POST(request: Request) {
       templateKey: body.templateKey,
       variables: body.variables,
       channels: {
-        email: body.channels?.email ?? true,
-        sms: body.channels?.sms ?? false,
+        email: body.channels?.email ?? false,
+        sms: body.channels?.sms ?? true,
         inApp: body.channels?.inApp ?? true,
         push: body.channels?.push ?? false,
       },

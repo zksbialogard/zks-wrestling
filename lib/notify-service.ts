@@ -10,7 +10,7 @@ import {
 
 import { fetchParentUsersFromFirestore } from "./firebase-parents";
 import { sanitizeNotifyResult } from "./notify-result-utils";
-import { sendEmailMessage, sendSmsMessage } from "./messaging";
+import { sendEmailMessage, sendSmsMessage, isSmsConfigured, coercePhoneValue } from "./messaging";
 import { renderTemplate, type TemplateKey } from "./message-templates";
 import {
   createNotificationRecordsBulk,
@@ -101,7 +101,7 @@ async function loadParentUsersFromFirestoreSdk(): Promise<ParentUser[]> {
       parents.push({
         uid,
         email: data.email as string | undefined,
-        telefon: data.telefon as string | undefined,
+        telefon: coercePhoneValue(data.telefon) || undefined,
         imie: data.imie as string | undefined,
         rola,
       });
@@ -182,9 +182,25 @@ export async function notifyParents(input: {
 
     if (!parents.length) {
       result.errors.push(
-        "Nie znaleziono rodziców z rolą „rodzic” w Firebase. Sprawdź Admin → Rodzice."
+        "Nie znaleziono rodziców z rolą „rodzic” w Firebase. Sprawdź Admin → Użytkownicy."
       );
       return result;
+    }
+
+    if (input.channels.sms && !isSmsConfigured()) {
+      result.warnings.push(
+        "Brak SMSAPI_TOKEN (lub SMSAPI_KEY) na Vercel — SMS nie zostały wysłane."
+      );
+    }
+
+    if (input.channels.sms) {
+      const withoutPhone = parents.filter((parent) => !parent.telefon?.trim()).length;
+
+      if (withoutPhone > 0) {
+        result.warnings.push(
+          `${withoutPhone} rodziców bez numeru telefonu — SMS pominięty dla nich.`
+        );
+      }
     }
 
     const activeChannels = [
@@ -267,9 +283,7 @@ export async function notifyParents(input: {
 
           if (smsResult.ok) {
             result.smsSent += 1;
-          } else if (smsResult.skipped) {
-            result.warnings.push(`${parent.telefon}: brak SMSAPI_TOKEN.`);
-          } else if ("error" in smsResult && smsResult.error) {
+          } else if (!smsResult.skipped && "error" in smsResult && smsResult.error) {
             result.errors.push(`${parent.telefon}: ${smsResult.error}`);
           }
         }

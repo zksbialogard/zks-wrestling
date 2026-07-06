@@ -1,18 +1,42 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import EmailSettingsCard from "@/components/admin/EmailSettingsCard";
+import SmsSettingsCard from "@/components/admin/SmsSettingsCard";
+import TemplateEditor, { type EditableTemplate } from "@/components/admin/TemplateEditor";
 import { auth } from "@/lib/firebase";
 import type { MessageTemplate } from "@/lib/message-templates";
+import { friendlyToTechnical, technicalToFriendly } from "@/lib/template-editor-utils";
+
+function toEditableTemplate(template: MessageTemplate): EditableTemplate {
+  return {
+    key: template.key,
+    name: template.name,
+    sms_text: technicalToFriendly(template.sms_text),
+    push_title: technicalToFriendly(template.push_title),
+    push_body: technicalToFriendly(template.push_body),
+  };
+}
+
+function mergeSavedTemplate(
+  original: MessageTemplate,
+  draft: EditableTemplate
+): MessageTemplate {
+  return {
+    ...original,
+    name: draft.name,
+    sms_text: friendlyToTechnical(draft.sms_text),
+    push_title: friendlyToTechnical(draft.push_title),
+    push_body: friendlyToTechnical(draft.push_body),
+  };
+}
 
 export default function AdminSzablonyPage() {
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [selectedKey, setSelectedKey] = useState<string>("");
-  const [draft, setDraft] = useState<MessageTemplate | null>(null);
+  const [draft, setDraft] = useState<EditableTemplate | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -41,7 +65,7 @@ export default function AdminSzablonyPage() {
 
       setTemplates(result.templates);
       setSelectedKey(result.templates[0]?.key || "");
-      setDraft(result.templates[0] || null);
+      setDraft(result.templates[0] ? toEditableTemplate(result.templates[0]) : null);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Nie udało się pobrać szablonów.";
@@ -54,11 +78,18 @@ export default function AdminSzablonyPage() {
   function selectTemplate(key: string) {
     const template = templates.find((item) => item.key === key) || null;
     setSelectedKey(key);
-    setDraft(template);
+    setDraft(template ? toEditableTemplate(template) : null);
   }
 
   async function saveTemplate() {
     if (!draft) return;
+
+    const original = templates.find((item) => item.key === draft.key);
+
+    if (!original) {
+      toast.error("Nie znaleziono szablonu do zapisu.");
+      return;
+    }
 
     try {
       setSaving(true);
@@ -75,7 +106,7 @@ export default function AdminSzablonyPage() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(draft),
+        body: JSON.stringify(mergeSavedTemplate(original, draft)),
       });
 
       const result = await response.json();
@@ -98,23 +129,23 @@ export default function AdminSzablonyPage() {
   return (
     <>
       <AdminPageHeader
-        title="Szablony wiadomości"
-        description="Edytuj treści e-mail, SMS i powiadomień w aplikacji. Użyj zmiennych: {{title}}, {{location}}, {{eventDate}}, {{registrationDeadline}}, {{childName}}, {{message}}, {{content}}, {{link}}."
+        title="Szablony SMS"
+        description="Edytuj treści wiadomości tekstowych i powiadomień w aplikacji."
       />
 
-      <EmailSettingsCard />
+      <SmsSettingsCard />
 
       {loading ? (
         <p className="text-zks-text-muted">Ładowanie szablonów...</p>
       ) : !draft ? (
         <div className="zks-card p-8 text-zks-text-muted">Brak szablonów.</div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-          <aside className="zks-card p-4">
+        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+          <aside className="zks-card h-fit p-4">
             <p className="mb-3 text-xs uppercase tracking-[0.2em] text-zks-gold-mid">
-              Szablony
+              Rodzaj wiadomości
             </p>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {templates.map((template) => (
                 <button
                   key={template.key}
@@ -132,91 +163,12 @@ export default function AdminSzablonyPage() {
             </div>
           </aside>
 
-          <div className="zks-card space-y-4 p-6">
-            <div>
-              <label className="mb-2 block text-xs uppercase tracking-wide text-zks-gold-mid">
-                Nazwa szablonu
-              </label>
-              <input
-                value={draft.name}
-                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                className="w-full rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3 text-white outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-xs uppercase tracking-wide text-zks-gold-mid">
-                Temat e-mail
-              </label>
-              <input
-                value={draft.subject}
-                onChange={(e) => setDraft({ ...draft, subject: e.target.value })}
-                className="w-full rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3 text-white outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-xs uppercase tracking-wide text-zks-gold-mid">
-                Treść SMS
-              </label>
-              <textarea
-                value={draft.sms_text}
-                onChange={(e) => setDraft({ ...draft, sms_text: e.target.value })}
-                rows={3}
-                className="w-full rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3 text-sm text-white outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-xs uppercase tracking-wide text-zks-gold-mid">
-                Treść e-mail (HTML)
-              </label>
-              <textarea
-                value={draft.body_html}
-                onChange={(e) => setDraft({ ...draft, body_html: e.target.value })}
-                rows={6}
-                className="w-full rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3 text-sm text-white outline-none"
-              />
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-xs uppercase tracking-wide text-zks-gold-mid">
-                  Tytuł powiadomienia
-                </label>
-                <input
-                  value={draft.push_title}
-                  onChange={(e) => setDraft({ ...draft, push_title: e.target.value })}
-                  className="w-full rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3 text-white outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-xs uppercase tracking-wide text-zks-gold-mid">
-                  Treść powiadomienia
-                </label>
-                <input
-                  value={draft.push_body}
-                  onChange={(e) => setDraft({ ...draft, push_body: e.target.value })}
-                  className="w-full rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3 text-white outline-none"
-                />
-              </div>
-            </div>
-
-            <button
-              type="button"
-              disabled={saving}
-              onClick={saveTemplate}
-              className="zks-btn-primary inline-flex items-center gap-2 px-6 py-3 text-sm disabled:opacity-60"
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              {saving ? "Zapisywanie..." : "Zapisz szablon"}
-            </button>
-          </div>
+          <TemplateEditor
+            draft={draft}
+            saving={saving}
+            onChange={setDraft}
+            onSave={saveTemplate}
+          />
         </div>
       )}
     </>

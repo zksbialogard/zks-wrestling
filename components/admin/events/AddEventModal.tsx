@@ -20,9 +20,8 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
   const [location, setLocation] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [registrationDeadline, setRegistrationDeadline] = useState("");
-  const [sendEmail, setSendEmail] = useState(false);
-  const [sendSms, setSendSms] = useState(false);
-  const [sendInApp, setSendInApp] = useState(false);
+  const [sendSms, setSendSms] = useState(true);
+  const [sendInApp, setSendInApp] = useState(true);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -43,7 +42,6 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
         event_date: eventDate,
         registration_deadline: registrationDeadline,
         notify: {
-          email: sendEmail,
           sms: sendSms,
           inApp: sendInApp,
           push: sendInApp,
@@ -146,21 +144,11 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
           <label className="flex items-center gap-3 text-sm text-zks-text">
             <input
               type="checkbox"
-              checked={sendEmail}
-              onChange={() => setSendEmail(!sendEmail)}
-              className="accent-zks-gold"
-            />
-            Powiadom rodziców e-mailem
-          </label>
-
-          <label className="flex items-center gap-3 text-sm text-zks-text">
-            <input
-              type="checkbox"
               checked={sendSms}
               onChange={() => setSendSms(!sendSms)}
               className="accent-zks-gold"
             />
-            Powiadom rodziców SMS
+            Powiadom rodziców SMS-em
           </label>
 
           <label className="flex items-center gap-3 text-sm text-zks-text">

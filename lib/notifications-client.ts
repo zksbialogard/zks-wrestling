@@ -118,7 +118,7 @@ export function formatNotifyResultMessage(result: {
 }) {
   const totalParents = result.totalParents ?? 0;
 
-  return `Rodziców: ${totalParents} · w aplikacji ${result.inAppSent}${result.pushSent ? ` · push ${result.pushSent}` : ""}${result.emailsSent || result.smsSent ? ` · email ${result.emailsSent} · SMS ${result.smsSent}` : ""}`;
+  return `Rodziców: ${totalParents} · SMS ${result.smsSent} · w aplikacji ${result.inAppSent}${result.pushSent ? ` · push ${result.pushSent}` : ""}`;
 }
 
 export async function savePushPreference(enabled: boolean) {

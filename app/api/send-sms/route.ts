@@ -1,44 +1,39 @@
 import { NextResponse } from "next/server";
 
+import { getAdminFromRequest } from "@/lib/verify-admin";
+import { isValidPolishPhone, sendSmsMessage } from "@/lib/messaging";
+
 export async function POST(request: Request) {
   try {
+    const admin = await getAdminFromRequest(request);
+
+    if (!admin) {
+      return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+    }
+
     const { phone, message } = await request.json();
 
-    const token = process.env.SMSAPI_TOKEN;
+    if (!phone || !message) {
+      return NextResponse.json({ error: "Brak numeru lub treści SMS." }, { status: 400 });
+    }
 
-    if (!token) {
+    if (!isValidPolishPhone(phone)) {
+      return NextResponse.json({ error: "Niepoprawny numer telefonu." }, { status: 400 });
+    }
+
+    const result = await sendSmsMessage({ phone, message });
+
+    if (!result.ok) {
       return NextResponse.json(
-        { error: "Brak SMSAPI_TOKEN" },
-        { status: 500 }
+        { error: result.error || "Błąd wysyłania SMS." },
+        { status: 400 }
       );
     }
 
-    const response = await fetch(
-      "https://api.smsapi.pl/sms.do",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type":
-            "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          to: phone,
-          message,
-          format: "json",
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    return NextResponse.json(data);
+    return NextResponse.json({ ok: true, data: result.data });
   } catch (error) {
     console.error(error);
 
-    return NextResponse.json(
-      { error: "Błąd wysyłania SMS" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Błąd wysyłania SMS." }, { status: 500 });
   }
 }
