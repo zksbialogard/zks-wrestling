@@ -25,8 +25,6 @@ import {
   prepareGalleryImages,
 } from "@/lib/gallery-image-utils";
 import type { GalleryItem } from "@/lib/gallery-types";
-import { hasNotifyIssues, sanitizeNotifyResult } from "@/lib/notify-result-utils";
-import type { NotifyResult } from "@/lib/notify-service";
 import { db, storage } from "@/lib/firebase";
 
 export default function AdminGaleriaPage() {
@@ -40,8 +38,10 @@ export default function AdminGaleriaPage() {
     "idle" | "optimizing" | "uploading" | "saving"
   >("idle");
 
-  const loadGallery = async () => {
-    setLoading(true);
+  const loadGallery = async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
 
     try {
       const snapshot = await getDocs(
@@ -70,7 +70,9 @@ export default function AdminGaleriaPage() {
       console.error(error);
       toast.error("Nie udało się wczytać galerii.");
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -111,8 +113,10 @@ export default function AdminGaleriaPage() {
 
       setUploadPhase("saving");
 
+      const photoTitle = title || baseName;
+
       const result = await registerGalleryPhoto({
-        title: title || baseName,
+        title: photoTitle,
         url,
         thumbUrl,
         storagePath: fullStoragePath,
@@ -121,33 +125,30 @@ export default function AdminGaleriaPage() {
       });
 
       const compressionNote = formatCompressionSummary(prepared);
+      const newItem: GalleryItem = {
+        id: result.id,
+        title: photoTitle,
+        url,
+        thumbUrl,
+        storagePath: fullStoragePath,
+        thumbStoragePath,
+        createdAt: new Date().toISOString(),
+      };
 
-      if (result.notifyResult) {
-        const clean = sanitizeNotifyResult(result.notifyResult as NotifyResult);
+      setItems((current) => [newItem, ...current.filter((item) => item.id !== result.id)]);
 
-        if (hasNotifyIssues(clean)) {
-          toast.warning(
-            `Zdjęcie dodane (${compressionNote}). Powiadomienia: ${clean.inAppSent} w aplikacji, ${clean.pushSent} push.`
-          );
-        } else if (notifyMembers) {
-          toast.success(
-            `Zdjęcie dodane (${compressionNote}). Powiadomiono ${clean.inAppSent} członków klubu.`
-          );
-        } else {
-          toast.success(`Zdjęcie dodane do galerii. ${compressionNote}`);
-        }
-      } else {
+      if (notifyMembers && result.notifyScheduled) {
         toast.success(
-          notifyMembers
-            ? `Zdjęcie dodane do galerii. ${compressionNote}`
-            : `Zdjęcie dodane (bez powiadomień). ${compressionNote}`
+          `Zdjęcie dodane (${compressionNote}). Powiadomienia wysyłane w tle do rodziców i zawodników.`
         );
+      } else {
+        toast.success(`Zdjęcie dodane do galerii. ${compressionNote}`);
       }
 
       setTitle("");
       setFile(null);
       setNotifyMembers(true);
-      await loadGallery();
+      void loadGallery(false);
     } catch (error) {
       console.error(error);
       toast.error(

@@ -37,7 +37,7 @@ export async function registerGalleryPhoto(data: {
     throw new Error(result.error || "Nie udało się dodać zdjęcia do galerii.");
   }
 
-  return result as { ok: true; id: string; notifyResult?: unknown };
+  return result as { ok: true; id: string; notifyScheduled?: boolean };
 }
 
 export async function deleteGalleryPhoto(id: string) {

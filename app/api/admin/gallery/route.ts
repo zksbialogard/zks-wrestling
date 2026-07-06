@@ -1,11 +1,26 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { revalidatePath } from "next/cache";
 
 import { addGalleryItem, deleteGalleryItem } from "@/lib/gallery-server";
 import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
 import { notifyClubMembers } from "@/lib/notify-service";
-import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 import { getAdminFromRequest } from "@/lib/verify-admin";
+
+async function notifyGalleryPublished(title: string) {
+  await seedDefaultTemplatesIfEmpty();
+  await notifyClubMembers({
+    templateKey: "gallery_published",
+    variables: { title },
+    channels: {
+      email: false,
+      sms: false,
+      inApp: true,
+      push: true,
+    },
+    type: "gallery",
+    link: "/galeria",
+  });
+}
 
 export async function POST(request: Request) {
   try {
@@ -35,32 +50,16 @@ export async function POST(request: Request) {
 
     revalidatePath("/galeria");
 
-    let notifyResult = null;
-
     if (notify) {
-      try {
-        await seedDefaultTemplatesIfEmpty();
-        notifyResult = await notifyClubMembers({
-          templateKey: "gallery_published",
-          variables: { title },
-          channels: {
-            email: false,
-            sms: false,
-            inApp: true,
-            push: true,
-          },
-          type: "gallery",
-          link: "/galeria",
-        });
-      } catch (notifyError) {
+      after(notifyGalleryPublished(title).catch((notifyError) => {
         console.error("Notify after gallery upload:", notifyError);
-      }
+      }));
     }
 
     return NextResponse.json({
       ok: true,
       id,
-      notifyResult: notifyResult ? sanitizeNotifyResult(notifyResult) : null,
+      notifyScheduled: Boolean(notify),
     });
   } catch (error) {
     console.error(error);
