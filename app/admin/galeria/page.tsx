@@ -3,14 +3,10 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
-  addDoc,
   collection,
-  deleteDoc,
-  doc,
   getDocs,
   orderBy,
   query,
-  serverTimestamp,
 } from "firebase/firestore";
 import {
   deleteObject,
@@ -23,20 +19,18 @@ import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AuthField from "@/components/auth/AuthField";
+import { deleteGalleryPhoto, registerGalleryPhoto } from "@/lib/gallery-admin";
+import { compressImageForUpload } from "@/lib/gallery-image-utils";
+import type { GalleryItem } from "@/lib/gallery-types";
+import { hasNotifyIssues, sanitizeNotifyResult } from "@/lib/notify-result-utils";
+import type { NotifyResult } from "@/lib/notify-service";
 import { db, storage } from "@/lib/firebase";
-
-type GalleryItem = {
-  id: string;
-  title: string;
-  url: string;
-  storagePath?: string;
-  createdAt?: { seconds: number };
-};
 
 export default function AdminGaleriaPage() {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [notifyMembers, setNotifyMembers] = useState(true);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
@@ -49,10 +43,20 @@ export default function AdminGaleriaPage() {
       );
 
       setItems(
-        snapshot.docs.map((item) => ({
-          id: item.id,
-          ...(item.data() as Omit<GalleryItem, "id">),
-        }))
+        snapshot.docs.map((item) => {
+          const data = item.data();
+          const createdAt = data.createdAt?.seconds
+            ? new Date(data.createdAt.seconds * 1000).toISOString()
+            : undefined;
+
+          return {
+            id: item.id,
+            title: (data.title as string) || "",
+            url: (data.url as string) || "",
+            storagePath: data.storagePath as string | undefined,
+            createdAt,
+          };
+        })
       );
     } catch (error) {
       console.error(error);
@@ -77,27 +81,52 @@ export default function AdminGaleriaPage() {
     setUploading(true);
 
     try {
-      const safeName = file.name.replace(/\s+/g, "-");
+      const compressed = await compressImageForUpload(file);
+      const safeName = compressed.name.replace(/\s+/g, "-");
       const storagePath = `gallery/${Date.now()}-${safeName}`;
       const storageRef = ref(storage, storagePath);
 
-      await uploadBytes(storageRef, file);
+      await uploadBytes(storageRef, compressed);
       const url = await getDownloadURL(storageRef);
 
-      await addDoc(collection(db, "gallery"), {
+      const result = await registerGalleryPhoto({
         title: title || safeName,
         url,
         storagePath,
-        createdAt: serverTimestamp(),
+        notify: notifyMembers,
       });
 
-      toast.success("Zdjęcie dodane do galerii.");
+      if (result.notifyResult) {
+        const clean = sanitizeNotifyResult(result.notifyResult as NotifyResult);
+
+        if (hasNotifyIssues(clean)) {
+          toast.warning(
+            `Zdjęcie dodane. Powiadomienia: ${clean.inAppSent} w aplikacji, ${clean.pushSent} push.`
+          );
+        } else if (notifyMembers) {
+          toast.success(
+            `Zdjęcie dodane. Powiadomiono ${clean.inAppSent} członków klubu.`
+          );
+        } else {
+          toast.success("Zdjęcie dodane do galerii.");
+        }
+      } else {
+        toast.success(
+          notifyMembers
+            ? "Zdjęcie dodane do galerii."
+            : "Zdjęcie dodane do galerii (bez powiadomień)."
+        );
+      }
+
       setTitle("");
       setFile(null);
+      setNotifyMembers(true);
       await loadGallery();
     } catch (error) {
       console.error(error);
-      toast.error("Nie udało się dodać zdjęcia.");
+      toast.error(
+        error instanceof Error ? error.message : "Nie udało się dodać zdjęcia."
+      );
     } finally {
       setUploading(false);
     }
@@ -111,7 +140,7 @@ export default function AdminGaleriaPage() {
         await deleteObject(ref(storage, item.storagePath));
       }
 
-      await deleteDoc(doc(db, "gallery", item.id));
+      await deleteGalleryPhoto(item.id);
       toast.success("Zdjęcie usunięte.");
       await loadGallery();
     } catch (error) {
@@ -149,6 +178,16 @@ export default function AdminGaleriaPage() {
             onChange={(e) => setFile(e.target.files?.[0] || null)}
             className="w-full rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3 text-sm text-zks-text file:mr-4 file:rounded-md file:border-0 file:bg-zks-gold file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-zks-black"
           />
+        </label>
+
+        <label className="flex cursor-pointer items-center gap-3 text-sm text-zks-text">
+          <input
+            type="checkbox"
+            checked={notifyMembers}
+            onChange={(e) => setNotifyMembers(e.target.checked)}
+            className="h-4 w-4 rounded border-zks-gold-mid/40 accent-zks-gold"
+          />
+          Powiadom rodziców i zawodników
         </label>
 
         <button

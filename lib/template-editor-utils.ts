@@ -22,6 +22,7 @@ const VARIABLES_BY_TEMPLATE: Record<TemplateKey, string[]> = {
   training_cancelled: ["message"],
   training_reminder: ["groupName", "sessionDate", "sessionTime"],
   news_published: ["title", "content"],
+  gallery_published: ["title"],
 };
 
 export const TEMPLATE_WHEN: Record<TemplateKey, string> = {
@@ -32,6 +33,7 @@ export const TEMPLATE_WHEN: Record<TemplateKey, string> = {
   training_cancelled: "Z listy zawodów — dzwonek → szablon „Odwołanie treningu”.",
   training_reminder: "Automatycznie dzień przed treningiem (cron o 18:00).",
   news_published: "Przy publikacji aktualności (gdy włączysz SMS).",
+  gallery_published: "Po dodaniu zdjęcia do galerii — gdy włączysz powiadomienia.",
 };
 
 export const SMS_AUTO_TRIGGERS = [

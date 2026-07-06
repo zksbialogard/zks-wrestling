@@ -18,6 +18,7 @@ import {
 } from "./notifications-db";
 import {
   listParentUsersFromDb,
+  listClubMembersFromDb,
   upsertParentUsers,
   type ParentUser,
 } from "./parent-users-db";
@@ -129,6 +130,60 @@ export async function loadParentUsers(): Promise<ParentUser[]> {
   }
 
   return parents;
+}
+
+async function loadClubMembersFromFirestoreSdk(): Promise<ParentUser[]> {
+  try {
+    const snapshot = await getDocs(collection(getDb(), "users"));
+    const members: ParentUser[] = [];
+
+    for (const item of snapshot.docs) {
+      const data = item.data();
+      const uid = (data.uid as string) || item.id;
+      const rola = data.rola as string | undefined;
+
+      if ((rola !== "rodzic" && rola !== "zawodnik") || !uid) {
+        continue;
+      }
+
+      members.push({
+        uid,
+        email: data.email as string | undefined,
+        telefon: coercePhoneValue(data.telefon) || undefined,
+        imie: data.imie as string | undefined,
+        rola,
+      });
+    }
+
+    return members;
+  } catch (error) {
+    console.error("loadClubMembersFromFirestoreSdk:", error);
+    return [];
+  }
+}
+
+export function clubMemberDefaultLink(rola?: string, fallbackLink?: string): string {
+  if (fallbackLink) {
+    return fallbackLink;
+  }
+
+  if (rola === "zawodnik") {
+    return "/panel-zawodnika/powiadomienia";
+  }
+
+  return "/panel-rodzica/powiadomienia";
+}
+
+export async function loadClubMembers(): Promise<ParentUser[]> {
+  const fromSupabase = await listClubMembersFromDb();
+  const fromFirestore = await loadClubMembersFromFirestoreSdk();
+  const members = mergeParentUsers(fromSupabase, fromFirestore);
+
+  if (members.length) {
+    await upsertParentUsers(members);
+  }
+
+  return members;
 }
 
 export async function syncAllParentsToSupabase() {
@@ -329,6 +384,211 @@ export async function notifyParents(input: {
         const message =
           error instanceof Error ? error.message : "Nieznany błąd powiadomienia.";
         result.errors.push(`${parent.email || parent.uid}: ${message}`);
+      }
+    }
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Nie udało się wysłać powiadomień.";
+    result.errors.push(message);
+  }
+
+  return sanitizeNotifyResult(result);
+}
+
+export async function notifyClubMembers(input: {
+  templateKey: TemplateKey;
+  variables: Record<string, string>;
+  channels: NotifyChannels;
+  type?: string;
+  link?: string;
+  targetUid?: string;
+}): Promise<NotifyResult> {
+  const result: NotifyResult = {
+    totalParents: 0,
+    emailsSent: 0,
+    smsSent: 0,
+    inAppSent: 0,
+    pushSent: 0,
+    errors: [],
+    warnings: [],
+  };
+
+  try {
+    const template = await getMessageTemplate(input.templateKey);
+    const rendered = {
+      subject: renderTemplate(template.subject, input.variables),
+      text: renderTemplate(template.body_text, input.variables),
+      html: renderTemplate(template.body_html, input.variables),
+      sms: renderTemplate(template.sms_text, input.variables),
+      pushTitle: renderTemplate(template.push_title, input.variables),
+      pushBody: renderTemplate(template.push_body, input.variables),
+    };
+
+    const allMembers = await loadClubMembers();
+    const members = input.targetUid
+      ? allMembers.filter((user) => user.uid === input.targetUid)
+      : allMembers;
+
+    result.totalParents = members.length;
+
+    if (!members.length) {
+      result.errors.push(
+        "Nie znaleziono członków klubu (rodzic / zawodnik). Sprawdź Admin → Użytkownicy."
+      );
+      return result;
+    }
+
+    if (input.channels.sms && !isSmsConfigured()) {
+      result.warnings.push(
+        "Brak SMSAPI_TOKEN (lub SMSAPI_KEY) na Vercel — SMS nie zostały wysłane."
+      );
+    }
+
+    if (input.channels.sms) {
+      const withoutPhone = members.filter((member) => !member.telefon?.trim()).length;
+
+      if (withoutPhone > 0) {
+        result.warnings.push(
+          `${withoutPhone} użytkowników bez numeru telefonu — SMS pominięty dla nich.`
+        );
+      }
+    }
+
+    const activeChannels = [
+      input.channels.email ? "email" : null,
+      input.channels.sms ? "sms" : null,
+      input.channels.inApp !== false ? "in_app" : null,
+      input.channels.push ? "push" : null,
+    ].filter(Boolean) as string[];
+
+    const urlsByUid = Object.fromEntries(
+      members.map((member) => [
+        member.uid,
+        clubMemberDefaultLink(member.rola, input.link),
+      ])
+    );
+
+    const inAppOnly =
+      input.channels.inApp !== false &&
+      !input.channels.email &&
+      !input.channels.sms;
+
+    if (inAppOnly) {
+      const bulk = await createNotificationRecordsBulk(
+        members.map((member) => ({
+          user_uid: member.uid,
+          type: input.type || input.templateKey,
+          title: rendered.pushTitle,
+          body: rendered.pushBody,
+          link: urlsByUid[member.uid],
+          channels: activeChannels,
+        }))
+      );
+
+      result.inAppSent = bulk.created;
+      result.errors.push(...bulk.errors);
+
+      if (input.channels.push) {
+        const pushResult = await sendWebPushToUsers(
+          members.map((member) => member.uid),
+          {
+            title: rendered.pushTitle,
+            body: rendered.pushBody,
+            urlsByUid,
+          }
+        );
+
+        result.pushSent = pushResult.sent;
+
+        if (pushResult.sent === 0 && pushResult.errors.length) {
+          result.warnings.push(...pushResult.errors.slice(0, 2));
+        }
+      }
+
+      if (bulk.created < members.length) {
+        result.warnings.push(
+          `Zapisano ${bulk.created} z ${members.length} powiadomień w aplikacji.`
+        );
+      }
+
+      return sanitizeNotifyResult(result);
+    }
+
+    for (const member of members) {
+      try {
+        if (input.channels.email && member.email) {
+          const emailResult = await sendEmailMessage({
+            to: member.email,
+            subject: rendered.subject,
+            html: rendered.html,
+            text: rendered.text,
+          });
+
+          if (emailResult.ok && !emailResult.simulated) {
+            result.emailsSent += 1;
+          } else if (emailResult.simulated) {
+            result.warnings.push(
+              `${member.email}: brak RESEND_API_KEY — email nie wysłany.`
+            );
+          } else if ("error" in emailResult && emailResult.error) {
+            result.errors.push(`${member.email}: ${emailResult.error}`);
+          }
+        }
+
+        if (input.channels.sms && member.telefon) {
+          const smsResult = await sendSmsMessage({
+            phone: member.telefon,
+            message: rendered.sms,
+          });
+
+          if (smsResult.ok) {
+            result.smsSent += 1;
+          } else if (!smsResult.skipped && "error" in smsResult && smsResult.error) {
+            if (isSmsAccountLimitedError(smsResult.error)) {
+              result.errors.push(smsResult.error);
+              break;
+            }
+
+            result.errors.push(`${member.telefon}: ${smsResult.error}`);
+          }
+        }
+
+        if (input.channels.inApp !== false) {
+          const bulk = await createNotificationRecordsBulk([
+            {
+              user_uid: member.uid,
+              type: input.type || input.templateKey,
+              title: rendered.pushTitle,
+              body: rendered.pushBody,
+              link: urlsByUid[member.uid],
+              channels: activeChannels,
+            },
+          ]);
+
+          if (bulk.created) {
+            result.inAppSent += 1;
+          } else if (bulk.errors.length) {
+            result.errors.push(`${member.imie || member.uid}: ${bulk.errors[0]}`);
+          }
+        }
+
+        if (input.channels.push) {
+          const pushResult = await sendWebPushToUsers([member.uid], {
+            title: rendered.pushTitle,
+            body: rendered.pushBody,
+            urlsByUid,
+          });
+
+          result.pushSent += pushResult.sent;
+
+          if (pushResult.sent === 0 && pushResult.errors.length) {
+            result.warnings.push(...pushResult.errors.slice(0, 1));
+          }
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Nieznany błąd powiadomienia.";
+        result.errors.push(`${member.email || member.uid}: ${message}`);
       }
     }
   } catch (error) {

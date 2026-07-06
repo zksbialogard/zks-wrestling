@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { notifyParents, type NotifyChannels } from "@/lib/notify-service";
+import { notifyClubMembers, type NotifyChannels } from "@/lib/notify-service";
 import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
 import { type TemplateKey } from "@/lib/message-templates";
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await notifyParents({
+    const result = await notifyClubMembers({
       templateKey: body.templateKey,
       variables: body.variables,
       channels: {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
-import { notifyParents } from "@/lib/notify-service";
+import { notifyClubMembers } from "@/lib/notify-service";
 import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
 import { supabaseRestInsert, testSupabaseConnection } from "@/lib/supabase-rest";
@@ -143,7 +143,7 @@ export async function POST(request: Request) {
     if (notify.email || notify.sms || notify.inApp || notify.push) {
       try {
         await seedDefaultTemplatesIfEmpty();
-        notifyResult = await notifyParents({
+        notifyResult = await notifyClubMembers({
           templateKey: "event_new",
           variables: {
             title: payload.title,

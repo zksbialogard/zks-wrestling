@@ -38,6 +38,31 @@ export async function listParentUsersFromDb(): Promise<ParentUser[]> {
   }));
 }
 
+export async function listClubMembersFromDb(): Promise<ParentUser[]> {
+  if (!hasServiceRole()) {
+    return [];
+  }
+
+  const supabase = createSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("parent_users")
+    .select("uid, email, telefon, imie, rola")
+    .in("rola", ["rodzic", "zawodnik"]);
+
+  if (error) {
+    console.error("listClubMembersFromDb:", error);
+    return [];
+  }
+
+  return (data || []).map((item) => ({
+    uid: item.uid,
+    email: item.email,
+    telefon: item.telefon ? String(item.telefon).trim() : undefined,
+    imie: item.imie || undefined,
+    rola: item.rola || undefined,
+  }));
+}
+
 export async function upsertParentUser(user: ParentUser & { nazwisko?: string }) {
   if (!hasServiceRole()) {
     return false;

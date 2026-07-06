@@ -5,7 +5,8 @@ export type TemplateKey =
   | "registration_rejected"
   | "training_cancelled"
   | "training_reminder"
-  | "news_published";
+  | "news_published"
+  | "gallery_published";
 
 export type MessageTemplate = {
   key: TemplateKey;
@@ -94,6 +95,16 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
     sms_text: "ZKS Białogard — aktualność: {{title}}",
     push_title: "{{title}}",
     push_body: "{{content}}",
+  },
+  {
+    key: "gallery_published",
+    name: "Nowe zdjęcie w galerii",
+    subject: "ZKS Białogard — nowe zdjęcie: {{title}}",
+    body_text: "W galerii klubowej pojawiło się nowe zdjęcie: {{title}}. Zobacz je w aplikacji.",
+    body_html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#111"><h2 style="color:#d4af37">Nowe zdjęcie w galerii</h2><p><strong>{{title}}</strong></p><p>Zobacz galerię w aplikacji klubowej.</p></div>`,
+    sms_text: "ZKS Białogard: nowe zdjęcie w galerii — {{title}}.",
+    push_title: "Nowe zdjęcie — {{title}}",
+    push_body: "Zobacz galerię klubową w aplikacji.",
   },
 ];
 

@@ -7,7 +7,7 @@ import {
   updateFirebaseNews,
 } from "@/lib/news-firebase";
 import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
-import { notifyParents } from "@/lib/notify-service";
+import { notifyClubMembers } from "@/lib/notify-service";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { getAdminFromRequest } from "@/lib/verify-admin";
 
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
           await seedDefaultTemplatesIfEmpty();
           const preview =
             content.length > 120 ? `${content.slice(0, 117).trim()}…` : content;
-          notifyResult = await notifyParents({
+          notifyResult = await notifyClubMembers({
             templateKey: "news_published",
             variables: { title, content: preview },
             channels: {
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
         await seedDefaultTemplatesIfEmpty();
         const preview =
           content.length > 120 ? `${content.slice(0, 117).trim()}…` : content;
-        notifyResult = await notifyParents({
+        notifyResult = await notifyClubMembers({
           templateKey: "news_published",
           variables: { title, content: preview },
           channels: {
