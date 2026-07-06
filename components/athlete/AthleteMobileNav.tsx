@@ -7,6 +7,7 @@ import {
   CalendarDays,
   Dumbbell,
   Home,
+  Images,
   LogOut,
   User,
 } from "lucide-react";
@@ -18,6 +19,7 @@ const links = [
   { href: "/panel-zawodnika", label: "Panel", icon: Home },
   { href: "/panel-zawodnika/treningi", label: "Treningi", icon: Dumbbell },
   { href: "/panel-zawodnika/zawody", label: "Zawody", icon: CalendarDays },
+  { href: "/panel-zawodnika/galeria", label: "Galeria", icon: Images },
   { href: "/panel-zawodnika/powiadomienia", label: "Powiad.", icon: Bell, badge: true },
   { href: "/panel-zawodnika/profil", label: "Profil", icon: User },
 ];

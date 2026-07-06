@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   Newspaper,
+  Images,
   Trophy,
   User,
   X,
@@ -42,6 +43,7 @@ const moreLinks: NavLink[] = [
   { href: "/panel-rodzica/treningi", label: "Treningi", icon: CalendarClock },
   { href: "/zawody", label: "Zawody", icon: CalendarDays },
   { href: "/aktualnosci", label: "Aktualności", icon: Newspaper },
+  { href: "/panel-rodzica/galeria", label: "Galeria", icon: Images },
   { href: "/panel-rodzica/wyniki", label: "Wyniki", icon: Trophy },
   { href: "/panel-rodzica/profil", label: "Profil", icon: User },
 ];

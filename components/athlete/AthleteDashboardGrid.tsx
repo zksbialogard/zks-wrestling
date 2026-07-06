@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, Bell, CalendarDays, Dumbbell } from "lucide-react";
+import { ArrowRight, Bell, CalendarDays, Dumbbell, Images } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { fetchEvents } from "@/lib/events";
@@ -139,6 +139,13 @@ export default function AthleteDashboardGrid() {
         >
           <Dumbbell className="h-4 w-4" />
           Plan treningów
+        </Link>
+        <Link
+          href="/panel-zawodnika/galeria"
+          className="zks-btn-outline inline-flex min-h-[44px] items-center gap-2 px-5 py-2.5 text-xs sm:text-sm"
+        >
+          <Images className="h-4 w-4" />
+          Galeria
         </Link>
         {unreadNotifications > 0 && (
           <Link

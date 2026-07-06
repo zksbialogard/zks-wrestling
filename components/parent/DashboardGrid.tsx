@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, Baby, Bell, CalendarClock, CalendarDays, ClipboardList, Newspaper, Trophy, User } from "lucide-react";
+import { ArrowRight, Baby, Bell, CalendarClock, CalendarDays, ClipboardList, Images, Newspaper, Trophy, User } from "lucide-react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -309,6 +309,12 @@ export default function DashboardGrid() {
             icon={Trophy}
             title="Wyniki"
             description="Historia startów, miejsca i medale Twoich dzieci."
+          />
+          <DashboardCard
+            href="/panel-rodzica/galeria"
+            icon={Images}
+            title="Galeria"
+            description="Zdjęcia z treningów, zawodów i wydarzeń klubowych."
           />
           <DashboardCard
             href="/panel-rodzica/profil"

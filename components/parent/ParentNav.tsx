@@ -11,6 +11,7 @@ import {
   Home,
   LogOut,
   Newspaper,
+  Images,
   Trophy,
   User,
 } from "lucide-react";
@@ -27,6 +28,7 @@ const links = [
   { href: "/panel-rodzica/treningi", label: "Treningi", icon: CalendarClock },
   { href: "/zawody", label: "Zawody", icon: CalendarDays },
   { href: "/aktualnosci", label: "Aktualności", icon: Newspaper },
+  { href: "/panel-rodzica/galeria", label: "Galeria", icon: Images },
   { href: "/panel-rodzica/powiadomienia", label: "Powiadomienia", icon: Bell, badge: true },
   { href: "/panel-rodzica/moje-zgloszenia", label: "Zgłoszenia", icon: ClipboardList },
   { href: "/panel-rodzica/wyniki", label: "Wyniki", icon: Trophy },
