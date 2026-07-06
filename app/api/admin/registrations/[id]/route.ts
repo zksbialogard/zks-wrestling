@@ -4,6 +4,7 @@ import type { RegistrationStatus } from "@/lib/registration-types";
 import {
   changeRegistrationStatus,
   removeRegistration,
+  updateRegistrationByAdmin,
 } from "@/lib/registrations-service";
 import { getAdminFromRequest } from "@/lib/verify-admin";
 
@@ -21,15 +22,25 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const { id } = await context.params;
     const body = await request.json();
+
+    if (body.data) {
+      const registration = await updateRegistrationByAdmin(id, body.data);
+      return NextResponse.json({ ok: true, registration });
+    }
+
     const status = body.status as RegistrationStatus;
 
     if (!["pending", "approved", "rejected"].includes(status)) {
       return NextResponse.json({ error: "Niepoprawny status." }, { status: 400 });
     }
 
-    const registration = await changeRegistrationStatus(id, status);
+    const updated = await changeRegistrationStatus(id, status);
 
-    return NextResponse.json({ ok: true, registration, notifyResult: registration.notifyResult });
+    return NextResponse.json({
+      ok: true,
+      registration: updated,
+      notifyResult: updated.notifyResult,
+    });
   } catch (error) {
     console.error(error);
     const message =

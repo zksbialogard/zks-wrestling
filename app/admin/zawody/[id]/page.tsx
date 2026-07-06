@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Check, Loader2, Trash2, X } from "lucide-react";
+import { ArrowLeft, Bell, Check, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import EventResultsSection from "@/components/admin/EventResultsSection";
+import NotifyEventModal from "@/components/admin/events/NotifyEventModal";
+import type { EventItem } from "@/components/admin/events/EventRow";
+import RegistrationEditModal from "@/components/admin/RegistrationEditModal";
 import { formatEventDate } from "@/lib/event-utils";
 import { fetchEventById, type Event } from "@/lib/events";
 import {
@@ -20,7 +23,7 @@ import {
   updateAdminRegistrationStatus,
   type RegistrationItem,
 } from "@/lib/registrations-client";
-import { getNotifySmsFailureAlert } from "@/lib/notifications-client";
+import { getNotifySmsFailureAlert, sendAdminNotify } from "@/lib/notifications-client";
 import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 import { exportStartListToExcel, buildStartListRows } from "@/lib/start-list-export";
 
@@ -32,6 +35,9 @@ export default function AdminEventRegistrationsPage() {
   const [registrations, setRegistrations] = useState<RegistrationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const [notifyOpen, setNotifyOpen] = useState(false);
+  const [editingRegistration, setEditingRegistration] = useState<RegistrationItem | null>(null);
+  const [remindingId, setRemindingId] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -95,34 +101,53 @@ export default function AdminEventRegistrationsPage() {
     toast.success(`Pobrano listę startową (${result.count} zawodników).`);
   };
 
-  const sendReminderSms = async () => {
-    const approved = registrations.filter(
-      (item) =>
-        normalizeRegistrationStatus(item.status) === "approved" && item.parent_phone
-    );
-
-    if (!approved.length) {
-      toast.warning("Brak zaakceptowanych zawodników z numerem telefonu.");
-      return;
-    }
+  const sendReminderToParent = async (registration: RegistrationItem) => {
+    if (!event) return;
 
     try {
-      for (const item of approved) {
-        await fetch("/api/send-sms", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: item.parent_phone,
-            message: `ZKS Białogard: przypomnienie o zawodach „${event?.title}” — ${event ? formatEventDate(event.event_date) : ""}, ${event?.location || ""}.`,
-          }),
-        });
-      }
+      setRemindingId(registration.id);
+      const eventDate = new Date(event.event_date).toLocaleDateString("pl-PL");
+      const registrationDeadline = new Date(event.registration_deadline).toLocaleDateString("pl-PL");
+      const result = sanitizeNotifyResult(
+        await sendAdminNotify({
+          templateKey: "event_reminder",
+          variables: {
+            title: event.title,
+            location: event.location,
+            eventDate,
+            registrationDeadline,
+            link: `/zawody/${event.id}`,
+          },
+          channels: { inApp: true, push: true },
+          type: "event",
+          link: "/panel-rodzica/moje-zgloszenia",
+          targetUid: registration.parent_uid,
+        })
+      );
 
-      toast.success(`Wysłano przypomnienia SMS do ${approved.length} rodziców.`);
+      if (result.inAppSent > 0 || result.pushSent > 0) {
+        toast.success(
+          `Przypomnienie wysłane do rodzica (${registration.child_name} ${registration.child_surname}).`
+        );
+      } else {
+        toast.warning("Nie udało się wysłać przypomnienia.");
+      }
     } catch (error) {
-      toast.error("Błąd wysyłania przypomnień.");
+      toast.error(error instanceof Error ? error.message : "Błąd wysyłania przypomnienia.");
+    } finally {
+      setRemindingId(null);
     }
   };
+
+  const eventForNotify: EventItem | null = event
+    ? {
+        id: event.id,
+        title: event.title,
+        location: event.location,
+        event_date: event.event_date,
+        registration_deadline: event.registration_deadline,
+      }
+    : null;
 
   const filtered =
     filter === "all"
@@ -167,8 +192,15 @@ export default function AdminEventRegistrationsPage() {
         <button type="button" onClick={exportToExcel} className="zks-btn-primary px-4 py-2 text-xs">
           Lista startowa (Excel)
         </button>
-        <button type="button" onClick={sendReminderSms} className="zks-btn-outline px-4 py-2 text-xs">
-          Wyślij SMS przypomnienie
+        <button
+          type="button"
+          onClick={() => setNotifyOpen(true)}
+          disabled={!event}
+          className="zks-btn-outline inline-flex items-center gap-2 px-4 py-2 text-xs disabled:opacity-60"
+          title="Przypomnienie do wszystkich rodziców"
+        >
+          <Bell className="h-4 w-4" />
+          Powiadom rodziców
         </button>
       </div>
 
@@ -293,6 +325,28 @@ export default function AdminEventRegistrationsPage() {
                 </div>
 
                 <div className="mt-5 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingRegistration(registration)}
+                    className="zks-btn-outline inline-flex items-center gap-2 px-4 py-2 text-xs"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edytuj dane
+                  </button>
+                  <button
+                    type="button"
+                    disabled={remindingId === registration.id}
+                    onClick={() => sendReminderToParent(registration)}
+                    className="zks-btn-outline inline-flex items-center gap-2 px-4 py-2 text-xs disabled:opacity-60"
+                    title="Wyślij przypomnienie rodzicowi"
+                  >
+                    {remindingId === registration.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Bell className="h-4 w-4" />
+                    )}
+                    Przypomnij
+                  </button>
                   {status !== "approved" && (
                     <button
                       type="button"
@@ -341,6 +395,19 @@ export default function AdminEventRegistrationsPage() {
           })}
         </div>
       )}
+
+      <NotifyEventModal
+        open={notifyOpen}
+        event={eventForNotify}
+        onClose={() => setNotifyOpen(false)}
+      />
+
+      <RegistrationEditModal
+        open={Boolean(editingRegistration)}
+        registration={editingRegistration}
+        onClose={() => setEditingRegistration(null)}
+        onSaved={loadData}
+      />
     </>
   );
 }

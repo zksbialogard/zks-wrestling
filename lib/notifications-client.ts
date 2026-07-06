@@ -1,3 +1,4 @@
+import { auth } from "./firebase";
 import { isSmsAccountLimitedError, SMS_ACCOUNT_LIMITED_MESSAGE } from "./messaging";
 
 export type NotificationItem = {

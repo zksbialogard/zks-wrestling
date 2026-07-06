@@ -8,6 +8,7 @@ import {
   findRegistrationByEventAndChild,
   getRegistrationById,
   updateRegistrationStatus,
+  updateRegistrationData,
 } from "./registrations-db";
 import type { RegistrationStatus } from "./registration-types";
 import { createNotificationRecordsBulk } from "./notifications-db";
@@ -83,10 +84,14 @@ export async function submitRegistration(input: {
   return registration;
 }
 
+export type RegistrationStatusUpdateResult = RegistrationRecord & {
+  notifyResult?: NotifyResult;
+};
+
 export async function changeRegistrationStatus(
   registrationId: string,
   status: RegistrationStatus
-) {
+): Promise<RegistrationStatusUpdateResult> {
   const registration = await getRegistrationById(registrationId);
 
   if (!registration) {
@@ -107,7 +112,7 @@ export async function changeRegistrationStatus(
     .maybeSingle();
 
   if (!event) {
-    return registration;
+    return { ...registration, status };
   }
 
   const childName = `${registration.child_name} ${registration.child_surname}`.trim();
@@ -149,6 +154,46 @@ export async function changeRegistrationStatus(
   }
 
   return { ...registration, status, notifyResult };
+}
+
+export type RegistrationDataUpdate = {
+  child_name?: string;
+  child_surname?: string;
+  child_birth_year?: string;
+  child_gender?: string;
+  child_weight?: string;
+  parent_phone?: string | null;
+};
+
+export async function updateRegistrationByAdmin(
+  registrationId: string,
+  data: RegistrationDataUpdate
+) {
+  const registration = await getRegistrationById(registrationId);
+
+  if (!registration) {
+    throw new Error("Nie znaleziono zgłoszenia.");
+  }
+
+  const payload = {
+    child_name: data.child_name?.trim() || registration.child_name,
+    child_surname: data.child_surname?.trim() || registration.child_surname,
+    child_birth_year: data.child_birth_year?.trim() || registration.child_birth_year,
+    child_gender: data.child_gender?.trim() || registration.child_gender,
+    child_weight: data.child_weight?.trim() || registration.child_weight,
+    parent_phone:
+      data.parent_phone === undefined
+        ? registration.parent_phone
+        : data.parent_phone?.trim() || null,
+  };
+
+  const ok = await updateRegistrationData(registrationId, payload);
+
+  if (!ok) {
+    throw new Error("Nie udało się zaktualizować danych zgłoszenia.");
+  }
+
+  return { ...registration, ...payload };
 }
 
 export async function removeRegistration(registrationId: string) {

@@ -117,6 +117,33 @@ export async function updateAdminRegistrationStatus(
   };
 }
 
+export async function updateAdminRegistrationData(
+  id: string,
+  data: {
+    child_name?: string;
+    child_surname?: string;
+    child_birth_year?: string;
+    child_gender?: string;
+    child_weight?: string;
+    parent_phone?: string | null;
+  }
+) {
+  const headers = await getAuthHeader();
+  const response = await fetch(`/api/admin/registrations/${id}`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify({ data }),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "Nie udało się zaktualizować danych zgłoszenia.");
+  }
+
+  return result.registration as RegistrationItem;
+}
+
 export async function deleteAdminRegistration(id: string) {
   const headers = await getAuthHeader();
   const response = await fetch(`/api/admin/registrations/${id}`, {

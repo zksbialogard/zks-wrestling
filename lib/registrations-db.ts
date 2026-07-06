@@ -186,6 +186,37 @@ export async function updateRegistrationStatus(
   }
 }
 
+export async function updateRegistrationData(
+  id: string,
+  data: Partial<
+    Pick<
+      RegistrationRecord,
+      | "child_name"
+      | "child_surname"
+      | "child_birth_year"
+      | "child_gender"
+      | "child_weight"
+      | "parent_phone"
+    >
+  >
+) {
+  if (!hasServiceRole()) {
+    return false;
+  }
+
+  try {
+    await supabaseRestPatch(
+      "registrations",
+      { id: `eq.${id}` },
+      { ...data, updated_at: new Date().toISOString() }
+    );
+    return true;
+  } catch (error) {
+    console.error("updateRegistrationData:", error);
+    return false;
+  }
+}
+
 export async function deleteRegistration(id: string) {
   if (!hasServiceRole()) {
     return false;
