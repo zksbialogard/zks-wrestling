@@ -1,4 +1,5 @@
 import { auth } from "./firebase";
+import type { NotifyResult } from "./notify-service";
 import type { RegistrationRecord } from "./registration-types";
 
 async function getAuthHeader() {
@@ -112,14 +113,7 @@ export async function updateAdminRegistrationStatus(
 
   return {
     registration: result.registration as RegistrationItem,
-    notifyResult: result.notifyResult as
-      | {
-          smsSent: number;
-          inAppSent: number;
-          errors: string[];
-          warnings: string[];
-        }
-      | undefined,
+    notifyResult: result.notifyResult as NotifyResult | undefined,
   };
 }
 
