@@ -9,6 +9,9 @@ export const TEMPLATE_VARIABLES = [
   { key: "message", label: "Treść wiadomości" },
   { key: "content", label: "Treść aktualności" },
   { key: "link", label: "Link do aplikacji" },
+  { key: "groupName", label: "Grupa treningowa" },
+  { key: "sessionDate", label: "Data treningu" },
+  { key: "sessionTime", label: "Godziny treningu" },
 ] as const;
 
 const VARIABLES_BY_TEMPLATE: Record<TemplateKey, string[]> = {
@@ -17,15 +20,17 @@ const VARIABLES_BY_TEMPLATE: Record<TemplateKey, string[]> = {
   registration_accepted: ["childName", "title", "eventDate", "location"],
   registration_rejected: ["childName", "title"],
   training_cancelled: ["message"],
+  training_reminder: ["groupName", "sessionDate", "sessionTime"],
   news_published: ["title", "content"],
 };
 
 export const TEMPLATE_WHEN: Record<TemplateKey, string> = {
   event_new: "Po dodaniu zawodów — gdy zaznaczysz „Powiadom SMS-em”.",
-  event_reminder: "Z listy zawodów — ikona dzwonka → SMS.",
+  event_reminder: "Ręcznie z panelu zawodów lub automatycznie dzień przed startem (cron).",
   registration_accepted: "Automatycznie po akceptacji zgłoszenia dziecka.",
   registration_rejected: "Automatycznie po odrzuceniu zgłoszenia.",
   training_cancelled: "Z listy zawodów — dzwonek → szablon „Odwołanie treningu”.",
+  training_reminder: "Automatycznie dzień przed treningiem (cron o 18:00).",
   news_published: "Przy publikacji aktualności (gdy włączysz SMS).",
 };
 
@@ -33,6 +38,7 @@ export const SMS_AUTO_TRIGGERS = [
   "Zgłoszenie dziecka — powiadomienie w aplikacji + push (automatycznie)",
   "Akceptacja / odrzucenie zgłoszenia — aplikacja + push (automatycznie)",
   "Nowe zawody / przypomnienie — aplikacja + push przy wysyłce z panelu",
+  "Treningi — automatyczne przypomnienie dzień przed (cron)",
   "SMS — tylko gdy zaznaczysz opcję SMS i masz aktywne konto SMSAPI",
 ] as const;
 

@@ -45,6 +45,22 @@ export async function listTrainingExceptionsForGroup(
   });
 }
 
+export async function getTrainingExceptionForSession(
+  groupId: TrainingGroupId,
+  sessionDate: string
+): Promise<TrainingException | null> {
+  const rows = await supabaseRestSelect<TrainingException>(
+    "training_exceptions",
+    {
+      group_id: `eq.${groupId}`,
+      session_date: `eq.${sessionDate}`,
+    },
+    { limit: 1 }
+  );
+
+  return rows[0] || null;
+}
+
 export async function createTrainingException(
   input: TrainingExceptionInsert
 ): Promise<TrainingException> {

@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Baby,
   Bell,
+  CalendarClock,
   CalendarDays,
   ClipboardList,
   Loader2,
@@ -13,13 +14,25 @@ import {
   Trophy,
   User,
 } from "lucide-react";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { fetchMyCompetitionResults } from "@/lib/competition-results-client";
 import { fetchEvents } from "@/lib/events";
+import { db } from "@/lib/firebase";
 import { fetchNotifications } from "@/lib/notifications-client";
+import {
+  buildParentTrainingOverview,
+  formatTrainingChangeMessage,
+  formatTrainingOverviewHint,
+  type ParentChild,
+  type ParentTrainingOverview,
+} from "@/lib/parent-training-summary";
 import { normalizeRegistrationStatus } from "@/lib/registration-types";
 import { fetchMyRegistrations } from "@/lib/registrations-client";
+import { fetchTrainingExceptions } from "@/lib/training-exceptions-client";
+import type { TrainingException } from "@/lib/training-exceptions-db";
+import { isTrainingGroupId, type TrainingGroupId } from "@/lib/training-groups";
 
 import DashboardCard from "./DashboardCard";
 import DashboardStatCard from "./DashboardStatCard";
@@ -40,9 +53,18 @@ const initialStats: DashboardStats = {
   nextEventTitle: null,
 };
 
+function getWeekStartDate(): string {
+  const monday = new Date();
+  const day = monday.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  monday.setDate(monday.getDate() + diff);
+  return monday.toISOString().slice(0, 10);
+}
+
 export default function DashboardGrid() {
   const { profile, user, ready, loadingProfile } = useAuth();
   const [stats, setStats] = useState<DashboardStats>(initialStats);
+  const [trainingOverview, setTrainingOverview] = useState<ParentTrainingOverview | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -60,12 +82,44 @@ export default function DashboardGrid() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const [notifications, registrations, events, results] = await Promise.all([
-        fetchNotifications(),
-        fetchMyRegistrations(),
-        fetchEvents(),
-        fetchMyCompetitionResults(),
-      ]);
+      const childrenSnapshot = await getDocs(
+        query(collection(db, "children"), where("parentUid", "==", user!.uid))
+      );
+
+      const children: ParentChild[] = childrenSnapshot.docs.map((item) => ({
+        id: item.id,
+        imie: item.data().imie as string,
+        nazwisko: item.data().nazwisko as string,
+        grupaTreningowa: item.data().grupaTreningowa as string | undefined,
+      }));
+
+      const groupIds = Array.from(
+        new Set(
+          children
+            .map((child) => child.grupaTreningowa)
+            .filter((groupId): groupId is TrainingGroupId =>
+              Boolean(groupId && isTrainingGroupId(groupId))
+            )
+        )
+      );
+
+      const fromDate = getWeekStartDate();
+
+      const [notifications, registrations, events, results, ...exceptionLists] =
+        await Promise.all([
+          fetchNotifications(),
+          fetchMyRegistrations(),
+          fetchEvents(),
+          fetchMyCompetitionResults(),
+          ...groupIds.map((groupId) => fetchTrainingExceptions(groupId, fromDate)),
+        ]);
+
+      const exceptionsByGroup = groupIds.reduce<
+        Partial<Record<TrainingGroupId, TrainingException[]>>
+      >((acc, groupId, index) => {
+        acc[groupId] = exceptionLists[index] as TrainingException[];
+        return acc;
+      }, {});
 
       const upcoming = events.filter((event) => {
         const eventDate = new Date(event.event_date);
@@ -84,14 +138,20 @@ export default function DashboardGrid() {
         recentResults: results.length,
         nextEventTitle: upcoming[0]?.title ?? null,
       });
+      setTrainingOverview(buildParentTrainingOverview(children, exceptionsByGroup));
     } catch {
       setStats(initialStats);
+      setTrainingOverview(null);
     } finally {
       setLoading(false);
     }
   }
 
   const displayName = profile?.imie || "Rodzicu";
+  const trainingValue = trainingOverview?.nextSessionLabel ?? "—";
+  const trainingHint = trainingOverview
+    ? formatTrainingOverviewHint(trainingOverview)
+    : "Dodaj grupę treningową dziecku";
 
   return (
     <div className="min-w-0 space-y-8">
@@ -111,50 +171,79 @@ export default function DashboardGrid() {
           Ładowanie podsumowania...
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <DashboardStatCard
-            href="/panel-rodzica/moje-zgloszenia"
-            icon={ClipboardList}
-            label="Oczekujące zgłoszenia"
-            value={stats.pendingRegistrations}
-            hint={
-              stats.pendingRegistrations > 0
-                ? "Wymagają decyzji klubu"
-                : "Brak oczekujących"
-            }
-            highlight={stats.pendingRegistrations > 0}
-          />
-          <DashboardStatCard
-            href="/panel-rodzica/powiadomienia"
-            icon={Bell}
-            label="Nieprzeczytane"
-            value={stats.unreadNotifications}
-            hint={
-              stats.unreadNotifications > 0
-                ? "Nowe wiadomości od klubu"
-                : "Wszystko przeczytane"
-            }
-            highlight={stats.unreadNotifications > 0}
-          />
-          <DashboardStatCard
-            href="/zawody"
-            icon={CalendarDays}
-            label="Nadchodzące zawody"
-            value={stats.upcomingEvents}
-            hint={stats.nextEventTitle ?? "Sprawdź terminy startów"}
-          />
-          <DashboardStatCard
-            href="/panel-rodzica/wyniki"
-            icon={Trophy}
-            label="Wyniki dzieci"
-            value={stats.recentResults}
-            hint={
-              stats.recentResults > 0
-                ? "Opublikowane miejsca"
-                : "Po zawodach pojawią się tutaj"
-            }
-          />
-        </div>
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <DashboardStatCard
+              href="/panel-rodzica/treningi"
+              icon={CalendarClock}
+              label="Najbliższy trening"
+              value={trainingValue}
+              hint={trainingHint}
+              highlight={Boolean(trainingOverview?.upcomingChange)}
+            />
+            <DashboardStatCard
+              href="/panel-rodzica/moje-zgloszenia"
+              icon={ClipboardList}
+              label="Oczekujące zgłoszenia"
+              value={stats.pendingRegistrations}
+              hint={
+                stats.pendingRegistrations > 0
+                  ? "Wymagają decyzji klubu"
+                  : "Brak oczekujących"
+              }
+              highlight={stats.pendingRegistrations > 0}
+            />
+            <DashboardStatCard
+              href="/panel-rodzica/powiadomienia"
+              icon={Bell}
+              label="Nieprzeczytane"
+              value={stats.unreadNotifications}
+              hint={
+                stats.unreadNotifications > 0
+                  ? "Nowe wiadomości od klubu"
+                  : "Wszystko przeczytane"
+              }
+              highlight={stats.unreadNotifications > 0}
+            />
+            <DashboardStatCard
+              href="/zawody"
+              icon={CalendarDays}
+              label="Nadchodzące zawody"
+              value={stats.upcomingEvents}
+              hint={stats.nextEventTitle ?? "Sprawdź terminy startów"}
+            />
+            <DashboardStatCard
+              href="/panel-rodzica/wyniki"
+              icon={Trophy}
+              label="Wyniki dzieci"
+              value={stats.recentResults}
+              hint={
+                stats.recentResults > 0
+                  ? "Opublikowane miejsca"
+                  : "Po zawodach pojawią się tutaj"
+              }
+            />
+          </div>
+
+          {trainingOverview?.upcomingChange && (
+            <Link
+              href="/panel-rodzica/treningi"
+              className="zks-card block border-amber-500/30 p-5 transition hover:border-amber-500/50"
+            >
+              <p className="text-xs font-medium uppercase tracking-wide text-amber-300">
+                Zmiana w planie treningów
+              </p>
+              <p className="mt-2 text-sm text-white">
+                {formatTrainingChangeMessage(trainingOverview.upcomingChange)}
+              </p>
+              {trainingOverview.upcomingChange.exception.message && (
+                <p className="mt-2 text-sm text-zks-text-muted">
+                  {trainingOverview.upcomingChange.exception.message}
+                </p>
+              )}
+            </Link>
+          )}
+        </>
       )}
 
       <div className="flex flex-wrap gap-2">
@@ -164,6 +253,13 @@ export default function DashboardGrid() {
         >
           Zgłoś na zawody
           <ArrowRight className="h-4 w-4" />
+        </Link>
+        <Link
+          href="/panel-rodzica/treningi"
+          className="zks-btn-outline inline-flex min-h-[44px] items-center gap-2 px-5 py-2.5 text-xs sm:text-sm"
+        >
+          <CalendarClock className="h-4 w-4" />
+          Plan treningów
         </Link>
         <Link
           href="/panel-rodzica/moje-dzieci"
@@ -192,6 +288,12 @@ export default function DashboardGrid() {
         </p>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <DashboardCard
+            href="/panel-rodzica/treningi"
+            icon={CalendarClock}
+            title="Treningi"
+            description="Plan tygodniowy, godziny i ewentualne odwołania grup dzieci."
+          />
           <DashboardCard
             href="/panel-rodzica/moje-dzieci"
             icon={Baby}

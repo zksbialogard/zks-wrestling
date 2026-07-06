@@ -5,6 +5,7 @@ import ParentHeader from "@/components/parent/ParentHeader";
 import ParentNav from "@/components/parent/ParentNav";
 import ParentPushBootstrap from "@/components/parent/ParentPushBootstrap";
 import PushPrompt from "@/components/parent/PushPrompt";
+import TrainingGroupBanner from "@/components/parent/TrainingGroupBanner";
 
 export default function ParentLayout({
   children,
@@ -21,6 +22,7 @@ export default function ParentLayout({
           <ParentNav />
           <section className="min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8">
             <PushPrompt />
+            <TrainingGroupBanner />
             {children}
           </section>
         </div>

@@ -4,6 +4,7 @@ export type TemplateKey =
   | "registration_accepted"
   | "registration_rejected"
   | "training_cancelled"
+  | "training_reminder"
   | "news_published";
 
 export type MessageTemplate = {
@@ -72,6 +73,17 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
     sms_text: "ZKS Białogard: {{message}}",
     push_title: "Odwołany trening",
     push_body: "{{message}}",
+  },
+  {
+    key: "training_reminder",
+    name: "Przypomnienie o treningu",
+    subject: "ZKS Białogard — przypomnienie o treningu",
+    body_text:
+      "Przypomnienie: jutro trening {{groupName}} ({{sessionDate}}) o godz. {{sessionTime}}.",
+    body_html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#111"><h2 style="color:#d4af37">Przypomnienie o treningu</h2><p>Jutro trening <strong>{{groupName}}</strong>.</p><p>Data: {{sessionDate}}</p><p>Godziny: {{sessionTime}}</p></div>`,
+    sms_text: "ZKS Białogard: jutro trening {{groupName}}, {{sessionTime}}.",
+    push_title: "Trening jutro — {{groupName}}",
+    push_body: "{{sessionDate}} · {{sessionTime}}",
   },
   {
     key: "news_published",
