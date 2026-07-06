@@ -77,6 +77,16 @@ export function PanelSection({
   );
 }
 
+export function PanelList({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <div className={`panel-list ${className}`.trim()}>{children}</div>;
+}
+
 export function PanelLoadingState({ label = "Ładowanie..." }: { label?: string }) {
   return (
     <div className="zks-card zks-card-pad flex items-center gap-3 text-sm text-zks-text-muted">
