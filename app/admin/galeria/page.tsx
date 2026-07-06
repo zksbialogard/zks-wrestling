@@ -10,20 +10,24 @@ import {
 } from "firebase/firestore";
 import {
   deleteObject,
-  getDownloadURL,
   ref,
-  uploadBytes,
 } from "firebase/storage";
 import { toast } from "sonner";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AuthField from "@/components/auth/AuthField";
-import { deleteGalleryPhoto, registerGalleryPhoto } from "@/lib/gallery-admin";
+import {
+  deleteGalleryPhotoFromFirestore,
+  ensureGalleryUploadAuth,
+  notifyGalleryPhotoPublished,
+  saveGalleryPhotoToFirestore,
+} from "@/lib/gallery-admin";
 import {
   formatCompressionSummary,
   prepareGalleryImages,
 } from "@/lib/gallery-image-utils";
+import { uploadGalleryFile } from "@/lib/gallery-storage-upload";
 import type { GalleryItem } from "@/lib/gallery-types";
 import { db, storage } from "@/lib/firebase";
 
@@ -92,54 +96,49 @@ export default function AdminGaleriaPage() {
     setUploadPhase("optimizing");
 
     try {
+      await ensureGalleryUploadAuth();
+
       const prepared = await prepareGalleryImages(file);
       const timestamp = Date.now();
       const baseName = prepared.full.name.replace(/\s+/g, "-");
-      const fullStoragePath = `gallery/${timestamp}-${baseName}`;
-      const thumbStoragePath = `gallery/${timestamp}-${prepared.thumb.name.replace(/\s+/g, "-")}`;
+      const storagePath = `gallery/${timestamp}-${baseName}`;
 
       setUploadPhase("uploading");
 
-      const uploadFile = async (uploadFile: File, path: string) => {
-        const storageRef = ref(storage, path);
-        await uploadBytes(storageRef, uploadFile);
-        return getDownloadURL(storageRef);
-      };
-
-      const [url, thumbUrl] = await Promise.all([
-        uploadFile(prepared.full, fullStoragePath),
-        uploadFile(prepared.thumb, thumbStoragePath),
-      ]);
+      const url = await uploadGalleryFile(prepared.full, storagePath);
 
       setUploadPhase("saving");
 
-      const photoTitle = title || baseName;
+      const photoTitle = title || baseName.replace(/\.jpg$/i, "");
 
-      const result = await registerGalleryPhoto({
+      const id = await saveGalleryPhotoToFirestore({
         title: photoTitle,
         url,
-        thumbUrl,
-        storagePath: fullStoragePath,
-        thumbStoragePath,
-        notify: notifyMembers,
+        thumbUrl: url,
+        storagePath,
       });
 
       const compressionNote = formatCompressionSummary(prepared);
       const newItem: GalleryItem = {
-        id: result.id,
+        id,
         title: photoTitle,
         url,
-        thumbUrl,
-        storagePath: fullStoragePath,
-        thumbStoragePath,
+        thumbUrl: url,
+        storagePath,
         createdAt: new Date().toISOString(),
       };
 
-      setItems((current) => [newItem, ...current.filter((item) => item.id !== result.id)]);
+      setItems((current) => [newItem, ...current.filter((item) => item.id !== id)]);
 
-      if (notifyMembers && result.notifyScheduled) {
+      if (notifyMembers) {
+        void notifyGalleryPhotoPublished(photoTitle).catch((notifyError) => {
+          console.error(notifyError);
+          toast.warning(
+            `Zdjęcie dodane (${compressionNote}). Powiadomienia mogły nie zostać wysłane.`
+          );
+        });
         toast.success(
-          `Zdjęcie dodane (${compressionNote}). Powiadomienia wysyłane w tle do rodziców i zawodników.`
+          `Zdjęcie dodane (${compressionNote}). Powiadomienia wysyłane w tle.`
         );
       } else {
         toast.success(`Zdjęcie dodane do galerii. ${compressionNote}`);
@@ -168,11 +167,11 @@ export default function AdminGaleriaPage() {
         await deleteObject(ref(storage, item.storagePath));
       }
 
-      if (item.thumbStoragePath) {
+      if (item.thumbStoragePath && item.thumbStoragePath !== item.storagePath) {
         await deleteObject(ref(storage, item.thumbStoragePath));
       }
 
-      await deleteGalleryPhoto(item.id);
+      await deleteGalleryPhotoFromFirestore(item.id);
       toast.success("Zdjęcie usunięte.");
       await loadGallery();
     } catch (error) {
@@ -206,15 +205,15 @@ export default function AdminGaleriaPage() {
           </span>
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/*"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
             className="w-full rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3 text-sm text-zks-text file:mr-4 file:rounded-md file:border-0 file:bg-zks-gold file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-zks-black"
           />
         </label>
 
         <p className="text-xs text-zks-text-muted">
-          Zdjęcia są automatycznie zmniejszane (max 1600 px, dobra jakość) i zapisywane z
-          miniaturą do szybkiego ładowania galerii.
+          Zdjęcia są automatycznie zmniejszane do max 1280 px (JPG). Jeden plik — szybszy upload.
+          Unikaj HEIC z iPhone; wybierz JPG.
         </p>
 
         <label className="flex cursor-pointer items-center gap-3 text-sm text-zks-text">

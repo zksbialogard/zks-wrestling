@@ -1,4 +1,22 @@
-import { auth } from "./firebase";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  serverTimestamp,
+} from "firebase/firestore";
+
+import { auth, db } from "./firebase";
+
+export async function ensureGalleryUploadAuth() {
+  const user = auth.currentUser;
+
+  if (!user) {
+    throw new Error("Musisz być zalogowany jako administrator.");
+  }
+
+  await user.getIdToken(true);
+}
 
 async function getAuthHeader() {
   const user = auth.currentUser;
@@ -15,45 +33,43 @@ async function getAuthHeader() {
   };
 }
 
-export async function registerGalleryPhoto(data: {
+export async function saveGalleryPhotoToFirestore(input: {
   title: string;
   url: string;
-  storagePath?: string;
   thumbUrl?: string;
+  storagePath?: string;
   thumbStoragePath?: string;
-  notify?: boolean;
 }) {
-  const headers = await getAuthHeader();
-
-  const response = await fetch("/api/admin/gallery", {
-    method: "POST",
-    headers,
-    body: JSON.stringify(data),
+  const docRef = await addDoc(collection(db, "gallery"), {
+    title: input.title,
+    url: input.url,
+    thumbUrl: input.thumbUrl || null,
+    storagePath: input.storagePath || null,
+    thumbStoragePath: input.thumbStoragePath || null,
+    createdAt: serverTimestamp(),
   });
 
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.error || "Nie udało się dodać zdjęcia do galerii.");
-  }
-
-  return result as { ok: true; id: string; notifyScheduled?: boolean };
+  return docRef.id;
 }
 
-export async function deleteGalleryPhoto(id: string) {
+export async function deleteGalleryPhotoFromFirestore(id: string) {
+  await deleteDoc(doc(db, "gallery", id));
+}
+
+export async function notifyGalleryPhotoPublished(title: string) {
   const headers = await getAuthHeader();
 
-  const response = await fetch("/api/admin/gallery", {
-    method: "DELETE",
+  const response = await fetch("/api/admin/gallery/notify", {
+    method: "POST",
     headers,
-    body: JSON.stringify({ id }),
+    body: JSON.stringify({ title }),
   });
 
-  const result = await response.json();
-
   if (!response.ok) {
-    throw new Error(result.error || "Nie udało się usunąć zdjęcia z galerii.");
+    const result = await response.json().catch(() => ({}));
+    throw new Error(
+      (result as { error?: string }).error ||
+        "Zdjęcie zapisane, ale powiadomienia mogły nie zostać wysłane."
+    );
   }
-
-  return true;
 }
