@@ -1,4 +1,5 @@
 import { coercePhoneValue } from "./messaging";
+import type { ParentUser } from "./parent-users-db";
 
 const firebaseConfig = {
   apiKey:
