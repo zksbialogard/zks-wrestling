@@ -8,6 +8,7 @@ import { X } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { GuestAuthTiles, LoggedInAuthTiles } from "./AuthTiles";
+import { getPanelLabel } from "@/lib/panel-routes";
 import { publicLinks } from "./navLinks";
 
 type MobileMenuProps = {
@@ -20,8 +21,7 @@ export default function MobileMenu({ onLogout }: MobileMenuProps) {
 
   const closeMenu = () => setOpen(false);
 
-  const panelLabel =
-    profile?.rola === "admin" ? "Panel admina" : "Panel rodzica";
+  const panelLabel = getPanelLabel(profile?.rola);
 
   return (
     <div className="lg:hidden">

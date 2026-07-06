@@ -9,7 +9,9 @@ import { toast } from "sonner";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthField from "@/components/auth/AuthField";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { getPanelHref } from "@/lib/panel-routes";
 import { auth } from "@/lib/firebase";
+import { getPanelHref } from "@/lib/panel-routes";
 
 function LoginForm() {
   const router = useRouter();
@@ -25,9 +27,7 @@ function LoginForm() {
   useEffect(() => {
     if (!ready || !user || !profile) return;
 
-    const destination =
-      nextPath ||
-      (profile.rola === "admin" ? "/admin" : "/panel-rodzica");
+    const destination = nextPath || getPanelHref(profile.rola);
 
     router.replace(destination);
   }, [ready, user, profile, nextPath, router]);

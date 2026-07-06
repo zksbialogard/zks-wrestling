@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ClipboardList,
+  Dumbbell,
   Home,
   Images,
   LayoutDashboard,
@@ -22,6 +23,7 @@ const menu = [
   { id: "dashboard", name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { id: "zawody", name: "Zawody", href: "/admin/zawody", icon: Trophy },
   { id: "zawodnicy", name: "Zawodnicy", href: "/admin/zawodnicy", icon: Users },
+  { id: "treningi", name: "Treningi", href: "/admin/treningi", icon: Dumbbell },
   { id: "rodzice", name: "Rodzice", href: "/admin/uzytkownicy", icon: UserRound },
   { id: "zgloszenia", name: "Zgłoszenia", href: "/admin/zgloszenia", icon: ClipboardList },
   { id: "aktualnosci", name: "Aktualności", href: "/admin/aktualnosci", icon: Newspaper },

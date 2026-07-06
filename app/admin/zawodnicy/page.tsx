@@ -7,6 +7,7 @@ import {
   deleteDoc,
   doc,
   getDocs,
+  updateDoc,
 } from "firebase/firestore";
 import { toast } from "sonner";
 import { Trash2, UserPlus } from "lucide-react";
@@ -14,6 +15,11 @@ import { Trash2, UserPlus } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AuthField from "@/components/auth/AuthField";
 import { db } from "@/lib/firebase";
+import {
+  TRAINING_GROUP_OPTIONS,
+  getTrainingGroupLabel,
+  type TrainingGroupId,
+} from "@/lib/training-groups";
 
 interface Child {
   id: string;
@@ -23,6 +29,7 @@ interface Child {
   plec: string;
   kategoriaWagowa: string;
   parentUid: string;
+  grupaTreningowa?: TrainingGroupId;
 }
 
 export default function AdminZawodnicyPage() {
@@ -36,6 +43,7 @@ export default function AdminZawodnicyPage() {
   const [plec, setPlec] = useState("M");
   const [kategoriaWagowa, setKategoriaWagowa] = useState("");
   const [parentUid, setParentUid] = useState("");
+  const [grupaTreningowa, setGrupaTreningowa] = useState<TrainingGroupId>("srednia");
 
   const loadChildren = async () => {
     try {
@@ -75,6 +83,7 @@ export default function AdminZawodnicyPage() {
         rokUrodzenia,
         plec,
         kategoriaWagowa,
+        grupaTreningowa,
         parentUid: parentUid || "admin",
         createdAt: new Date(),
       });
@@ -85,12 +94,26 @@ export default function AdminZawodnicyPage() {
       setRokUrodzenia("");
       setKategoriaWagowa("");
       setParentUid("");
+      setGrupaTreningowa("srednia");
       await loadChildren();
     } catch (error) {
       console.error(error);
       toast.error("Nie udało się dodać zawodnika.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const updateGroup = async (id: string, groupId: TrainingGroupId) => {
+    try {
+      await updateDoc(doc(db, "children", id), {
+        grupaTreningowa: groupId,
+      });
+      toast.success("Grupa treningowa zaktualizowana.");
+      await loadChildren();
+    } catch (error) {
+      console.error(error);
+      toast.error("Nie udało się zapisać grupy.");
     }
   };
 
@@ -146,6 +169,23 @@ export default function AdminZawodnicyPage() {
           </select>
         </label>
 
+        <label className="block space-y-2">
+          <span className="text-xs font-medium uppercase tracking-[0.15em] text-zks-gold-mid">
+            Grupa treningowa
+          </span>
+          <select
+            value={grupaTreningowa}
+            onChange={(e) => setGrupaTreningowa(e.target.value as TrainingGroupId)}
+            className="w-full rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3.5 text-sm text-white outline-none"
+          >
+            {TRAINING_GROUP_OPTIONS.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <AuthField
           label="UID rodzica (opcjonalnie)"
           value={parentUid}
@@ -177,6 +217,28 @@ export default function AdminZawodnicyPage() {
                 <p>Kategoria wagowa: {child.kategoriaWagowa} kg</p>
                 <p className="break-all text-zks-text-muted">Rodzic: {child.parentUid}</p>
               </div>
+
+              <label className="mt-4 block max-w-sm space-y-2">
+                <span className="text-xs font-medium uppercase tracking-[0.15em] text-zks-gold-mid">
+                  Grupa treningowa
+                </span>
+                <select
+                  value={child.grupaTreningowa || "srednia"}
+                  onChange={(e) =>
+                    updateGroup(child.id, e.target.value as TrainingGroupId)
+                  }
+                  className="w-full rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3 text-sm text-white outline-none"
+                >
+                  {TRAINING_GROUP_OPTIONS.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-zks-text-muted">
+                  Aktualnie: {getTrainingGroupLabel(child.grupaTreningowa)}
+                </p>
+              </label>
 
               <button
                 type="button"

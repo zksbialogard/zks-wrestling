@@ -1,3 +1,5 @@
+import { getTrainingGroupLabel } from "@/lib/training-groups";
+
 type Props = {
   child: {
     imie: string;
@@ -5,6 +7,7 @@ type Props = {
     rokUrodzenia: string;
     plec: string;
     kategoriaWagowa: string;
+    grupaTreningowa?: string;
   };
   onEdit: () => void;
   onDelete: () => void;
@@ -23,6 +26,9 @@ export default function ChildCard({ child, onEdit, onDelete }: Props) {
             <p>Rocznik: {child.rokUrodzenia}</p>
             <p>Kategoria wagowa: {child.kategoriaWagowa} kg</p>
             <p>Płeć: {child.plec}</p>
+            {child.grupaTreningowa && (
+              <p>Grupa: {getTrainingGroupLabel(child.grupaTreningowa)}</p>
+            )}
           </div>
         </div>
 

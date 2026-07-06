@@ -4,15 +4,18 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { getPanelHref } from "@/lib/panel-routes";
 
 type Props = {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireRole?: "rodzic" | "zawodnik";
 };
 
 export default function AuthGuard({
   children,
   requireAdmin = false,
+  requireRole,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -33,9 +36,19 @@ export default function AuthGuard({
     }
 
     if (requireAdmin && profile.rola !== "admin") {
-      router.replace("/panel-rodzica");
+      router.replace(getPanelHref(profile.rola));
+      return;
     }
-  }, [ready, loadingProfile, user, profile, requireAdmin, router, pathname]);
+
+    if (requireRole === "rodzic" && profile.rola === "zawodnik") {
+      router.replace("/panel-zawodnika");
+      return;
+    }
+
+    if (requireRole === "zawodnik" && profile.rola !== "zawodnik") {
+      router.replace(getPanelHref(profile.rola));
+    }
+  }, [ready, loadingProfile, user, profile, requireAdmin, requireRole, router, pathname]);
 
   if (!ready || loadingProfile) {
     return (
@@ -50,6 +63,14 @@ export default function AuthGuard({
   }
 
   if (requireAdmin && profile.rola !== "admin") {
+    return null;
+  }
+
+  if (requireRole === "rodzic" && profile.rola === "zawodnik") {
+    return null;
+  }
+
+  if (requireRole === "zawodnik" && profile.rola !== "zawodnik") {
     return null;
   }
 

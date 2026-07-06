@@ -18,6 +18,8 @@ import {
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { auth, db } from "@/lib/firebase";
+import { getPanelHref } from "@/lib/panel-routes";
+import type { TrainingGroupId } from "@/lib/training-groups";
 
 export type UserProfile = {
   id: string;
@@ -27,6 +29,7 @@ export type UserProfile = {
   email?: string;
   telefon?: string;
   rola?: string;
+  grupaTreningowa?: TrainingGroupId;
 };
 
 type AuthContextValue = {
@@ -109,8 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await loadProfile(auth.currentUser.uid);
   }, [loadProfile]);
 
-  const panelHref =
-    profile?.rola === "admin" ? "/admin" : "/panel-rodzica";
+  const panelHref = getPanelHref(profile?.rola);
 
   const value = useMemo(
     () => ({

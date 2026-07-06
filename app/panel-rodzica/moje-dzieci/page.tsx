@@ -18,6 +18,10 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import AuthField from "@/components/auth/AuthField";
 import ChildCard from "@/components/children/ChildCard";
 import { db } from "@/lib/firebase";
+import {
+  TRAINING_GROUP_OPTIONS,
+  type TrainingGroupId,
+} from "@/lib/training-groups";
 
 type Child = {
   id: string;
@@ -27,6 +31,7 @@ type Child = {
   plec: string;
   kategoriaWagowa: string;
   parentUid: string;
+  grupaTreningowa?: TrainingGroupId;
 };
 
 const emptyForm = {
@@ -35,6 +40,7 @@ const emptyForm = {
   rokUrodzenia: "",
   plec: "M",
   kategoriaWagowa: "",
+  grupaTreningowa: "srednia" as TrainingGroupId,
 };
 
 export default function MojeDzieciPage() {
@@ -84,7 +90,7 @@ export default function MojeDzieciPage() {
 
     if (!user) return;
 
-    if (!form.imie || !form.nazwisko || !form.rokUrodzenia || !form.kategoriaWagowa) {
+    if (!form.imie || !form.nazwisko || !form.rokUrodzenia || !form.kategoriaWagowa || !form.grupaTreningowa) {
       toast.error("Uzupełnij wymagane pola dziecka.");
       return;
     }
@@ -97,6 +103,7 @@ export default function MojeDzieciPage() {
           rokUrodzenia: form.rokUrodzenia,
           plec: form.plec,
           kategoriaWagowa: form.kategoriaWagowa,
+          grupaTreningowa: form.grupaTreningowa,
         });
         toast.success("Dane dziecka zaktualizowane.");
       } else {
@@ -124,6 +131,7 @@ export default function MojeDzieciPage() {
       rokUrodzenia: child.rokUrodzenia,
       plec: child.plec,
       kategoriaWagowa: child.kategoriaWagowa,
+      grupaTreningowa: child.grupaTreningowa || "srednia",
     });
     setShowForm(true);
   };
@@ -209,6 +217,28 @@ export default function MojeDzieciPage() {
             >
               <option value="M">Mężczyzna</option>
               <option value="K">Kobieta</option>
+            </select>
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-xs font-medium uppercase tracking-[0.15em] text-zks-gold-mid">
+              Grupa treningowa
+            </span>
+            <select
+              value={form.grupaTreningowa}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  grupaTreningowa: e.target.value as TrainingGroupId,
+                })
+              }
+              className="w-full rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3.5 text-sm text-white outline-none"
+            >
+              {TRAINING_GROUP_OPTIONS.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.label}
+                </option>
+              ))}
             </select>
           </label>
 

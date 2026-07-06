@@ -12,16 +12,23 @@ import { toast } from "sonner";
 
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthField from "@/components/auth/AuthField";
+import TrainingGroupSelect from "@/components/shared/TrainingGroupSelect";
 import { auth, db } from "@/lib/firebase";
+import type { TrainingGroupId } from "@/lib/training-groups";
+import { TRAINING_GROUP_OPTIONS } from "@/lib/training-groups";
+
+type AccountType = "rodzic" | "zawodnik";
 
 export default function RejestracjaPage() {
   const router = useRouter();
 
+  const [accountType, setAccountType] = useState<AccountType>("rodzic");
   const [imie, setImie] = useState("");
   const [nazwisko, setNazwisko] = useState("");
   const [telefon, setTelefon] = useState("");
   const [email, setEmail] = useState("");
   const [haslo, setHaslo] = useState("");
+  const [grupaTreningowa, setGrupaTreningowa] = useState<TrainingGroupId>("srednia");
   const [zgoda, setZgoda] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -43,6 +50,11 @@ export default function RejestracjaPage() {
       return;
     }
 
+    if (accountType === "zawodnik" && !grupaTreningowa) {
+      toast.error("Wybierz grupę treningową.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -52,15 +64,21 @@ export default function RejestracjaPage() {
         haslo
       );
 
-      await addDoc(collection(db, "users"), {
+      const userData: Record<string, unknown> = {
         uid: userCredential.user.uid,
         imie,
         nazwisko,
         telefon,
         email,
-        rola: "rodzic",
+        rola: accountType === "zawodnik" ? "zawodnik" : "rodzic",
         createdAt: new Date(),
-      });
+      };
+
+      if (accountType === "zawodnik") {
+        userData.grupaTreningowa = grupaTreningowa;
+      }
+
+      await addDoc(collection(db, "users"), userData);
 
       await sendEmailVerification(userCredential.user);
 
@@ -93,7 +111,11 @@ export default function RejestracjaPage() {
   return (
     <AuthLayout
       title="Rejestracja"
-      subtitle="Załóż konto rodzica i zarządzaj danymi swoich dzieci w klubie."
+      subtitle={
+        accountType === "zawodnik"
+          ? "Załóż konto zawodnika i śledź treningi oraz zawody klubu."
+          : "Załóż konto rodzica i zarządzaj danymi swoich dzieci w klubie."
+      }
       footer={
         <p className="text-center text-sm text-zks-text-muted">
           Masz już konto?{" "}
@@ -107,6 +129,36 @@ export default function RejestracjaPage() {
       }
     >
       <form onSubmit={register} className="space-y-4">
+        <div className="space-y-2">
+          <span className="text-xs font-medium uppercase tracking-[0.15em] text-zks-gold-mid">
+            Typ konta
+          </span>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setAccountType("rodzic")}
+              className={`rounded-lg border px-4 py-3 text-sm font-medium transition ${
+                accountType === "rodzic"
+                  ? "border-zks-gold-bright bg-zks-gold/15 text-zks-gold-bright"
+                  : "border-zks-gold-mid/30 text-zks-text hover:border-zks-gold-mid"
+              }`}
+            >
+              Rodzic
+            </button>
+            <button
+              type="button"
+              onClick={() => setAccountType("zawodnik")}
+              className={`rounded-lg border px-4 py-3 text-sm font-medium transition ${
+                accountType === "zawodnik"
+                  ? "border-zks-gold-bright bg-zks-gold/15 text-zks-gold-bright"
+                  : "border-zks-gold-mid/30 text-zks-text hover:border-zks-gold-mid"
+              }`}
+            >
+              Zawodnik
+            </button>
+          </div>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <AuthField
             label="Imię"
@@ -160,6 +212,25 @@ export default function RejestracjaPage() {
           value={haslo}
           onChange={(e) => setHaslo(e.target.value)}
         />
+
+        {accountType === "zawodnik" && (
+          <label className="block space-y-2">
+            <span className="text-xs font-medium uppercase tracking-[0.15em] text-zks-gold-mid">
+              Grupa treningowa
+            </span>
+            <select
+              value={grupaTreningowa}
+              onChange={(e) => setGrupaTreningowa(e.target.value as TrainingGroupId)}
+              className="w-full rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3.5 text-sm text-white outline-none"
+            >
+              {TRAINING_GROUP_OPTIONS.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.label} ({group.start}–{group.end})
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <label className="flex items-start gap-3 text-sm leading-relaxed text-zks-text">
           <input
