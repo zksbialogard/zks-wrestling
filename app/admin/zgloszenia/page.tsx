@@ -22,7 +22,7 @@ import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 export default function AdminZgloszeniaPage() {
   const [registrations, setRegistrations] = useState<RegistrationItem[]>([]);
   const [eventNames, setEventNames] = useState<Record<string, string>>({});
-  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [loading, setLoading] = useState(true);
 
   const loadRegistrations = async () => {

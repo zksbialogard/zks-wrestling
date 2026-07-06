@@ -34,7 +34,7 @@ export default function AdminEventRegistrationsPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [registrations, setRegistrations] = useState<RegistrationItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [editingRegistration, setEditingRegistration] = useState<RegistrationItem | null>(null);
   const [remindingId, setRemindingId] = useState<string | null>(null);
