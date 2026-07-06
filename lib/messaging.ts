@@ -67,7 +67,22 @@ export function estimateSmsParts(message: string) {
   return Math.max(1, Math.ceil(length / partSize));
 }
 
+export const SMS_ACCOUNT_LIMITED_MESSAGE =
+  "Konto SMSAPI jest w trybie testowym — SMS można wysłać tylko na numer podany przy rejestracji. Aby wysyłać do wszystkich rodziców: doładuj konto, przejdź weryfikację firmy w panelu smsapi.pl lub skontaktuj się z obsługą SMSAPI.";
+
+export function isSmsAccountLimitedError(message: string) {
+  return (
+    /account is limited/i.test(message) ||
+    /registration form/i.test(message) ||
+    message.includes(SMS_ACCOUNT_LIMITED_MESSAGE)
+  );
+}
+
 function humanizeSmsError(message: string, sender: string) {
+  if (isSmsAccountLimitedError(message)) {
+    return SMS_ACCOUNT_LIMITED_MESSAGE;
+  }
+
   if (/invalid from/i.test(message)) {
     return sender
       ? `Pole nadawcy „${sender}” nie jest zatwierdzone w SMSAPI. Dodaj je w panelu smsapi.pl → Pola nadawcy, albo ustaw krótszą nazwę (np. ZKS) w SMSAPI_FROM na Vercel.`

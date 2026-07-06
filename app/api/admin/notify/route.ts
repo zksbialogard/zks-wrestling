@@ -39,9 +39,9 @@ export async function POST(request: Request) {
       variables: body.variables,
       channels: {
         email: body.channels?.email ?? false,
-        sms: body.channels?.sms ?? true,
+        sms: body.channels?.sms ?? false,
         inApp: body.channels?.inApp ?? true,
-        push: body.channels?.push ?? false,
+        push: body.channels?.push ?? true,
       },
       type: body.type,
       link: body.link,

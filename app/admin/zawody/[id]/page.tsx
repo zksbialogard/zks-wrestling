@@ -7,6 +7,7 @@ import { ArrowLeft, Check, Loader2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import EventResultsSection from "@/components/admin/EventResultsSection";
 import { formatEventDate } from "@/lib/event-utils";
 import { fetchEventById, type Event } from "@/lib/events";
 import {
@@ -19,6 +20,8 @@ import {
   updateAdminRegistrationStatus,
   type RegistrationItem,
 } from "@/lib/registrations-client";
+import { getNotifySmsFailureAlert } from "@/lib/notifications-client";
+import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 import { exportStartListToExcel, buildStartListRows } from "@/lib/start-list-export";
 
 export default function AdminEventRegistrationsPage() {
@@ -53,14 +56,25 @@ export default function AdminEventRegistrationsPage() {
 
   const updateStatus = async (id: string, status: "pending" | "approved" | "rejected") => {
     try {
-      await updateAdminRegistrationStatus(id, status);
-      toast.success(
-        status === "approved"
-          ? "Zgłoszenie zaakceptowane."
-          : status === "rejected"
-            ? "Zgłoszenie odrzucone."
-            : "Przywrócono status oczekujące."
-      );
+      const { registration, notifyResult } = await updateAdminRegistrationStatus(id, status);
+      const clean = notifyResult ? sanitizeNotifyResult(notifyResult) : null;
+      const smsFailure =
+        clean && (status === "approved" || status === "rejected")
+          ? getNotifySmsFailureAlert(clean, Boolean(registration.parent_phone))
+          : null;
+
+      if (smsFailure) {
+        toast.error(smsFailure, { duration: 12000 });
+      } else {
+        toast.success(
+          status === "approved"
+            ? "Zgłoszenie zaakceptowane."
+            : status === "rejected"
+              ? "Zgłoszenie odrzucone."
+              : "Przywrócono status oczekujące."
+        );
+      }
+
       loadData();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Błąd aktualizacji.");
@@ -171,6 +185,8 @@ export default function AdminEventRegistrationsPage() {
           </div>
         ))}
       </div>
+
+      <EventResultsSection eventId={eventId} registrations={registrations} />
 
       <div className="zks-card mb-8 overflow-hidden">
         <div className="border-b border-zks-gold-mid/20 px-5 py-4">

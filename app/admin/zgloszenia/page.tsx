@@ -16,6 +16,8 @@ import {
   updateAdminRegistrationStatus,
   type RegistrationItem,
 } from "@/lib/registrations-client";
+import { getNotifySmsFailureAlert } from "@/lib/notifications-client";
+import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 
 export default function AdminZgloszeniaPage() {
   const [registrations, setRegistrations] = useState<RegistrationItem[]>([]);
@@ -48,8 +50,21 @@ export default function AdminZgloszeniaPage() {
 
   const approveRegistration = async (id: string) => {
     try {
-      await updateAdminRegistrationStatus(id, "approved");
-      toast.success("Zgłoszenie zaakceptowane. Rodzic dostał powiadomienie.");
+      const { registration, notifyResult } = await updateAdminRegistrationStatus(id, "approved");
+
+      if (notifyResult) {
+        const clean = sanitizeNotifyResult(notifyResult);
+        const smsFailure = getNotifySmsFailureAlert(clean, Boolean(registration.parent_phone));
+
+        if (smsFailure) {
+          toast.error(smsFailure, { duration: 12000 });
+        } else {
+          toast.success("Zgłoszenie zaakceptowane. Rodzic dostał powiadomienie.");
+        }
+      } else {
+        toast.success("Zgłoszenie zaakceptowane.");
+      }
+
       loadRegistrations();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Błąd akceptacji.");
@@ -58,8 +73,21 @@ export default function AdminZgloszeniaPage() {
 
   const rejectRegistration = async (id: string) => {
     try {
-      await updateAdminRegistrationStatus(id, "rejected");
-      toast.success("Zgłoszenie odrzucone.");
+      const { registration, notifyResult } = await updateAdminRegistrationStatus(id, "rejected");
+
+      if (notifyResult) {
+        const clean = sanitizeNotifyResult(notifyResult);
+        const smsFailure = getNotifySmsFailureAlert(clean, Boolean(registration.parent_phone));
+
+        if (smsFailure) {
+          toast.error(smsFailure, { duration: 12000 });
+        } else {
+          toast.success("Zgłoszenie odrzucone.");
+        }
+      } else {
+        toast.success("Zgłoszenie odrzucone.");
+      }
+
       loadRegistrations();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Błąd odrzucenia.");

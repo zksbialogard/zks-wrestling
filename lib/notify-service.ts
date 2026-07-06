@@ -10,7 +10,7 @@ import {
 
 import { fetchParentUsersFromFirestore } from "./firebase-parents";
 import { sanitizeNotifyResult } from "./notify-result-utils";
-import { sendEmailMessage, sendSmsMessage, isSmsConfigured, coercePhoneValue } from "./messaging";
+import { sendEmailMessage, sendSmsMessage, isSmsConfigured, coercePhoneValue, isSmsAccountLimitedError } from "./messaging";
 import { renderTemplate, type TemplateKey } from "./message-templates";
 import {
   createNotificationRecordsBulk,
@@ -284,6 +284,11 @@ export async function notifyParents(input: {
           if (smsResult.ok) {
             result.smsSent += 1;
           } else if (!smsResult.skipped && "error" in smsResult && smsResult.error) {
+            if (isSmsAccountLimitedError(smsResult.error)) {
+              result.errors.push(smsResult.error);
+              break;
+            }
+
             result.errors.push(`${parent.telefon}: ${smsResult.error}`);
           }
         }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, MessageSquare, Send } from "lucide-react";
+import { AlertCircle, Loader2, MessageSquare, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { SMS_AUTO_TRIGGERS } from "@/lib/template-editor-utils";
@@ -82,8 +82,8 @@ export default function SmsSettingsCard() {
               Wysyłka SMS
             </h2>
             <p className="mt-1 max-w-xl text-sm text-zks-text-muted">
-              Rodzice dostają SMS na numer z profilu w Firebase. Poniżej edytujesz treści
-              poszczególnych wiadomości.
+              Główny kanał to powiadomienia w aplikacji + push (darmowe). SMS włączysz po
+              aktywacji konta SMSAPI — tutaj edytujesz treści wiadomości.
             </p>
           </div>
         </div>
@@ -101,9 +101,17 @@ export default function SmsSettingsCard() {
         )}
       </div>
 
-      <div className="mt-5 rounded-xl border border-zks-gold-mid/15 bg-zks-black/50 p-4">
+      <div className="mt-5 rounded-xl border border-green-500/25 bg-green-500/10 p-4 text-sm text-green-100">
+        <p className="font-medium text-green-200">Domyślnie: aplikacja + push (0 zł)</p>
+        <p className="mt-1 text-green-100/90">
+          Zawody, zgłoszenia i przypomnienia trafiają do rodziców w panelu i na telefon (push).
+          SMS zostaw wyłączony, dopóki nie aktywujesz pełnego konta SMSAPI.
+        </p>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-zks-gold-mid/15 bg-zks-black/50 p-4">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zks-gold-mid">
-          Kiedy aplikacja wysyła SMS?
+          SMS (opcjonalnie, po aktywacji SMSAPI)
         </p>
         <ul className="space-y-1.5 text-sm text-zks-text-muted">
           {SMS_AUTO_TRIGGERS.map((item) => (
@@ -124,6 +132,27 @@ export default function SmsSettingsCard() {
             </p>
           ) : (
             <>
+              <div className="flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+                <div>
+                  <p className="font-medium text-amber-200">Konto testowe SMSAPI</p>
+                  <p className="mt-1 text-amber-100/90">
+                    Przed pełną aktywacją konta SMS można wysłać tylko na numer podany przy
+                    rejestracji. Test poniżej zadziała, ale wysyłka masowa do rodziców może
+                    się nie udać — doładuj konto i przejdź weryfikację na{" "}
+                    <a
+                      href="https://ssl.smsapi.pl/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline"
+                    >
+                      smsapi.pl
+                    </a>
+                    .
+                  </p>
+                </div>
+              </div>
+
               <div className="grid gap-3 text-sm sm:grid-cols-2">
                 <p className="text-zks-text-muted">
                   Nadawca: <span className="text-white">{status.sender}</span>

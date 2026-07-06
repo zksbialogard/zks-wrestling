@@ -17,6 +17,7 @@ import {
 export default function AdminAktualnosciPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [notifyParents, setNotifyParents] = useState(true);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,6 +49,7 @@ export default function AdminAktualnosciPage() {
   const resetForm = () => {
     setTitle("");
     setContent("");
+    setNotifyParents(true);
     setEditingId(null);
   };
 
@@ -71,8 +73,12 @@ export default function AdminAktualnosciPage() {
         );
         toast.success("Aktualność zaktualizowana.");
       } else {
-        await createNews({ title, content });
-        toast.success("Aktualność dodana.");
+        await createNews({ title, content, notify: notifyParents });
+        toast.success(
+          notifyParents
+            ? "Aktualność dodana. Powiadomienia w aplikacji wysłane do rodziców."
+            : "Aktualność dodana."
+        );
       }
 
       resetForm();
@@ -140,6 +146,25 @@ export default function AdminAktualnosciPage() {
             className="w-full rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3 text-sm text-white outline-none focus:border-zks-gold-mid"
           />
         </label>
+
+        {!editingId && (
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zks-gold-mid/20 bg-zks-black/40 p-4">
+            <input
+              type="checkbox"
+              checked={notifyParents}
+              onChange={(e) => setNotifyParents(e.target.checked)}
+              className="mt-1 h-4 w-4 accent-zks-gold"
+            />
+            <span className="text-sm text-zks-text">
+              <span className="font-semibold text-white">
+                Powiadom rodziców (aplikacja + push)
+              </span>
+              <span className="mt-1 block text-xs text-zks-text-muted">
+                Wysyła powiadomienie o nowej aktualności do wszystkich rodziców w panelu.
+              </span>
+            </span>
+          </label>
+        )}
 
         <div className="flex flex-wrap gap-3">
           <button

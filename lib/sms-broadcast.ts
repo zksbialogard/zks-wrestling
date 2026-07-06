@@ -1,4 +1,9 @@
-import { coercePhoneValue, isSmsConfigured, sendSmsMessage } from "./messaging";
+import {
+  coercePhoneValue,
+  isSmsAccountLimitedError,
+  isSmsConfigured,
+  sendSmsMessage,
+} from "./messaging";
 import { loadParentUsers } from "./notify-service";
 
 export type SmsBroadcastResult = {
@@ -51,6 +56,11 @@ export async function broadcastSmsToAllParents(message: string): Promise<SmsBroa
     if (smsResult.ok) {
       result.smsSent += 1;
     } else if (!smsResult.skipped && "error" in smsResult && smsResult.error) {
+      if (isSmsAccountLimitedError(smsResult.error)) {
+        result.errors.push(smsResult.error);
+        break;
+      }
+
       result.errors.push(`${phone}: ${smsResult.error}`);
     }
   }

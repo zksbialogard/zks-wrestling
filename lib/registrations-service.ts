@@ -1,7 +1,7 @@
 import { getEventRegistrationStatus } from "./event-utils";
 import { getChildForParent, getParentPhone } from "./firebase-children";
 import { createSupabaseAdmin } from "./supabase";
-import { notifyParents } from "./notify-service";
+import { notifyParents, type NotifyResult } from "./notify-service";
 import {
   createRegistration,
   deleteRegistration,
@@ -10,7 +10,8 @@ import {
   updateRegistrationStatus,
 } from "./registrations-db";
 import type { RegistrationStatus } from "./registration-types";
-import { sendSmsMessage } from "./messaging";
+import { createNotificationRecordsBulk } from "./notifications-db";
+import { sendWebPushToUsers } from "./web-push-service";
 
 export async function submitRegistration(input: {
   eventId: string;
@@ -58,12 +59,26 @@ export async function submitRegistration(input: {
     parent_phone: parentPhone || null,
   });
 
-  if (parentPhone) {
-    await sendSmsMessage({
-      phone: parentPhone,
-      message: `ZKS Białogard: zgłoszenie ${child.imie} ${child.nazwisko} na „${event.title}” zapisane. Oczekuje na akceptację klubu.`,
-    });
-  }
+  const childName = `${child.imie} ${child.nazwisko}`.trim();
+  const title = "Zgłoszenie zapisane";
+  const body = `${childName} — ${event.title}. Oczekuje na akceptację klubu.`;
+
+  await createNotificationRecordsBulk([
+    {
+      user_uid: input.parentUid,
+      type: "registration",
+      title,
+      body,
+      link: "/panel-rodzica/moje-zgloszenia",
+      channels: ["in_app", "push"],
+    },
+  ]);
+
+  await sendWebPushToUsers([input.parentUid], {
+    title,
+    body,
+    url: "/panel-rodzica/moje-zgloszenia",
+  });
 
   return registration;
 }
@@ -97,11 +112,10 @@ export async function changeRegistrationStatus(
 
   const childName = `${registration.child_name} ${registration.child_surname}`.trim();
   const eventDate = new Date(event.event_date).toLocaleDateString("pl-PL");
-  const parentPhone =
-    registration.parent_phone || (await getParentPhone(registration.parent_uid)) || "";
+  let notifyResult: NotifyResult | undefined;
 
   if (status === "approved") {
-    await notifyParents({
+    notifyResult = await notifyParents({
       templateKey: "registration_accepted",
       variables: {
         childName,
@@ -110,7 +124,7 @@ export async function changeRegistrationStatus(
         eventDate,
         link: `/panel-rodzica/moje-zgloszenia`,
       },
-      channels: { sms: Boolean(parentPhone), inApp: true, push: true },
+      channels: { inApp: true, push: true },
       type: "registration",
       link: "/panel-rodzica/moje-zgloszenia",
       targetUid: registration.parent_uid,
@@ -118,7 +132,7 @@ export async function changeRegistrationStatus(
   }
 
   if (status === "rejected") {
-    await notifyParents({
+    notifyResult = await notifyParents({
       templateKey: "registration_rejected",
       variables: {
         childName,
@@ -127,14 +141,14 @@ export async function changeRegistrationStatus(
         eventDate,
         link: `/panel-rodzica/moje-zgloszenia`,
       },
-      channels: { sms: Boolean(parentPhone), inApp: true, push: true },
+      channels: { inApp: true, push: true },
       type: "registration",
       link: "/panel-rodzica/moje-zgloszenia",
       targetUid: registration.parent_uid,
     });
   }
 
-  return { ...registration, status };
+  return { ...registration, status, notifyResult };
 }
 
 export async function removeRegistration(registrationId: string) {

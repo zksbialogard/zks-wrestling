@@ -29,7 +29,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const registration = await changeRegistrationStatus(id, status);
 
-    return NextResponse.json({ ok: true, registration });
+    return NextResponse.json({ ok: true, registration, notifyResult: registration.notifyResult });
   } catch (error) {
     console.error(error);
     const message =

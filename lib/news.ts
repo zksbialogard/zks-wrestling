@@ -70,7 +70,11 @@ export async function getNews(options?: {
   return sortNewsByDate([...supabaseNews, ...firebaseNews]);
 }
 
-export async function createNews(data: { title: string; content: string }) {
+export async function createNews(data: {
+  title: string;
+  content: string;
+  notify?: boolean;
+}) {
   const headers = await getAuthHeader();
 
   const response = await fetch("/api/admin/aktualnosci", {

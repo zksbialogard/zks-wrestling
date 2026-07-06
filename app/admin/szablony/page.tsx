@@ -142,7 +142,7 @@ export default function AdminSzablonyPage() {
     <>
       <AdminPageHeader
         title="Szablony SMS"
-        description="Edytuj treści wiadomości tekstowych i powiadomień w aplikacji."
+        description="Szablony powiadomień — domyślnie aplikacja + push. SMS opcjonalnie po aktywacji SMSAPI."
       />
 
       <SmsSettingsCard />

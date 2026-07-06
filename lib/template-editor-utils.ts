@@ -30,10 +30,10 @@ export const TEMPLATE_WHEN: Record<TemplateKey, string> = {
 };
 
 export const SMS_AUTO_TRIGGERS = [
-  "Zgłoszenie dziecka na zawody — potwierdzenie zapisu",
-  "Akceptacja lub odrzucenie zgłoszenia przez admina",
-  "Nowe zawody lub przypomnienie — gdy zaznaczysz SMS przy wysyłce",
-  "Odwołanie treningu — własna treść z formularza powiadomienia",
+  "Zgłoszenie dziecka — powiadomienie w aplikacji + push (automatycznie)",
+  "Akceptacja / odrzucenie zgłoszenia — aplikacja + push (automatycznie)",
+  "Nowe zawody / przypomnienie — aplikacja + push przy wysyłce z panelu",
+  "SMS — tylko gdy zaznaczysz opcję SMS i masz aktywne konto SMSAPI",
 ] as const;
 
 export function getVariablesForTemplate(key: TemplateKey) {

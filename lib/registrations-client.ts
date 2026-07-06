@@ -110,7 +110,17 @@ export async function updateAdminRegistrationStatus(
     throw new Error(result.error || "Nie udało się zaktualizować zgłoszenia.");
   }
 
-  return result.registration as RegistrationItem;
+  return {
+    registration: result.registration as RegistrationItem,
+    notifyResult: result.notifyResult as
+      | {
+          smsSent: number;
+          inAppSent: number;
+          errors: string[];
+          warnings: string[];
+        }
+      | undefined,
+  };
 }
 
 export async function deleteAdminRegistration(id: string) {

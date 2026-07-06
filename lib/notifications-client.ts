@@ -1,4 +1,4 @@
-import { auth } from "./firebase";
+import { isSmsAccountLimitedError, SMS_ACCOUNT_LIMITED_MESSAGE } from "./messaging";
 
 export type NotificationItem = {
   id: string;
@@ -105,6 +105,31 @@ export async function sendAdminNotify(input: {
     errors: string[];
     warnings: string[];
   };
+}
+
+export function getNotifySmsFailureAlert(
+  result: { smsSent: number; errors?: string[]; inAppSent?: number },
+  smsRequested: boolean
+): string | null {
+  if (!smsRequested || result.smsSent > 0) {
+    return null;
+  }
+
+  if (result.errors?.some((item) => isSmsAccountLimitedError(item))) {
+    const inAppNote =
+      result.inAppSent && result.inAppSent > 0
+        ? ` Powiadomienia w aplikacji wysłano do ${result.inAppSent} rodziców.`
+        : "";
+    return `${SMS_ACCOUNT_LIMITED_MESSAGE} Rodzice NIE otrzymali wiadomości SMS.${inAppNote}`;
+  }
+
+  const firstSmsError = result.errors?.find((item) => /\d/.test(item));
+
+  if (firstSmsError) {
+    return `SMS nie wysłano (${result.smsSent} wysłanych). ${firstSmsError} Rodzice NIE otrzymali wiadomości SMS.`;
+  }
+
+  return "SMS nie zostały wysłane — rodzice NIE otrzymali wiadomości na telefon.";
 }
 
 export function formatNotifyResultMessage(result: {

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { auth } from "@/lib/firebase";
 import type { MessageTemplate } from "@/lib/message-templates";
 import { estimateSmsParts, smsUsesUnicode } from "@/lib/messaging";
+import { getNotifySmsFailureAlert } from "@/lib/notifications-client";
 import {
   friendlyToTechnical,
   getVariablesForTemplate,
@@ -176,13 +177,28 @@ export default function TemplateEditor({
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Nie udało się wysłać SMS.");
+        const err = result.error || "Nie udało się wysłać SMS.";
+        const alert = getNotifySmsFailureAlert(
+          { smsSent: result.result?.smsSent ?? 0, errors: [err] },
+          true
+        );
+
+        toast.error(alert || `${err} Rodzice NIE otrzymali wiadomości SMS.`, {
+          duration: 12000,
+        });
+        return;
       }
 
       toast.success(result.message);
 
       if (result.result?.errors?.length) {
-        toast.warning(result.result.errors.slice(0, 2).join(" "));
+        const alert = getNotifySmsFailureAlert(result.result, true);
+
+        if (alert) {
+          toast.error(alert, { duration: 12000 });
+        } else {
+          toast.warning(result.result.errors.slice(0, 2).join(" "));
+        }
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Błąd wysyłki masowej.");

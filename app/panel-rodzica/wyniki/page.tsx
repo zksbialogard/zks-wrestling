@@ -1,31 +1,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trophy } from "lucide-react";
+import { Loader2, Trophy } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
-import { fetchEvents } from "@/lib/events";
-import {
-  fetchMyRegistrations,
-  type RegistrationItem,
-} from "@/lib/registrations-client";
+import { fetchMyCompetitionResults } from "@/lib/competition-results-client";
+
+function placeLabel(place: number | null | undefined) {
+  if (!place) return "Brak miejsca";
+  if (place === 1) return "🥇 1. miejsce";
+  if (place === 2) return "🥈 2. miejsce";
+  if (place === 3) return "🥉 3. miejsce";
+  return `${place}. miejsce`;
+}
 
 export default function WynikiPage() {
   const { user } = useAuth();
-  const [results, setResults] = useState<RegistrationItem[]>([]);
-  const [eventNames, setEventNames] = useState<Record<string, string>>({});
+  const [results, setResults] = useState<
+    Awaited<ReturnType<typeof fetchMyCompetitionResults>>
+  >([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       if (!user) return;
 
-      const [events, registrations] = await Promise.all([
-        fetchEvents(),
-        fetchMyRegistrations(),
-      ]);
-
-      setEventNames(Object.fromEntries(events.map((event) => [event.id, event.title])));
-      setResults(registrations.filter((item) => item.status === "approved"));
+      try {
+        setLoading(true);
+        const data = await fetchMyCompetitionResults();
+        setResults(data);
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     load();
@@ -34,15 +42,20 @@ export default function WynikiPage() {
   return (
     <div>
       <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-white">
-        Wyniki i starty
+        Wyniki zawodów
       </h2>
       <p className="mt-2 text-sm text-zks-text-muted">
-        Zaakceptowane starty Twoich dzieci w zawodach klubowych.
+        Opublikowane miejsca Twoich dzieci po zawodach klubowych.
       </p>
 
-      {results.length === 0 ? (
+      {loading ? (
+        <div className="zks-card mt-6 flex items-center gap-3 p-6 text-zks-text-muted">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Ładowanie wyników...
+        </div>
+      ) : results.length === 0 ? (
         <div className="zks-card mt-6 p-6 text-zks-text-muted">
-          Brak zatwierdzonych startów. Po akceptacji zgłoszenia przez klub pojawi się tutaj.
+          Brak opublikowanych wyników. Po zawodach klub opublikuje miejsca tutaj.
         </div>
       ) : (
         <div className="mt-6 space-y-4">
@@ -52,11 +65,13 @@ export default function WynikiPage() {
                 <Trophy className="h-6 w-6 text-zks-gold-bright" />
               </div>
               <div>
-                <h3 className="font-bold text-white">
-                  {item.child_name} {item.child_surname}
-                </h3>
+                <h3 className="font-bold text-white">{item.athlete_name}</h3>
                 <p className="text-sm text-zks-text-muted">
-                  Start zatwierdzony • {eventNames[item.event_id] || "Zawody klubowe"}
+                  {item.event_title}
+                  {item.weight_class ? ` · ${item.weight_class} kg` : ""}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-zks-gold-bright">
+                  {placeLabel(item.place)}
                 </p>
               </div>
             </div>
