@@ -17,7 +17,7 @@ export default function DashboardCard({
   return (
     <Link
       href={href}
-      className="zks-card group block p-6 transition hover:-translate-y-1 hover:border-zks-gold-mid/50 hover:shadow-gold-glow-sm"
+      className="zks-card group block min-h-[44px] p-5 transition hover:-translate-y-0.5 hover:border-zks-gold-mid/50 hover:shadow-gold-glow-sm sm:p-6"
     >
       <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-lg border border-zks-gold-mid/30 bg-zks-gold/10 transition group-hover:shadow-gold-glow-sm">
         <Icon className="h-6 w-6 text-zks-gold-bright" />

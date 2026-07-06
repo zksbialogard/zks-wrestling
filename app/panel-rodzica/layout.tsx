@@ -13,13 +13,13 @@ export default function ParentLayout({
 }) {
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-zks-black pb-24 text-white lg:pb-0">
+      <div className="min-h-screen overflow-x-hidden bg-zks-black pb-24 text-white lg:pb-0">
         <ParentPushBootstrap />
         <ParentHeader />
 
         <div className="mx-auto flex max-w-7xl">
           <ParentNav />
-          <section className="flex-1 px-4 py-6 sm:px-6 sm:py-8">
+          <section className="min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8">
             <PushPrompt />
             {children}
           </section>
