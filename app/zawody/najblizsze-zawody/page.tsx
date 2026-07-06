@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 
+import EventsEmptyState from "@/components/events/EventsEmptyState";
+import EventsLoadingState from "@/components/events/EventsLoadingState";
+import EventsSectionHero from "@/components/events/EventsSectionHero";
+import PublicEventCard from "@/components/events/PublicEventCard";
 import { fetchEvents, type Event } from "@/lib/events";
 
 export default function NajblizszeZawodyPage() {
@@ -10,7 +15,7 @@ export default function NajblizszeZawodyPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadEvents = async () => {
+    async function loadEvents() {
       try {
         const data = await fetchEvents();
         setEvents(data);
@@ -19,67 +24,45 @@ export default function NajblizszeZawodyPage() {
       } finally {
         setLoading(false);
       }
-    };
+    }
 
     loadEvents();
   }, []);
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <section className="mx-auto max-w-7xl px-6 py-20">
-        <div className="mb-16 text-center">
-          <h1 className="mb-6 text-5xl font-bold text-yellow-400 md:text-7xl">
-            Najbliższe zawody
-          </h1>
+    <main className="relative min-h-screen overflow-hidden pb-20">
+      <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-zks-gold/10 blur-[120px]" />
+      <div className="pointer-events-none absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-zks-gold-deep/10 blur-[140px]" />
 
-          <p className="mx-auto max-w-3xl text-lg text-gray-300 md:text-xl">
-            Lista najbliższych zawodów i turniejów, w których planowany jest udział
-            zawodników ZKS Białogard.
-          </p>
-        </div>
+      <section className="relative mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
+        <EventsSectionHero
+          title="Najbliższe"
+          titleAccent="zawody"
+          description="Lista nadchodzących turniejów i zawodów, w których bierze udział ZKS Białogard."
+        />
 
-        <div className="space-y-8">
-          {loading ? (
-            <div className="rounded-3xl border border-yellow-500 bg-zinc-900 p-8 text-center text-gray-300">
-              Ładowanie zawodów...
-            </div>
-          ) : events.length === 0 ? (
-            <div className="rounded-3xl border border-yellow-500 bg-zinc-900 p-8 text-center">
-              <p className="text-gray-300">Brak zawodów w bazie danych.</p>
-            </div>
-          ) : (
-            events.map((event) => (
-              <div
+        {loading ? (
+          <EventsLoadingState />
+        ) : events.length === 0 ? (
+          <EventsEmptyState />
+        ) : (
+          <div className="space-y-6">
+            {events.map((event) => (
+              <PublicEventCard
                 key={event.id}
-                className="rounded-3xl border border-yellow-500 bg-zinc-900 p-8"
-              >
-                <h2 className="mb-4 text-3xl font-bold text-yellow-400">{event.title}</h2>
+                event={event}
+                showAction={false}
+              />
+            ))}
+          </div>
+        )}
 
-                <div className="space-y-3 text-gray-300">
-                  <p>
-                    <strong>Data:</strong>{" "}
-                    {new Date(event.event_date).toLocaleDateString("pl-PL")}
-                  </p>
-
-                  <p>
-                    <strong>Miejsce:</strong> {event.location}
-                  </p>
-
-                  <p>
-                    <strong>Termin zgłoszeń:</strong>{" "}
-                    {new Date(event.registration_deadline).toLocaleDateString("pl-PL")}
-                  </p>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="mt-16 text-center">
+        <div className="mt-12 text-center">
           <Link
             href="/zawody"
-            className="inline-block rounded-2xl bg-yellow-500 px-8 py-4 font-bold text-black transition hover:bg-yellow-400"
+            className="zks-btn-outline inline-flex items-center gap-2 px-6 py-3 text-sm"
           >
+            <ArrowLeft className="h-4 w-4" />
             Zobacz wszystkie zawody
           </Link>
         </div>

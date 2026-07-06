@@ -23,6 +23,21 @@ export async function fetchEvents(): Promise<Event[]> {
   return data || [];
 }
 
+export async function fetchEventById(id: string): Promise<Event | null> {
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data;
+}
+
 async function getAuthHeader() {
   const user = auth.currentUser;
 

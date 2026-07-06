@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { notifyParents, type NotifyChannels } from "@/lib/notify-service";
+import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
 import { type TemplateKey } from "@/lib/message-templates";
 import { getAdminFromRequest } from "@/lib/verify-admin";
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
       targetUid: body.targetUid,
     });
 
-    return NextResponse.json({ ok: true, result });
+    return NextResponse.json({ ok: true, result: sanitizeNotifyResult(result) });
   } catch (error) {
     console.error(error);
     const message =

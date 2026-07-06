@@ -30,8 +30,6 @@ export async function POST(request: Request) {
     const enabled = Boolean(body.enabled);
     const subscription = body.subscription;
 
-    await savePushPreference(user.uid, enabled);
-
     if (enabled && subscription?.endpoint && subscription.keys?.p256dh && subscription.keys?.auth) {
       const saved = await upsertPushSubscription({
         user_uid: user.uid,
@@ -51,6 +49,8 @@ export async function POST(request: Request) {
     if (!enabled && subscription?.endpoint) {
       await removePushSubscription(subscription.endpoint);
     }
+
+    await savePushPreference(user.uid, enabled);
 
     return NextResponse.json({ ok: true, enabled });
   } catch (error) {

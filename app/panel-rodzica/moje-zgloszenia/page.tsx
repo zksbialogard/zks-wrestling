@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { fetchEvents } from "@/lib/events";
 import { db } from "@/lib/firebase";
 
 type Registration = {
@@ -19,6 +20,7 @@ type Registration = {
 export default function MojeZgloszeniaPage() {
   const { user } = useAuth();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [eventNames, setEventNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,6 +30,10 @@ export default function MojeZgloszeniaPage() {
       setLoading(true);
 
       try {
+        const events = await fetchEvents();
+        const names = Object.fromEntries(events.map((event) => [event.id, event.title]));
+        setEventNames(names);
+
         const userSnap = await getDocs(
           query(collection(db, "users"), where("uid", "==", user.uid))
         );
@@ -85,8 +91,10 @@ export default function MojeZgloszeniaPage() {
               <h3 className="text-lg font-bold text-white">
                 {reg.childName} {reg.childSurname}
               </h3>
-              <p className="mt-2 text-sm text-zks-text-muted">Zawody ID: {reg.eventId}</p>
-              <p className="mt-1 text-sm text-zks-gold-bright">{statusLabel(reg.status)}</p>
+              <p className="mt-2 text-sm text-zks-gold-bright">
+                {eventNames[reg.eventId] || "Zawody klubowe"}
+              </p>
+              <p className="mt-1 text-sm text-zks-text-muted">{statusLabel(reg.status)}</p>
             </div>
           ))}
         </div>

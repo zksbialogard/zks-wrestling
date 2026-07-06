@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 
+import EventsEmptyState from "@/components/events/EventsEmptyState";
+import EventsLoadingState from "@/components/events/EventsLoadingState";
+import EventsSectionHero from "@/components/events/EventsSectionHero";
+import PublicEventCard from "@/components/events/PublicEventCard";
 import { fetchEvents, type Event } from "@/lib/events";
 
 export default function ZawodyPage() {
@@ -10,65 +13,44 @@ export default function ZawodyPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    async function loadEvents() {
+      try {
+        const data = await fetchEvents();
+        setEvents(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     loadEvents();
   }, []);
 
-  const loadEvents = async () => {
-    try {
-      const data = await fetchEvents();
-      setEvents(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <main className="min-h-screen bg-black p-6 text-white">
-      <div className="mx-auto max-w-5xl">
-        <h1 className="mb-10 text-center text-5xl font-bold text-yellow-400">Zawody</h1>
+    <main className="relative min-h-screen overflow-hidden pb-20">
+      <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-zks-gold/10 blur-[120px]" />
+      <div className="pointer-events-none absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-zks-gold-deep/10 blur-[140px]" />
+
+      <section className="relative mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
+        <EventsSectionHero
+          title="Zawody"
+          titleAccent="ZKS Białogard"
+          description="Przeglądaj nadchodzące starty, sprawdź terminy zapisów i zgłaszaj dzieci bezpośrednio z aplikacji klubowej."
+        />
 
         {loading ? (
-          <div className="text-center">Ładowanie zawodów...</div>
+          <EventsLoadingState />
         ) : events.length === 0 ? (
-          <div className="rounded-3xl border border-yellow-500 bg-zinc-900 p-8 text-center">
-            Brak dostępnych zawodów.
-          </div>
+          <EventsEmptyState />
         ) : (
-          <div className="grid gap-6">
+          <div className="grid gap-6 lg:grid-cols-2">
             {events.map((event) => (
-              <div
-                key={event.id}
-                className="rounded-3xl border border-yellow-500 bg-zinc-900 p-6"
-              >
-                <h2 className="mb-4 text-3xl font-bold text-yellow-400">{event.title}</h2>
-
-                <p>
-                  <strong>Miejsce:</strong> {event.location}
-                </p>
-
-                <p>
-                  <strong>Data zawodów:</strong>{" "}
-                  {new Date(event.event_date).toLocaleDateString("pl-PL")}
-                </p>
-
-                <p>
-                  <strong>Termin zgłoszeń:</strong>{" "}
-                  {new Date(event.registration_deadline).toLocaleDateString("pl-PL")}
-                </p>
-
-                <Link
-                  href={`/zawody/${event.id}`}
-                  className="mt-5 inline-block rounded-xl bg-yellow-500 px-6 py-3 font-bold text-black"
-                >
-                  Zgłoś dziecko
-                </Link>
-              </div>
+              <PublicEventCard key={event.id} event={event} />
             ))}
           </div>
         )}
-      </div>
+      </section>
     </main>
   );
 }

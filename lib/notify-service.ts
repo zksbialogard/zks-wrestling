@@ -9,6 +9,7 @@ import {
 } from "firebase/firestore";
 
 import { fetchParentUsersFromFirestore } from "./firebase-parents";
+import { sanitizeNotifyResult } from "./notify-result-utils";
 import { sendEmailMessage, sendSmsMessage } from "./messaging";
 import { renderTemplate, type TemplateKey } from "./message-templates";
 import {
@@ -224,7 +225,7 @@ export async function notifyParents(input: {
 
       result.pushSent = pushResult.sent;
 
-      if (pushResult.errors.length) {
+      if (pushResult.sent === 0 && pushResult.errors.length) {
         result.warnings.push(...pushResult.errors.slice(0, 2));
       }
 
@@ -234,7 +235,7 @@ export async function notifyParents(input: {
         );
       }
 
-      return result;
+      return sanitizeNotifyResult(result);
     }
 
     for (const parent of parents) {
@@ -303,24 +304,26 @@ export async function notifyParents(input: {
     result.errors.push(message);
   }
 
-  return result;
+  return sanitizeNotifyResult(result);
 }
+  try {
+    const snapshot = await getDocs(
+      query(collection(getDb(), "users"), where("uid", "==", uid))
+    );
 
-export async function savePushPreference(uid: string, enabled: boolean) {
-  const snapshot = await getDocs(
-    query(collection(getDb(), "users"), where("uid", "==", uid))
-  );
+    if (snapshot.empty) {
+      return;
+    }
 
-  if (snapshot.empty) {
-    return;
+    await setDoc(
+      snapshot.docs[0].ref,
+      {
+        pushEnabled: enabled,
+        pushUpdatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+  } catch (error) {
+    console.error("savePushPreference:", error);
   }
-
-  await setDoc(
-    snapshot.docs[0].ref,
-    {
-      pushEnabled: enabled,
-      pushUpdatedAt: new Date().toISOString(),
-    },
-    { merge: true }
-  );
 }

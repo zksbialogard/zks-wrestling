@@ -262,3 +262,19 @@ export async function getWebPushStatus() {
     };
   }
 }
+
+export async function fetchPushServerStatus() {
+  const headers = await getAuthHeader();
+  const response = await fetch("/api/push/status", { headers });
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "Nie udało się sprawdzić statusu push.");
+  }
+
+  return result as {
+    registered: boolean;
+    serverSubscriptions: number;
+    vapidConfigured: boolean;
+  };
+}

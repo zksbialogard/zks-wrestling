@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { BellRing, Smartphone, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAuth } from "@/components/auth/AuthProvider";
 import {
   activatePushNotifications,
   ensureWebPushSubscription,
@@ -14,11 +15,16 @@ import {
 } from "@/lib/push-client";
 
 export default function PushPrompt() {
+  const { user, ready, loadingProfile } = useAuth();
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [iosPwaHint, setIosPwaHint] = useState(false);
 
   useEffect(() => {
+    if (!ready || loadingProfile || !user) {
+      return;
+    }
+
     async function check() {
       if (!isWebPushSupported()) {
         return;
@@ -44,7 +50,7 @@ export default function PushPrompt() {
     }
 
     check();
-  }, []);
+  }, [ready, loadingProfile, user]);
 
   if (!visible) {
     return null;

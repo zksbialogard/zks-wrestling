@@ -7,6 +7,7 @@ import { CalendarPlus, Loader2, X } from "lucide-react";
 
 import { createEvent } from "@/lib/events";
 import { formatNotifyResultMessage } from "@/lib/notifications-client";
+import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 
 type Props = {
   open: boolean;
@@ -60,14 +61,15 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
       toast.success("Zawody zostały dodane.");
 
       if (notifyResult) {
-        toast.success(formatNotifyResultMessage(notifyResult));
+        const clean = sanitizeNotifyResult(notifyResult);
+        toast.success(formatNotifyResultMessage(clean));
 
-        if (notifyResult.warnings?.length) {
-          toast.warning(notifyResult.warnings.slice(0, 3).join(" "));
+        if (clean.warnings?.length) {
+          toast.warning(clean.warnings.slice(0, 2).join(" "));
         }
 
-        if (notifyResult.errors.length) {
-          toast.error(notifyResult.errors.slice(0, 3).join(" "));
+        if (clean.errors.length) {
+          toast.error(clean.errors.slice(0, 3).join(" "));
         }
       }
     } catch (err) {

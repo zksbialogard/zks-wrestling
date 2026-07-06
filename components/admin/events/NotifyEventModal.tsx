@@ -5,6 +5,7 @@ import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { sendAdminNotify, formatNotifyResultMessage } from "@/lib/notifications-client";
+import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 import { syncParentsFromFirebaseToSupabase } from "@/lib/parents-admin-client";
 import type { EventItem } from "./EventRow";
 
@@ -42,32 +43,34 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
 
       const syncedCount = await syncParentsFromFirebaseToSupabase();
 
-      const result = await sendAdminNotify({
-        templateKey,
-        variables: {
-          title: event!.title,
-          location: event!.location,
-          eventDate,
-          registrationDeadline,
-          link: `${window.location.origin}/zawody/${event!.id}`,
-          message: customMessage || `Zmiana dotycząca zawodów ${event!.title}.`,
-        },
-        channels: {
-          email: sendEmail,
-          sms: sendSms,
-          inApp: sendInApp,
-          push: false,
-        },
-        type: "event",
-        link: `/zawody/${event!.id}`,
-      });
+      const result = sanitizeNotifyResult(
+        await sendAdminNotify({
+          templateKey,
+          variables: {
+            title: event!.title,
+            location: event!.location,
+            eventDate,
+            registrationDeadline,
+            link: `${window.location.origin}/zawody/${event!.id}`,
+            message: customMessage || `Zmiana dotycząca zawodów ${event!.title}.`,
+          },
+          channels: {
+            email: sendEmail,
+            sms: sendSms,
+            inApp: sendInApp,
+            push: false,
+          },
+          type: "event",
+          link: `/zawody/${event!.id}`,
+        })
+      );
 
       toast.success(
         `${formatNotifyResultMessage(result)} (zsynchronizowano ${syncedCount} rodziców)`
       );
 
       if (result.warnings.length) {
-        toast.warning(result.warnings.slice(0, 3).join(" "));
+        toast.warning(result.warnings.slice(0, 2).join(" "));
       }
 
       if (result.errors.length) {

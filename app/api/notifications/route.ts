@@ -16,7 +16,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
     }
 
-    const notifications = await listNotificationsForUser(user.uid);
+    const notifications = await listNotificationsForUser(user.uid, 50, true);
     const unreadCount = await countUnreadNotifications(user.uid);
 
     return NextResponse.json({ ok: true, notifications, unreadCount });
@@ -40,7 +40,15 @@ export async function PATCH(request: Request) {
     const body = await request.json();
 
     if (body.markAll) {
-      await markAllNotificationsRead(user.uid);
+      const ok = await markAllNotificationsRead(user.uid);
+
+      if (!ok) {
+        return NextResponse.json(
+          { error: "Nie udało się oznaczyć powiadomień jako przeczytane." },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json({ ok: true });
     }
 
@@ -48,7 +56,14 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Brak ID powiadomienia." }, { status: 400 });
     }
 
-    await markNotificationRead(body.id, user.uid);
+    const ok = await markNotificationRead(body.id, user.uid);
+
+    if (!ok) {
+      return NextResponse.json(
+        { error: "Nie udało się oznaczyć powiadomienia jako przeczytane." },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

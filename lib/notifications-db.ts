@@ -1,5 +1,5 @@
 import { createSupabaseAdmin } from "./supabase";
-import { supabaseRestInsertMany } from "./supabase-rest";
+import { supabaseRestInsertMany, supabaseRestPatch } from "./supabase-rest";
 import {
   DEFAULT_TEMPLATES,
   getDefaultTemplate,
@@ -32,18 +32,28 @@ function hasServiceRole() {
   return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
 }
 
-export async function listNotificationsForUser(userUid: string, limit = 50) {
+export async function listNotificationsForUser(
+  userUid: string,
+  limit = 50,
+  unreadOnly = false
+) {
   if (!hasServiceRole()) {
     return [];
   }
 
   const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
+  let query = supabase
     .from("notifications")
     .select("*")
     .eq("user_uid", userUid)
     .order("created_at", { ascending: false })
     .limit(limit);
+
+  if (unreadOnly) {
+    query = query.is("read_at", null);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("listNotificationsForUser:", error);
@@ -125,19 +135,20 @@ export async function markNotificationRead(id: string, userUid: string) {
     return false;
   }
 
-  const supabase = createSupabaseAdmin();
-  const { error } = await supabase
-    .from("notifications")
-    .update({ read_at: new Date().toISOString() })
-    .eq("id", id)
-    .eq("user_uid", userUid);
-
-  if (error) {
+  try {
+    await supabaseRestPatch(
+      "notifications",
+      {
+        id: `eq.${id}`,
+        user_uid: `eq.${userUid}`,
+      },
+      { read_at: new Date().toISOString() }
+    );
+    return true;
+  } catch (error) {
     console.error("markNotificationRead:", error);
     return false;
   }
-
-  return true;
 }
 
 export async function markAllNotificationsRead(userUid: string) {
@@ -145,19 +156,20 @@ export async function markAllNotificationsRead(userUid: string) {
     return false;
   }
 
-  const supabase = createSupabaseAdmin();
-  const { error } = await supabase
-    .from("notifications")
-    .update({ read_at: new Date().toISOString() })
-    .eq("user_uid", userUid)
-    .is("read_at", null);
-
-  if (error) {
+  try {
+    await supabaseRestPatch(
+      "notifications",
+      {
+        user_uid: `eq.${userUid}`,
+        read_at: "is.null",
+      },
+      { read_at: new Date().toISOString() }
+    );
+    return true;
+  } catch (error) {
     console.error("markAllNotificationsRead:", error);
     return false;
   }
-
-  return true;
 }
 
 export async function listMessageTemplates(): Promise<MessageTemplate[]> {

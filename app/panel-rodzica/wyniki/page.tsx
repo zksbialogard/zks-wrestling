@@ -5,6 +5,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { Trophy } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { fetchEvents } from "@/lib/events";
 import { db } from "@/lib/firebase";
 
 type Registration = {
@@ -18,10 +19,14 @@ type Registration = {
 export default function WynikiPage() {
   const { user } = useAuth();
   const [results, setResults] = useState<Registration[]>([]);
+  const [eventNames, setEventNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const load = async () => {
       if (!user) return;
+
+      const events = await fetchEvents();
+      setEventNames(Object.fromEntries(events.map((event) => [event.id, event.title])));
 
       const snapshot = await getDocs(collection(db, "registrations"));
       const all = snapshot.docs.map((item) => ({
@@ -65,7 +70,9 @@ export default function WynikiPage() {
                 <h3 className="font-bold text-white">
                   {item.childName} {item.childSurname}
                 </h3>
-                <p className="text-sm text-zks-text-muted">Start zatwierdzony • {item.eventId}</p>
+                <p className="text-sm text-zks-text-muted">
+                  Start zatwierdzony • {eventNames[item.eventId] || "Zawody klubowe"}
+                </p>
               </div>
             </div>
           ))}

@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
+import { useAuth } from "@/components/auth/AuthProvider";
 
 import {
   fetchNotifications,
@@ -13,29 +15,44 @@ import {
 } from "@/lib/notifications-client";
 import {
   activatePushNotifications,
+  fetchPushServerStatus,
   getWebPushStatus,
   unsubscribeFromWebPush,
 } from "@/lib/push-client";
 
 export default function ParentNotificationsPage() {
+  const router = useRouter();
+  const { user, ready, loadingProfile } = useAuth();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushOnServer, setPushOnServer] = useState(false);
 
   useEffect(() => {
+    if (!ready || loadingProfile || !user) {
+      return;
+    }
+
     loadNotifications();
 
     async function loadPushStatus() {
-      const status = await getWebPushStatus();
-      setPushEnabled(status.subscribed);
+      try {
+        const status = await getWebPushStatus();
+        setPushEnabled(status.subscribed);
+
+        const server = await fetchPushServerStatus();
+        setPushOnServer(server.registered);
+      } catch {
+        setPushOnServer(false);
+      }
     }
 
     loadPushStatus();
 
     const interval = window.setInterval(loadNotifications, 60000);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [ready, loadingProfile, user]);
 
   async function loadNotifications() {
     try {
@@ -57,10 +74,20 @@ export default function ParentNotificationsPage() {
       await markNotificationAsRead(item.id);
       setNotifications((prev) => prev.filter((notification) => notification.id !== item.id));
       setUnreadCount((prev) => Math.max(0, prev - 1));
+      return true;
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Nie udało się oznaczyć powiadomienia.";
       toast.error(message);
+      return false;
+    }
+  }
+
+  async function handleOpenNotification(item: NotificationItem) {
+    const marked = await handleMarkRead(item);
+
+    if (marked && item.link) {
+      router.push(item.link);
     }
   }
 
@@ -82,6 +109,12 @@ export default function ParentNotificationsPage() {
 
     if (result.ok) {
       setPushEnabled(true);
+      try {
+        const server = await fetchPushServerStatus();
+        setPushOnServer(server.registered);
+      } catch {
+        setPushOnServer(false);
+      }
       toast.success(result.message);
     } else {
       toast.error(result.message);
@@ -107,6 +140,12 @@ export default function ParentNotificationsPage() {
           </h1>
           <p className="mt-2 text-sm text-zks-text-muted">
             Tylko nieprzeczytane wiadomości. Po odczytaniu znikają z listy.
+          </p>
+          <p className="mt-1 text-xs text-zks-text-muted">
+            Push na serwerze:{" "}
+            <span className={pushOnServer ? "text-green-400" : "text-red-400"}>
+              {pushOnServer ? "zarejestrowany ✓" : "brak — kliknij „Włącz powiadomienia push”"}
+            </span>
           </p>
         </div>
 
@@ -179,23 +218,33 @@ export default function ParentNotificationsPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {item.link && (
-                      <Link
-                        href={item.link}
-                        onClick={() => unread && handleMarkRead(item)}
+                    {item.link ? (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenNotification(item)}
                         className="zks-btn-primary px-4 py-2 text-xs"
                       >
                         Otwórz
-                      </Link>
+                      </button>
+                    ) : (
+                      unread && (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkRead(item)}
+                          className="zks-btn-primary px-4 py-2 text-xs"
+                        >
+                          Oznacz jako przeczytane
+                        </button>
+                      )
                     )}
 
-                    {unread && (
+                    {unread && item.link && (
                       <button
                         type="button"
                         onClick={() => handleMarkRead(item)}
                         className="zks-btn-outline px-4 py-2 text-xs"
                       >
-                        Oznacz jako przeczytane
+                        Usuń z listy
                       </button>
                     )}
                   </div>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
 import { notifyParents } from "@/lib/notify-service";
+import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
 import { supabaseRestInsert, testSupabaseConnection } from "@/lib/supabase-rest";
 import { getAdminFromRequest } from "@/lib/verify-admin";
@@ -176,7 +177,11 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ ok: true, data, notifyResult });
+    return NextResponse.json({
+      ok: true,
+      data,
+      notifyResult: notifyResult ? sanitizeNotifyResult(notifyResult) : null,
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
