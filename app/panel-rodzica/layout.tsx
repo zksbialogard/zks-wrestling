@@ -3,6 +3,7 @@
 import AuthGuard from "@/components/auth/AuthGuard";
 import ParentHeader from "@/components/parent/ParentHeader";
 import ParentNav from "@/components/parent/ParentNav";
+import ParentPushBootstrap from "@/components/parent/ParentPushBootstrap";
 import PushPrompt from "@/components/parent/PushPrompt";
 
 export default function ParentLayout({
@@ -13,6 +14,7 @@ export default function ParentLayout({
   return (
     <AuthGuard>
       <div className="min-h-screen bg-zks-black pb-24 text-white lg:pb-0">
+        <ParentPushBootstrap />
         <ParentHeader />
 
         <div className="mx-auto flex max-w-7xl">

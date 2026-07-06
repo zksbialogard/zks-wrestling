@@ -83,7 +83,7 @@ export async function sendWebPushToUsers(
 
   if (!subscriptions.length) {
     errors.push(
-      "Żaden rodzic nie włączył powiadomień push (musi zainstalować PWA i kliknąć „Włącz powiadomienia”)."
+      "Push na telefon: 0 — rodzice muszą w panelu kliknąć „Włącz powiadomienia” (powiadomienia w aplikacji i tak trafiły do panelu rodzica)."
     );
   }
 

@@ -14,6 +14,11 @@ self.addEventListener("push", (event) => {
       body: payload.body || "",
       icon: "/logo-shield.png",
       badge: "/logo-shield.png",
+      silent: false,
+      vibrate: [300, 100, 300, 100, 300],
+      requireInteraction: true,
+      tag: "zks-club-alert",
+      renotify: true,
       data: { url: payload.url || "/panel-rodzica/powiadomienia" },
     })
   );
@@ -23,6 +28,7 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
   const targetUrl = event.notification.data?.url || "/panel-rodzica/powiadomienia";
+  const absoluteUrl = new URL(targetUrl, self.location.origin).href;
 
-  event.waitUntil(clients.openWindow(targetUrl));
+  event.waitUntil(clients.openWindow(absoluteUrl));
 });
