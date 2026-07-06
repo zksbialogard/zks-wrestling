@@ -8,10 +8,6 @@ import {
   orderBy,
   query,
 } from "firebase/firestore";
-import {
-  deleteObject,
-  ref,
-} from "firebase/storage";
 import { toast } from "sonner";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 
@@ -27,9 +23,12 @@ import {
   formatCompressionSummary,
   prepareGalleryImages,
 } from "@/lib/gallery-image-utils";
-import { uploadGalleryFile } from "@/lib/gallery-storage-upload";
+import {
+  deleteGalleryFileViaApi,
+  uploadGalleryFileViaApi,
+} from "@/lib/gallery-storage-upload";
 import type { GalleryItem } from "@/lib/gallery-types";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 
 export default function AdminGaleriaPage() {
   const [items, setItems] = useState<GalleryItem[]>([]);
@@ -99,20 +98,18 @@ export default function AdminGaleriaPage() {
       await ensureGalleryUploadAuth();
 
       const prepared = await prepareGalleryImages(file);
-      const timestamp = Date.now();
-      const baseName = prepared.full.name.replace(/\s+/g, "-");
-      const storagePath = `gallery/${timestamp}-${baseName}`;
+      const photoTitle = title || prepared.full.name.replace(/\.jpg$/i, "").replace(/-full$/i, "");
 
       setUploadPhase("uploading");
 
-      const url = await uploadGalleryFile(prepared.full, storagePath);
+      const { url, storagePath } = await uploadGalleryFileViaApi(prepared.full);
+
+      const photoTitleFinal = title || photoTitle;
 
       setUploadPhase("saving");
 
-      const photoTitle = title || baseName.replace(/\.jpg$/i, "");
-
       const id = await saveGalleryPhotoToFirestore({
-        title: photoTitle,
+        title: photoTitleFinal,
         url,
         thumbUrl: url,
         storagePath,
@@ -121,7 +118,7 @@ export default function AdminGaleriaPage() {
       const compressionNote = formatCompressionSummary(prepared);
       const newItem: GalleryItem = {
         id,
-        title: photoTitle,
+        title: photoTitleFinal,
         url,
         thumbUrl: url,
         storagePath,
@@ -131,7 +128,7 @@ export default function AdminGaleriaPage() {
       setItems((current) => [newItem, ...current.filter((item) => item.id !== id)]);
 
       if (notifyMembers) {
-        void notifyGalleryPhotoPublished(photoTitle).catch((notifyError) => {
+        void notifyGalleryPhotoPublished(photoTitleFinal).catch((notifyError) => {
           console.error(notifyError);
           toast.warning(
             `Zdjęcie dodane (${compressionNote}). Powiadomienia mogły nie zostać wysłane.`
@@ -163,12 +160,12 @@ export default function AdminGaleriaPage() {
     if (!confirm("Usunąć to zdjęcie?")) return;
 
     try {
-      if (item.storagePath) {
-        await deleteObject(ref(storage, item.storagePath));
-      }
-
-      if (item.thumbStoragePath && item.thumbStoragePath !== item.storagePath) {
-        await deleteObject(ref(storage, item.thumbStoragePath));
+      if (item.storagePath?.startsWith("gallery/")) {
+        try {
+          await deleteGalleryFileViaApi(item.storagePath);
+        } catch (storageError) {
+          console.error(storageError);
+        }
       }
 
       await deleteGalleryPhotoFromFirestore(item.id);
@@ -212,8 +209,7 @@ export default function AdminGaleriaPage() {
         </label>
 
         <p className="text-xs text-zks-text-muted">
-          Zdjęcia są automatycznie zmniejszane do max 1280 px (JPG). Jeden plik — szybszy upload.
-          Unikaj HEIC z iPhone; wybierz JPG.
+          Zdjęcia są zmniejszane do max 1280 px i wysyłane przez serwer (Supabase). Format JPG.
         </p>
 
         <label className="flex cursor-pointer items-center gap-3 text-sm text-zks-text">

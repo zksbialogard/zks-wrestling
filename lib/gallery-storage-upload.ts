@@ -1,51 +1,57 @@
-import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
+import { auth } from "./firebase";
 
-import { storage } from "./firebase";
+async function getAuthHeader() {
+  const user = auth.currentUser;
 
-const UPLOAD_TIMEOUT_MS = 90_000;
+  if (!user) {
+    throw new Error("Musisz być zalogowany jako administrator.");
+  }
 
-export async function uploadGalleryFile(file: File, path: string) {
-  const storageRef = ref(storage, path);
+  const token = await user.getIdToken(true);
 
-  await new Promise<void>((resolve, reject) => {
-    const task = uploadBytesResumable(storageRef, file, {
-      contentType: file.type || "image/jpeg",
-      cacheControl: "public,max-age=31536000",
-    });
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
 
-    const timer = window.setTimeout(() => {
-      task.cancel();
-      reject(
-        new Error(
-          "Upload trwa zbyt długo — sprawdź internet lub wybierz mniejsze zdjęcie (JPG)."
-        )
-      );
-    }, UPLOAD_TIMEOUT_MS);
+export async function uploadGalleryFileViaApi(file: File) {
+  const headers = await getAuthHeader();
+  const formData = new FormData();
+  formData.append("file", file);
 
-    task.on(
-      "state_changed",
-      () => undefined,
-      (error) => {
-        window.clearTimeout(timer);
-        const code = (error as { code?: string }).code;
-
-        if (code === "storage/unauthorized") {
-          reject(new Error("Brak uprawnień do wysyłania zdjęć. Zaloguj się ponownie jako admin."));
-          return;
-        }
-
-        reject(
-          error instanceof Error
-            ? error
-            : new Error("Nie udało się wysłać pliku do magazynu zdjęć.")
-        );
-      },
-      () => {
-        window.clearTimeout(timer);
-        resolve();
-      }
-    );
+  const response = await fetch("/api/admin/gallery/upload", {
+    method: "POST",
+    headers,
+    body: formData,
   });
 
-  return getDownloadURL(storageRef);
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      (result as { error?: string }).error || "Nie udało się wysłać zdjęcia na serwer."
+    );
+  }
+
+  return result as { ok: true; url: string; storagePath: string };
+}
+
+export async function deleteGalleryFileViaApi(storagePath: string) {
+  const headers = {
+    ...(await getAuthHeader()),
+    "Content-Type": "application/json",
+  };
+
+  const response = await fetch("/api/admin/gallery/upload", {
+    method: "DELETE",
+    headers,
+    body: JSON.stringify({ storagePath }),
+  });
+
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(
+      (result as { error?: string }).error || "Nie udało się usunąć pliku zdjęcia."
+    );
+  }
 }
