@@ -66,7 +66,7 @@ export async function POST(request: Request) {
 
     const result = await sendSmsMessage({
       phone,
-      message: "ZKS Białogard: test SMS z aplikacji klubowej. Jeśli widzisz tę wiadomość, SMS działa.",
+      message: "ZKS Białogard: test SMS — polskie znaki działają: ąęółśźż.",
     });
 
     if (!result.ok) {

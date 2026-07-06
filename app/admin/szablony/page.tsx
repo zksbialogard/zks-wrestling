@@ -39,10 +39,22 @@ export default function AdminSzablonyPage() {
   const [draft, setDraft] = useState<EditableTemplate | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [parentsWithPhone, setParentsWithPhone] = useState(0);
 
   useEffect(() => {
     loadTemplates();
+    loadSmsStatus();
   }, []);
+
+  async function loadSmsStatus() {
+    try {
+      const response = await fetch("/api/admin/sms");
+      const result = await response.json();
+      setParentsWithPhone(result.parentsWithPhone || 0);
+    } catch {
+      setParentsWithPhone(0);
+    }
+  }
 
   async function loadTemplates() {
     try {
@@ -166,6 +178,7 @@ export default function AdminSzablonyPage() {
           <TemplateEditor
             draft={draft}
             saving={saving}
+            parentsWithPhone={parentsWithPhone}
             onChange={setDraft}
             onSave={saveTemplate}
           />

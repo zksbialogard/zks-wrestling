@@ -1,10 +1,14 @@
 "use client";
 
-import { useRef } from "react";
-import { Eye, Info, Loader2, Save } from "lucide-react";
+import { useRef, useState } from "react";
+import { Eye, Info, Loader2, Save, Send } from "lucide-react";
+import { toast } from "sonner";
 
+import { auth } from "@/lib/firebase";
 import type { MessageTemplate } from "@/lib/message-templates";
+import { estimateSmsParts, smsUsesUnicode } from "@/lib/messaging";
 import {
+  friendlyToTechnical,
   getVariablesForTemplate,
   TEMPLATE_WHEN,
   technicalToFriendly,
@@ -21,6 +25,7 @@ export type EditableTemplate = {
 type TemplateEditorProps = {
   draft: EditableTemplate;
   saving: boolean;
+  parentsWithPhone: number;
   onChange: (draft: EditableTemplate) => void;
   onSave: () => void;
 };
@@ -93,9 +98,11 @@ function fillPreview(text: string) {
 export default function TemplateEditor({
   draft,
   saving,
+  parentsWithPhone,
   onChange,
   onSave,
 }: TemplateEditorProps) {
+  const [broadcasting, setBroadcasting] = useState(false);
   const refs = {
     sms_text: useRef<HTMLTextAreaElement>(null),
     push_title: useRef<HTMLInputElement>(null),
@@ -124,7 +131,65 @@ export default function TemplateEditor({
   }
 
   const previewSms = fillPreview(draft.sms_text);
-  const charCount = previewSms.length;
+  const smsParts = estimateSmsParts(previewSms);
+  const unicode = smsUsesUnicode(previewSms);
+
+  async function broadcastToAll() {
+    const technical = friendlyToTechnical(draft.sms_text).trim();
+
+    if (!technical) {
+      toast.error("Uzupełnij treść SMS.");
+      return;
+    }
+
+    if (/\[[^\]]+\]/.test(draft.sms_text)) {
+      toast.error("Usuń placeholdery typu [Tytuł] albo wstaw konkretne dane przed wysyłką.");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Wyślesz SMS do ${parentsWithPhone} rodziców z numerem telefonu.\n\nTreść:\n${technical}\n\nKoszt: ok. ${smsParts} SMS na osobę. Kontynuować?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setBroadcasting(true);
+      const user = auth.currentUser;
+
+      if (!user) {
+        throw new Error("Brak sesji administratora.");
+      }
+
+      const token = await user.getIdToken();
+      const response = await fetch("/api/admin/sms/broadcast", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: technical, confirmed: true }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Nie udało się wysłać SMS.");
+      }
+
+      toast.success(result.message);
+
+      if (result.result?.errors?.length) {
+        toast.warning(result.result.errors.slice(0, 2).join(" "));
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Błąd wysyłki masowej.");
+    } finally {
+      setBroadcasting(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -143,7 +208,7 @@ export default function TemplateEditor({
 
         <FieldBlock
           label="Wiadomość na telefon rodzica"
-          hint="Krótko i konkretnie — max ok. 160 znaków to 1 SMS (polskie znaki skracają limit)."
+          hint="Polskie znaki działają (ą, ę, ó, ł, ś, ź, ż). Przy polskich znakach 1 SMS = max 70 znaków."
         >
           <textarea
             ref={refs.sms_text}
@@ -158,8 +223,8 @@ export default function TemplateEditor({
             onInsert={(label) => insertIntoField("sms_text", label)}
           />
           <p className="mt-2 text-xs text-zks-text-muted">
-            Długość (przykład): {charCount} znaków
-            {charCount > 160 ? " — może zostać policzone jako 2+ SMS-y" : ""}
+            {previewSms.length} znaków · ok. {smsParts} SMS na osobę
+            {unicode ? " (polskie znaki)" : ""}
           </p>
         </FieldBlock>
       </section>
@@ -218,15 +283,33 @@ export default function TemplateEditor({
         </div>
       </section>
 
-      <button
-        type="button"
-        disabled={saving}
-        onClick={onSave}
-        className="zks-btn-primary inline-flex items-center gap-2 px-6 py-3 text-sm disabled:opacity-60"
-      >
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-        {saving ? "Zapisywanie..." : "Zapisz szablon"}
-      </button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <button
+          type="button"
+          disabled={saving}
+          onClick={onSave}
+          className="zks-btn-primary inline-flex items-center gap-2 px-6 py-3 text-sm disabled:opacity-60"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {saving ? "Zapisywanie..." : "Zapisz szablon"}
+        </button>
+
+        <button
+          type="button"
+          disabled={broadcasting || parentsWithPhone === 0}
+          onClick={broadcastToAll}
+          className="zks-btn-outline inline-flex items-center gap-2 px-6 py-3 text-sm disabled:opacity-60"
+        >
+          {broadcasting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
+          {broadcasting
+            ? "Wysyłanie..."
+            : `Wyślij SMS do wszystkich (${parentsWithPhone})`}
+        </button>
+      </div>
     </div>
   );
 }

@@ -61,7 +61,7 @@ export async function submitRegistration(input: {
   if (parentPhone) {
     await sendSmsMessage({
       phone: parentPhone,
-      message: `ZKS Białogard: zgloszenie ${child.imie} ${child.nazwisko} na "${event.title}" zapisane. Oczekuje na akceptacje klubu.`,
+      message: `ZKS Białogard: zgłoszenie ${child.imie} ${child.nazwisko} na „${event.title}” zapisane. Oczekuje na akceptację klubu.`,
     });
   }
 

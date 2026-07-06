@@ -47,7 +47,7 @@ export function getSmsSenderName() {
 }
 
 function truncateSmsMessage(message: string) {
-  const maxLength = 640;
+  const maxLength = 402;
   const trimmed = message.trim();
 
   if (trimmed.length <= maxLength) {
@@ -55,6 +55,16 @@ function truncateSmsMessage(message: string) {
   }
 
   return `${trimmed.slice(0, maxLength - 1)}…`;
+}
+
+export function smsUsesUnicode(message: string) {
+  return /[^\u0000-\u007F]/.test(message);
+}
+
+export function estimateSmsParts(message: string) {
+  const length = message.trim().length;
+  const partSize = smsUsesUnicode(message) ? 70 : 160;
+  return Math.max(1, Math.ceil(length / partSize));
 }
 
 function humanizeSmsError(message: string, sender: string) {
@@ -233,6 +243,7 @@ export async function sendSmsMessage(input: { phone: string | unknown; message: 
     to,
     message,
     format: "json",
+    encoding: "utf-8",
   });
 
   const sender = getSmsSenderName();
