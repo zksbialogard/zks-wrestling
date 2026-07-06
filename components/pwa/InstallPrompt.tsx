@@ -1,28 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Download, Share, X } from "lucide-react";
 
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-};
-
-function isStandalone() {
-  if (typeof window === "undefined") return false;
-
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    ("standalone" in window.navigator &&
-      (window.navigator as Navigator & { standalone?: boolean }).standalone)
-  );
-}
-
-function isIos() {
-  if (typeof window === "undefined") return false;
-
-  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-}
+import {
+  type BeforeInstallPromptEvent,
+  isIosDevice,
+  isStandalonePwa,
+} from "@/lib/pwa-install-utils";
 
 export default function InstallPrompt() {
   const [visible, setVisible] = useState(false);
@@ -31,12 +17,12 @@ export default function InstallPrompt() {
   const [iosHint, setIosHint] = useState(false);
 
   useEffect(() => {
-    if (isStandalone()) return;
+    if (isStandalonePwa()) return;
 
     const dismissed = sessionStorage.getItem("zks-pwa-dismissed");
     if (dismissed) return;
 
-    if (isIos()) {
+    if (isIosDevice()) {
       setIosHint(true);
       setVisible(true);
       return;
@@ -102,6 +88,13 @@ export default function InstallPrompt() {
                 Zainstaluj
               </button>
             )}
+
+            <Link
+              href="/pobierz"
+              className="mt-2 inline-block text-xs font-medium text-zks-gold-bright hover:underline"
+            >
+              Pełna instrukcja instalacji →
+            </Link>
           </div>
 
           <button

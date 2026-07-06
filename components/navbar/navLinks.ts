@@ -8,6 +8,7 @@ export const publicLinks: NavLink[] = [
   { label: "Klub", href: "/klub/o-klubie" },
   { label: "Zawody", href: "/zawody" },
   { label: "Aktualności", href: "/aktualnosci" },
+  { label: "Pobierz", href: "/pobierz" },
   { label: "Kontakt", href: "/kontakt" },
 ];
 
