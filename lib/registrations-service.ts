@@ -10,7 +10,7 @@ import {
   updateRegistrationStatus,
   updateRegistrationData,
 } from "./registrations-db";
-import type { RegistrationStatus } from "./registration-types";
+import type { RegistrationRecord, RegistrationStatus } from "./registration-types";
 import { createNotificationRecordsBulk } from "./notifications-db";
 import { sendWebPushToUsers } from "./web-push-service";
 
