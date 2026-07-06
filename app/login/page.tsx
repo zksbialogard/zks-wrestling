@@ -11,7 +11,6 @@ import AuthField from "@/components/auth/AuthField";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { getPanelHref } from "@/lib/panel-routes";
 import { auth } from "@/lib/firebase";
-import { getPanelHref } from "@/lib/panel-routes";
 
 function LoginForm() {
   const router = useRouter();
