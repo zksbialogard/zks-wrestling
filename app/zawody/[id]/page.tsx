@@ -52,6 +52,8 @@ export default function ZgloszenieNaZawodyPage() {
   const [registrations, setRegistrations] = useState<RegistrationItem[]>([]);
   const [loadingChildren, setLoadingChildren] = useState(true);
   const [registeringId, setRegisteringId] = useState<string | null>(null);
+  const [bulkRegistering, setBulkRegistering] = useState(false);
+  const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -148,6 +150,57 @@ export default function ZgloszenieNaZawodyPage() {
     }
   };
 
+  const unregisteredChildren = children.filter((child) => !getChildRegistration(child.id));
+
+  const toggleChildSelection = (childId: string) => {
+    setSelectedChildIds((prev) =>
+      prev.includes(childId) ? prev.filter((id) => id !== childId) : [...prev, childId]
+    );
+  };
+
+  const registerMany = async (childIds: string[]) => {
+    if (!event || !childIds.length) {
+      return;
+    }
+
+    if (getEventRegistrationStatus(event) !== "open") {
+      toast.error("Zapisy na te zawody są już zamknięte.");
+      return;
+    }
+
+    try {
+      setBulkRegistering(true);
+      let successCount = 0;
+
+      for (const childId of childIds) {
+        if (getChildRegistration(childId)) {
+          continue;
+        }
+
+        await submitRegistration(eventId, childId);
+        successCount += 1;
+      }
+
+      await loadRegistrations();
+      setSelectedChildIds([]);
+
+      if (successCount === 0) {
+        toast.info("Wybrane dzieci są już zgłoszone.");
+      } else if (successCount === 1) {
+        toast.success("Zgłoszono 1 dziecko na zawody.");
+      } else {
+        toast.success(`Zgłoszono ${successCount} dzieci na zawody.`);
+      }
+    } catch (error) {
+      await loadRegistrations();
+      const message =
+        error instanceof Error ? error.message : "Błąd podczas zgłaszania dzieci.";
+      toast.error(message);
+    } finally {
+      setBulkRegistering(false);
+    }
+  };
+
   if (eventLoading) {
     return (
       <main className="min-h-screen px-5 py-14 sm:px-8">
@@ -221,13 +274,40 @@ export default function ZgloszenieNaZawodyPage() {
           </ul>
         </div>
 
-        <div className="mt-8">
-          <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white">
-            Wybierz dziecko
-          </h2>
-          <p className="mt-2 text-sm text-zks-text-muted">
-            Zgłoś zawodnika na zawody „{event.title}”.
-          </p>
+        <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white">
+              Wybierz dzieci
+            </h2>
+            <p className="mt-2 text-sm text-zks-text-muted">
+              Możesz zgłosić jedno dziecko albo kilka naraz na zawody „{event.title}”.
+            </p>
+          </div>
+
+          {canRegister && unregisteredChildren.length > 1 && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={bulkRegistering}
+                onClick={() =>
+                  registerMany(unregisteredChildren.map((child) => child.id))
+                }
+                className="zks-btn-primary px-4 py-2.5 text-xs disabled:opacity-60"
+              >
+                {bulkRegistering ? "Zgłaszanie..." : "Zgłoś wszystkie dzieci"}
+              </button>
+              {selectedChildIds.length > 0 && (
+                <button
+                  type="button"
+                  disabled={bulkRegistering}
+                  onClick={() => registerMany(selectedChildIds)}
+                  className="zks-btn-outline px-4 py-2.5 text-xs disabled:opacity-60"
+                >
+                  Zgłoś zaznaczone ({selectedChildIds.length})
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {!isLoggedIn ? (
@@ -267,11 +347,26 @@ export default function ZgloszenieNaZawodyPage() {
               return (
                 <article
                   key={child.id}
-                  className="zks-card rounded-2xl p-5 transition hover:border-zks-gold-mid/40"
+                  className={`zks-card rounded-2xl p-5 transition hover:border-zks-gold-mid/40 ${
+                    selectedChildIds.includes(child.id) ? "border-zks-gold-bright/50" : ""
+                  }`}
                 >
-                  <h3 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white">
-                    {child.imie} {child.nazwisko}
-                  </h3>
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white">
+                      {child.imie} {child.nazwisko}
+                    </h3>
+                    {!existing && canRegister && unregisteredChildren.length > 1 && (
+                      <label className="flex items-center gap-2 text-xs text-zks-text-muted">
+                        <input
+                          type="checkbox"
+                          checked={selectedChildIds.includes(child.id)}
+                          onChange={() => toggleChildSelection(child.id)}
+                          className="accent-zks-gold"
+                        />
+                        Zaznacz
+                      </label>
+                    )}
+                  </div>
 
                   <dl className="mt-4 space-y-2 text-sm text-zks-text-muted">
                     <div className="flex justify-between gap-4">
@@ -303,7 +398,7 @@ export default function ZgloszenieNaZawodyPage() {
                   ) : (
                     <button
                       type="button"
-                      disabled={!canRegister || registeringId === child.id}
+                      disabled={!canRegister || registeringId === child.id || bulkRegistering}
                       onClick={() => registerChild(child)}
                       className="zks-btn-primary mt-5 inline-flex w-full items-center justify-center gap-2 px-4 py-3 text-xs disabled:cursor-not-allowed disabled:opacity-50"
                     >

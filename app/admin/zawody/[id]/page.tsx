@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
 import { ArrowLeft, Check, Loader2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +19,7 @@ import {
   updateAdminRegistrationStatus,
   type RegistrationItem,
 } from "@/lib/registrations-client";
+import { exportStartListToExcel, buildStartListRows } from "@/lib/start-list-export";
 
 export default function AdminEventRegistrationsPage() {
   const params = useParams();
@@ -69,32 +68,17 @@ export default function AdminEventRegistrationsPage() {
   };
 
   const exportToExcel = () => {
-    const approved = registrations.filter(
-      (item) => normalizeRegistrationStatus(item.status) === "approved"
+    const result = exportStartListToExcel(
+      registrations,
+      `${event?.title || "zawody"}_lista_startowa`
     );
 
-    if (!approved.length) {
-      toast.warning("Brak zaakceptowanych zawodników.");
+    if (!result.ok) {
+      toast.warning(result.reason);
       return;
     }
 
-    const data = approved.map((item) => ({
-      Imię: item.child_name,
-      Nazwisko: item.child_surname,
-      Rocznik: item.child_birth_year,
-      Waga: `${item.child_weight} kg`,
-      Klub: "ZKS Białogard",
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Lista startowa");
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-    const fileData = new Blob([excelBuffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-
-    saveAs(fileData, `${event?.title || "zawody"}_lista_startowa.xlsx`);
+    toast.success(`Pobrano listę startową (${result.count} zawodników).`);
   };
 
   const sendReminderSms = async () => {
@@ -141,6 +125,8 @@ export default function AdminEventRegistrationsPage() {
       .length,
   };
 
+  const startListRows = buildStartListRows(registrations);
+
   return (
     <>
       <Link
@@ -165,7 +151,7 @@ export default function AdminEventRegistrationsPage() {
           Odśwież
         </button>
         <button type="button" onClick={exportToExcel} className="zks-btn-primary px-4 py-2 text-xs">
-          Pobierz Excel
+          Lista startowa (Excel)
         </button>
         <button type="button" onClick={sendReminderSms} className="zks-btn-outline px-4 py-2 text-xs">
           Wyślij SMS przypomnienie
@@ -184,6 +170,49 @@ export default function AdminEventRegistrationsPage() {
             <div className="text-xs uppercase tracking-wide text-zks-text-muted">{stat.label}</div>
           </div>
         ))}
+      </div>
+
+      <div className="zks-card mb-8 overflow-hidden">
+        <div className="border-b border-zks-gold-mid/20 px-5 py-4">
+          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold uppercase text-white">
+            Lista startowa
+          </h2>
+          <p className="mt-1 text-xs text-zks-text-muted">
+            Tylko zaakceptowani zawodnicy. Pobierz Excel w tym samym formacie.
+          </p>
+        </div>
+
+        {startListRows.length === 0 ? (
+          <p className="p-5 text-sm text-zks-text-muted">
+            Brak zaakceptowanych zawodników — najpierw kliknij „Akceptuj” przy zgłoszeniach.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-zks-black/40 text-xs uppercase tracking-wide text-zks-gold-mid">
+                <tr>
+                  <th className="px-5 py-3">Imię i Nazwisko</th>
+                  <th className="px-5 py-3">Data urodzenia</th>
+                  <th className="px-5 py-3">Klub</th>
+                  <th className="px-5 py-3">Kat. wagowa</th>
+                </tr>
+              </thead>
+              <tbody>
+                {startListRows.map((row, index) => (
+                  <tr
+                    key={`${row["Imię i Nazwisko"]}-${index}`}
+                    className="border-t border-zks-gold-mid/10 text-zks-text"
+                  >
+                    <td className="px-5 py-3 font-medium text-white">{row["Imię i Nazwisko"]}</td>
+                    <td className="px-5 py-3">{row["Data urodzenia"]}</td>
+                    <td className="px-5 py-3">{row.Klub}</td>
+                    <td className="px-5 py-3">{row["Kat. wagowa"]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="mb-6 flex flex-wrap gap-2">

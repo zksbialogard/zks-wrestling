@@ -6,12 +6,15 @@ import { toast } from "sonner";
 import {
   Bell,
   CalendarDays,
+  FileSpreadsheet,
   MapPin,
   Pencil,
   Trash2,
 } from "lucide-react";
 
 import { deleteEvent } from "@/lib/events";
+import { fetchAdminRegistrations } from "@/lib/registrations-client";
+import { exportStartListToExcel } from "@/lib/start-list-export";
 import EventStatusBadge from "./EventStatusBadge";
 
 export type EventItem = {
@@ -58,6 +61,27 @@ export default function EventRow({
     onNotify(event);
   };
 
+  const downloadStartList = async () => {
+    try {
+      const registrations = await fetchAdminRegistrations(event.id);
+      const result = exportStartListToExcel(
+        registrations,
+        `${event.title}_lista_startowa`
+      );
+
+      if (!result.ok) {
+        toast.warning(result.reason);
+        return;
+      }
+
+      toast.success(`Lista startowa pobrana (${result.count} zawodników).`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Nie udało się pobrać listy startowej."
+      );
+    }
+  };
+
   return (
     <div className="zks-card p-5 transition hover:border-zks-gold-mid/40 sm:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -90,6 +114,15 @@ export default function EventRow({
           >
             Zgłoszenia
           </Link>
+
+          <button
+            type="button"
+            onClick={downloadStartList}
+            className="zks-btn-outline inline-flex items-center gap-2 px-4 py-2 text-xs"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            Excel
+          </button>
 
           <button
             type="button"
