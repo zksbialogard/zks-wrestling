@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
   Baby,
+  CalendarClock,
   CalendarDays,
   ClipboardList,
   Home,
@@ -23,6 +24,7 @@ import ParentMobileNav from "./ParentMobileNav";
 const links = [
   { href: "/panel-rodzica", label: "Panel", icon: Home },
   { href: "/panel-rodzica/moje-dzieci", label: "Moje dzieci", icon: Baby },
+  { href: "/panel-rodzica/treningi", label: "Treningi", icon: CalendarClock },
   { href: "/zawody", label: "Zawody", icon: CalendarDays },
   { href: "/aktualnosci", label: "Aktualności", icon: Newspaper },
   { href: "/panel-rodzica/powiadomienia", label: "Powiadomienia", icon: Bell, badge: true },

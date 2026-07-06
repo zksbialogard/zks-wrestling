@@ -3,8 +3,6 @@ import {
   collection,
   getDocs,
   getFirestore,
-  query,
-  where,
 } from "firebase/firestore";
 
 import { renderTemplate, type TemplateKey } from "./message-templates";
@@ -35,7 +33,12 @@ type GroupMember = {
   email?: string;
   telefon?: string;
   imie?: string;
+  rola?: string;
 };
+
+function trainingNotificationLink(rola?: string): string {
+  return rola === "zawodnik" ? "/panel-zawodnika/treningi" : "/panel-rodzica/treningi";
+}
 
 function getDb() {
   const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -46,27 +49,29 @@ async function loadGroupMemberUids(groupId: TrainingGroupId): Promise<Set<string
   const db = getDb();
   const uids = new Set<string>();
 
-  const childrenSnapshot = await getDocs(
-    query(collection(db, "children"), where("grupaTreningowa", "==", groupId))
-  );
+  const childrenSnapshot = await getDocs(collection(db, "children"));
 
   for (const item of childrenSnapshot.docs) {
-    const parentUid = item.data().parentUid as string | undefined;
+    const data = item.data();
+    if (data.grupaTreningowa !== groupId) {
+      continue;
+    }
+
+    const parentUid = data.parentUid as string | undefined;
     if (parentUid) {
       uids.add(parentUid);
     }
   }
 
-  const usersSnapshot = await getDocs(
-    query(
-      collection(db, "users"),
-      where("rola", "==", "zawodnik"),
-      where("grupaTreningowa", "==", groupId)
-    )
-  );
+  const usersSnapshot = await getDocs(collection(db, "users"));
 
   for (const item of usersSnapshot.docs) {
-    const uid = (item.data().uid as string) || item.id;
+    const data = item.data();
+    if (data.rola !== "zawodnik" || data.grupaTreningowa !== groupId) {
+      continue;
+    }
+
+    const uid = (data.uid as string) || item.id;
     if (uid) {
       uids.add(uid);
     }
@@ -99,6 +104,7 @@ async function loadGroupMembers(groupId: TrainingGroupId): Promise<GroupMember[]
       email: data.email as string | undefined,
       telefon: coercePhoneValue(data.telefon) || undefined,
       imie: data.imie as string | undefined,
+      rola: data.rola as string | undefined,
     });
   }
 
@@ -171,8 +177,13 @@ export async function notifyTrainingGroup(input: {
       channels.push ? "push" : null,
     ].filter(Boolean) as string[];
 
-    const link = input.link || "/panel-zawodnika/treningi";
     const memberUids = members.map((member) => member.uid);
+    const urlsByUid = Object.fromEntries(
+      members.map((member) => [
+        member.uid,
+        input.link || trainingNotificationLink(member.rola),
+      ])
+    );
 
     if (channels.inApp !== false) {
       const bulk = await createNotificationRecordsBulk(
@@ -181,7 +192,7 @@ export async function notifyTrainingGroup(input: {
           type: "training_exception",
           title: rendered.pushTitle,
           body: rendered.pushBody,
-          link,
+          link: urlsByUid[member.uid],
           channels: activeChannels,
         }))
       );
@@ -194,7 +205,7 @@ export async function notifyTrainingGroup(input: {
       const pushResult = await sendWebPushToUsers(memberUids, {
         title: rendered.pushTitle,
         body: rendered.pushBody,
-        url: link,
+        urlsByUid,
       });
 
       result.pushSent = pushResult.sent;

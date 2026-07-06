@@ -1,32 +1,17 @@
 "use client";
 
-import { CalendarDays, ChevronRight, MapPin, Users } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, ChevronRight, Loader2, MapPin, Users } from "lucide-react";
 
-const events = [
-  {
-    name: "Turniej Młodzików",
-    date: "12 lipca 2026",
-    city: "Koszalin",
-    athletes: 14,
-    status: "Zapisy",
-  },
-  {
-    name: "Mistrzostwa Województwa",
-    date: "26 lipca 2026",
-    city: "Szczecin",
-    athletes: 9,
-    status: "Oczekiwanie",
-  },
-  {
-    name: "Puchar Polski",
-    date: "9 sierpnia 2026",
-    city: "Warszawa",
-    athletes: 21,
-    status: "Gotowe",
-  },
-];
+import PublicEventStatusBadge from "@/components/events/PublicEventStatusBadge";
+import type { AdminDashboardEvent } from "@/lib/admin-dashboard";
 
-export default function UpcomingEventsTable() {
+type Props = {
+  events: AdminDashboardEvent[];
+  loading?: boolean;
+};
+
+export default function UpcomingEventsTable({ events, loading = false }: Props) {
   return (
     <section className="zks-card p-6 sm:p-8">
       <div className="mb-6 flex items-center justify-between gap-4">
@@ -38,41 +23,63 @@ export default function UpcomingEventsTable() {
             Przegląd nadchodzących startów klubowych.
           </p>
         </div>
+
+        <Link
+          href="/admin/zawody"
+          className="text-sm font-medium text-zks-gold-bright transition hover:text-zks-gold-mid"
+        >
+          Wszystkie zawody
+        </Link>
       </div>
 
-      <div className="space-y-3">
-        {events.map((event) => (
-          <div
-            key={event.name}
-            className="flex flex-col gap-4 rounded-xl border border-zks-gold-mid/15 bg-zks-black p-4 transition hover:border-zks-gold-mid/35 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div>
-              <h3 className="font-semibold text-white">{event.name}</h3>
-              <div className="mt-2 flex flex-wrap gap-4 text-sm text-zks-text-muted">
-                <span className="inline-flex items-center gap-1.5">
-                  <CalendarDays className="h-4 w-4 text-zks-gold-mid" />
-                  {event.date}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4 text-zks-gold-mid" />
-                  {event.city}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Users className="h-4 w-4 text-zks-gold-mid" />
-                  {event.athletes} zawodników
-                </span>
+      {loading ? (
+        <div className="flex items-center gap-3 rounded-xl border border-zks-gold-mid/15 bg-zks-black p-6 text-zks-text-muted">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Ładowanie zawodów...
+        </div>
+      ) : events.length === 0 ? (
+        <div className="rounded-xl border border-zks-gold-mid/15 bg-zks-black p-6 text-sm text-zks-text-muted">
+          Brak nadchodzących zawodów.{" "}
+          <Link href="/admin/zawody" className="text-zks-gold-bright hover:underline">
+            Dodaj zawody
+          </Link>
+          .
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {events.map((event) => (
+            <Link
+              key={event.id}
+              href={`/admin/zawody/${event.id}`}
+              className="flex flex-col gap-4 rounded-xl border border-zks-gold-mid/15 bg-zks-black p-4 transition hover:border-zks-gold-mid/35 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div>
+                <h3 className="font-semibold text-white">{event.title}</h3>
+                <div className="mt-2 flex flex-wrap gap-4 text-sm text-zks-text-muted">
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarDays className="h-4 w-4 text-zks-gold-mid" />
+                    {event.dateLabel}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4 text-zks-gold-mid" />
+                    {event.location}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Users className="h-4 w-4 text-zks-gold-mid" />
+                    {event.athleteCount} zatwierdzonych
+                    {event.pendingCount > 0 ? ` · ${event.pendingCount} oczekuje` : ""}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-3">
-              <span className="rounded-full border border-zks-gold-mid/30 px-3 py-1 text-xs uppercase tracking-wide text-zks-gold-bright">
-                {event.status}
-              </span>
-              <ChevronRight className="h-5 w-5 text-zks-text-muted" />
-            </div>
-          </div>
-        ))}
-      </div>
+              <div className="flex items-center gap-3">
+                <PublicEventStatusBadge status={event.registrationStatus} />
+                <ChevronRight className="h-5 w-5 text-zks-text-muted" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

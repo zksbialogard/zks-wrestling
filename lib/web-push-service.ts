@@ -76,7 +76,12 @@ function parseWebPushFailure(error: unknown) {
 
 export async function sendWebPushToUsers(
   userUids: string[],
-  payload: { title: string; body: string; url?: string }
+  payload: {
+    title: string;
+    body: string;
+    url?: string;
+    urlsByUid?: Record<string, string>;
+  }
 ) {
   const config = getVapidConfig();
 
@@ -92,11 +97,7 @@ export async function sendWebPushToUsers(
   webpush.setVapidDetails(config.subject, config.publicKey, config.privateKey);
 
   const subscriptions = await listPushSubscriptionsForUsers(userUids);
-  const body = JSON.stringify({
-    title: payload.title,
-    body: payload.body,
-    url: payload.url || "/panel-rodzica/powiadomienia",
-  });
+  const defaultUrl = payload.url || "/panel-rodzica/powiadomienia";
 
   let sent = 0;
   let failed = 0;
@@ -104,6 +105,13 @@ export async function sendWebPushToUsers(
   const errors: string[] = [];
 
   for (const subscription of subscriptions) {
+    const url = payload.urlsByUid?.[subscription.user_uid] || defaultUrl;
+    const body = JSON.stringify({
+      title: payload.title,
+      body: payload.body,
+      url,
+    });
+
     try {
       await webpush.sendNotification(
         {

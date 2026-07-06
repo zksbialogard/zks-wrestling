@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
   Baby,
+  CalendarClock,
   CalendarDays,
   ClipboardList,
   Home,
@@ -38,6 +39,7 @@ const primaryLinks: NavLink[] = [
 ];
 
 const moreLinks: NavLink[] = [
+  { href: "/panel-rodzica/treningi", label: "Treningi", icon: CalendarClock },
   { href: "/zawody", label: "Zawody", icon: CalendarDays },
   { href: "/aktualnosci", label: "Aktualności", icon: Newspaper },
   { href: "/panel-rodzica/wyniki", label: "Wyniki", icon: Trophy },

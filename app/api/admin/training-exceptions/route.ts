@@ -94,7 +94,6 @@ export async function POST(request: Request) {
         inApp: body.notify?.inApp ?? true,
         push: body.notify?.push ?? true,
       },
-      link: "/panel-zawodnika/treningi",
     });
 
     return NextResponse.json({
