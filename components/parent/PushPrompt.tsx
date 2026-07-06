@@ -5,12 +5,12 @@ import { BellRing, Smartphone, X } from "lucide-react";
 import { toast } from "sonner";
 
 import {
+  activatePushNotifications,
   ensureWebPushSubscription,
   getWebPushStatus,
   isIosDevice,
   isStandalonePwa,
   isWebPushSupported,
-  subscribeToWebPush,
 } from "@/lib/push-client";
 
 export default function PushPrompt() {
@@ -53,9 +53,14 @@ export default function PushPrompt() {
   async function handleEnable() {
     try {
       setLoading(true);
-      await subscribeToWebPush();
-      toast.success("Gotowe! Dostaniesz alerty z dźwiękiem — nawet gdy aplikacja jest wyłączona.");
-      setVisible(false);
+      const result = await activatePushNotifications();
+
+      if (result.ok) {
+        toast.success(result.message);
+        setVisible(false);
+      } else {
+        toast.error(result.message);
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Nie udało się włączyć powiadomień.";

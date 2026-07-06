@@ -137,32 +137,72 @@ export async function subscribeToWebPush() {
 
 /**
  * Po zalogowaniu: jeśli zgoda już jest, tworzy subskrypcję push i zapisuje w Supabase.
- * To odróżnia „zezwól w przeglądarce” od prawdziwego push (jak Facebook).
  */
-export async function ensureWebPushSubscription() {
+export async function ensureWebPushSubscription(): Promise<{
+  ok: boolean;
+  reason: "subscribed" | "unsupported" | "denied" | "needs_prompt" | "ios_needs_pwa" | "error";
+  message?: string;
+}> {
   if (!isWebPushSupported()) {
-    return { ok: false as const, reason: "unsupported" as const };
+    return { ok: false, reason: "unsupported", message: "Przeglądarka nie obsługuje push." };
   }
 
   if (Notification.permission === "denied") {
-    return { ok: false as const, reason: "denied" as const };
+    return {
+      ok: false,
+      reason: "denied",
+      message:
+        "Powiadomienia zablokowane. W ustawieniach przeglądarki włącz powiadomienia dla zks-wrestling.vercel.app.",
+    };
   }
 
   if (Notification.permission === "default") {
-    return { ok: false as const, reason: "needs_prompt" as const };
+    return { ok: false, reason: "needs_prompt" };
   }
 
   if (isIosDevice() && !isStandalonePwa()) {
-    return { ok: false as const, reason: "ios_needs_pwa" as const };
+    return {
+      ok: false,
+      reason: "ios_needs_pwa",
+      message:
+        "Na iPhone: dodaj aplikację na ekran główny (Safari → Udostępnij → Do ekranu początkowego), potem włącz powiadomienia.",
+    };
   }
 
   try {
     const subscription = await getOrCreatePushSubscription();
     await savePushSubscriptionToServer(subscription);
-    return { ok: true as const, reason: "subscribed" as const };
-  } catch {
-    return { ok: false as const, reason: "error" as const };
+    return { ok: true, reason: "subscribed" };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Nie udało się zapisać push.";
+    return { ok: false, reason: "error", message };
   }
+}
+
+/** Włącza push — z okienkiem zgody LUB bez, jeśli zgoda już była wcześniej. */
+export async function activatePushNotifications() {
+  if (Notification.permission === "default") {
+    await subscribeToWebPush();
+    return {
+      ok: true,
+      message: "Push włączone! Dostaniesz alerty z dźwiękiem — nawet gdy aplikacja jest wyłączona.",
+    };
+  }
+
+  const result = await ensureWebPushSubscription();
+
+  if (result.ok) {
+    return {
+      ok: true,
+      message:
+        "Push zapisany na serwerze! Dostaniesz alerty na telefon (zgoda była już wcześniej — to normalne, że okienko się nie pokazało).",
+    };
+  }
+
+  return {
+    ok: false,
+    message: result.message || "Nie udało się włączyć powiadomień push.",
+  };
 }
 
 export async function syncPushSubscriptionIfGranted() {

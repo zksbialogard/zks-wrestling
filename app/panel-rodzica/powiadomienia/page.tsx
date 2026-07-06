@@ -12,8 +12,8 @@ import {
   type NotificationItem,
 } from "@/lib/notifications-client";
 import {
+  activatePushNotifications,
   getWebPushStatus,
-  subscribeToWebPush,
   unsubscribeFromWebPush,
 } from "@/lib/push-client";
 
@@ -41,7 +41,7 @@ export default function ParentNotificationsPage() {
     try {
       setLoading(true);
       const result = await fetchNotifications();
-      setNotifications(result.notifications);
+      setNotifications(result.notifications.filter((item) => !item.read_at));
       setUnreadCount(result.unreadCount);
     } catch (error) {
       const message =
@@ -55,13 +55,7 @@ export default function ParentNotificationsPage() {
   async function handleMarkRead(item: NotificationItem) {
     try {
       await markNotificationAsRead(item.id);
-      setNotifications((prev) =>
-        prev.map((notification) =>
-          notification.id === item.id
-            ? { ...notification, read_at: new Date().toISOString() }
-            : notification
-        )
-      );
+      setNotifications((prev) => prev.filter((notification) => notification.id !== item.id));
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
       const message =
@@ -73,12 +67,7 @@ export default function ParentNotificationsPage() {
   async function handleMarkAllRead() {
     try {
       await markAllNotificationsAsRead();
-      setNotifications((prev) =>
-        prev.map((notification) => ({
-          ...notification,
-          read_at: notification.read_at || new Date().toISOString(),
-        }))
-      );
+      setNotifications([]);
       setUnreadCount(0);
       toast.success("Wszystkie powiadomienia oznaczone jako przeczytane.");
     } catch (error) {
@@ -89,14 +78,13 @@ export default function ParentNotificationsPage() {
   }
 
   async function enablePush() {
-    try {
-      await subscribeToWebPush();
+    const result = await activatePushNotifications();
+
+    if (result.ok) {
       setPushEnabled(true);
-      toast.success("Powiadomienia push włączone — dostaniesz je na telefon.");
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Nie udało się włączyć powiadomień push.";
-      toast.error(message);
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
     }
   }
 
@@ -118,7 +106,7 @@ export default function ParentNotificationsPage() {
             Powiadomienia
           </h1>
           <p className="mt-2 text-sm text-zks-text-muted">
-            Komunikaty od klubu: zawody, zgłoszenia i ważne informacje.
+            Tylko nieprzeczytane wiadomości. Po odczytaniu znikają z listy.
           </p>
         </div>
 
@@ -162,7 +150,7 @@ export default function ParentNotificationsPage() {
       ) : notifications.length === 0 ? (
         <div className="zks-card p-8 text-center">
           <Bell className="mx-auto h-10 w-10 text-zks-gold-mid" />
-          <p className="mt-4 text-zks-text-muted">Brak powiadomień.</p>
+          <p className="mt-4 text-zks-text-muted">Brak nowych powiadomień.</p>
         </div>
       ) : (
         <div className="space-y-3">
