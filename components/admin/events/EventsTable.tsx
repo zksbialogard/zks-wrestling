@@ -10,12 +10,14 @@ import EventRow, { EventItem } from "./EventRow";
 
 interface EventsTableProps {
   events: EventItem[];
+  registrationCounts?: Record<string, number>;
   onDeleted: (id: string) => void;
   onUpdated: (event: Event) => void;
 }
 
 export default function EventsTable({
   events,
+  registrationCounts = {},
   onDeleted,
   onUpdated,
 }: EventsTableProps) {
@@ -41,6 +43,7 @@ export default function EventsTable({
           <EventRow
             key={event.id}
             event={event}
+            entries={registrationCounts[event.id] || 0}
             onEdit={(item) => setEditing(item)}
             onNotify={(item) => setNotifying(item)}
             onDeleted={onDeleted}

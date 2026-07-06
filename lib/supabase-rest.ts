@@ -146,6 +146,74 @@ export async function supabaseRestPatch(
   return true;
 }
 
+export async function supabaseRestSelect<T>(
+  table: string,
+  filters: Record<string, string> = {},
+  options: { order?: string; limit?: number } = {}
+): Promise<T[]> {
+  const url = resolveSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const key = getServiceRoleKey();
+
+  const queryParts = Object.entries(filters).map(
+    ([column, value]) => `${column}=${encodeURIComponent(value)}`
+  );
+
+  if (options.order) {
+    queryParts.push(`order=${encodeURIComponent(options.order)}`);
+  }
+
+  if (options.limit) {
+    queryParts.push(`limit=${options.limit}`);
+  }
+
+  const query = queryParts.length ? `?${queryParts.join("&")}` : "";
+
+  const response = await fetch(`${url}/rest/v1/${table}${query}`, {
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+    },
+    cache: "no-store",
+  });
+
+  const body = await response.text();
+
+  if (!response.ok) {
+    throw new Error(parseSupabaseError(body, response.status));
+  }
+
+  return JSON.parse(body) as T[];
+}
+
+export async function supabaseRestDelete(
+  table: string,
+  filters: Record<string, string>
+) {
+  const url = resolveSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const key = getServiceRoleKey();
+
+  const query = Object.entries(filters)
+    .map(([column, value]) => `${column}=${encodeURIComponent(value)}`)
+    .join("&");
+
+  const response = await fetch(`${url}/rest/v1/${table}?${query}`, {
+    method: "DELETE",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+    },
+    cache: "no-store",
+  });
+
+  const body = await response.text();
+
+  if (!response.ok) {
+    throw new Error(parseSupabaseError(body, response.status));
+  }
+
+  return true;
+}
+
 export async function testSupabaseConnection() {
   const url = resolveSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const key = getServiceRoleKey();

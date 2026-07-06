@@ -1,46 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
 import { Trophy } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { fetchEvents } from "@/lib/events";
-import { db } from "@/lib/firebase";
-
-type Registration = {
-  id: string;
-  childName: string;
-  childSurname: string;
-  eventId: string;
-  status: string;
-};
+import {
+  fetchMyRegistrations,
+  type RegistrationItem,
+} from "@/lib/registrations-client";
 
 export default function WynikiPage() {
   const { user } = useAuth();
-  const [results, setResults] = useState<Registration[]>([]);
+  const [results, setResults] = useState<RegistrationItem[]>([]);
   const [eventNames, setEventNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const load = async () => {
       if (!user) return;
 
-      const events = await fetchEvents();
+      const [events, registrations] = await Promise.all([
+        fetchEvents(),
+        fetchMyRegistrations(),
+      ]);
+
       setEventNames(Object.fromEntries(events.map((event) => [event.id, event.title])));
-
-      const snapshot = await getDocs(collection(db, "registrations"));
-      const all = snapshot.docs.map((item) => ({
-        id: item.id,
-        ...(item.data() as Omit<Registration, "id">),
-      }));
-
-      const approved = all.filter(
-        (reg) =>
-          (reg.status === "approved" || reg.status === "accepted") &&
-          ((reg as Registration & { parentUid?: string }).parentUid === user.uid)
-      );
-
-      setResults(approved);
+      setResults(registrations.filter((item) => item.status === "approved"));
     };
 
     load();
@@ -68,10 +53,10 @@ export default function WynikiPage() {
               </div>
               <div>
                 <h3 className="font-bold text-white">
-                  {item.childName} {item.childSurname}
+                  {item.child_name} {item.child_surname}
                 </h3>
                 <p className="text-sm text-zks-text-muted">
-                  Start zatwierdzony • {eventNames[item.eventId] || "Zawody klubowe"}
+                  Start zatwierdzony • {eventNames[item.event_id] || "Zawody klubowe"}
                 </p>
               </div>
             </div>

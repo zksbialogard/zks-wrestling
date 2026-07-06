@@ -4,13 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import {
-  addDoc,
-  collection,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import {
   ArrowLeft,
   CalendarDays,
@@ -29,6 +23,15 @@ import {
   getEventRegistrationStatus,
 } from "@/lib/event-utils";
 import { fetchEventById, type Event } from "@/lib/events";
+import {
+  registrationStatusLabel,
+  normalizeRegistrationStatus,
+} from "@/lib/registration-types";
+import {
+  fetchRegistrationsForEvent,
+  submitRegistration,
+  type RegistrationItem,
+} from "@/lib/registrations-client";
 
 interface Child {
   id: string;
@@ -46,6 +49,7 @@ export default function ZgloszenieNaZawodyPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [eventLoading, setEventLoading] = useState(true);
   const [children, setChildren] = useState<Child[]>([]);
+  const [registrations, setRegistrations] = useState<RegistrationItem[]>([]);
   const [loadingChildren, setLoadingChildren] = useState(true);
   const [registeringId, setRegisteringId] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -71,15 +75,16 @@ export default function ZgloszenieNaZawodyPage() {
 
       if (!user) {
         setChildren([]);
+        setRegistrations([]);
         setLoadingChildren(false);
         return;
       }
 
-      await loadChildren(user.uid);
+      await Promise.all([loadChildren(user.uid), loadRegistrations()]);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [eventId]);
 
   const loadChildren = async (uid: string) => {
     try {
@@ -102,69 +107,42 @@ export default function ZgloszenieNaZawodyPage() {
     }
   };
 
+  const loadRegistrations = async () => {
+    try {
+      const data = await fetchRegistrationsForEvent(eventId);
+      setRegistrations(data);
+    } catch {
+      setRegistrations([]);
+    }
+  };
+
+  const getChildRegistration = (childId: string) =>
+    registrations.find((item) => item.child_id === childId);
+
   const registerChild = async (child: Child) => {
     if (!event) {
       return;
     }
 
-    const status = getEventRegistrationStatus(event);
-
-    if (status !== "open") {
+    if (getEventRegistrationStatus(event) !== "open") {
       toast.error("Zapisy na te zawody są już zamknięte.");
       return;
     }
 
+    if (getChildRegistration(child.id)) {
+      toast.info("To dziecko jest już zgłoszone.");
+      return;
+    }
+
     try {
-      const user = auth.currentUser;
-
-      if (!user) {
-        toast.error("Musisz być zalogowany, aby zgłosić dziecko.");
-        return;
-      }
-
       setRegisteringId(child.id);
-
-      const userSnapshot = await getDocs(
-        query(collection(db, "users"), where("uid", "==", user.uid))
-      );
-
-      let parentPhone = "";
-
-      if (!userSnapshot.empty) {
-        parentPhone = userSnapshot.docs[0].data().telefon || "";
-      }
-
-      await addDoc(collection(db, "registrations"), {
-        eventId,
-        childId: child.id,
-        childName: child.imie,
-        childSurname: child.nazwisko,
-        childBirthYear: child.rokUrodzenia,
-        childGender: child.plec,
-        childWeight: child.kategoriaWagowa,
-        parentUid: user.uid,
-        parentPhone,
-        status: "pending",
-        createdAt: new Date(),
-      });
-
-      if (parentPhone) {
-        await fetch("/api/send-sms", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            phone: parentPhone,
-            message: `ZKS Białogard: zgłoszenie ${child.imie} ${child.nazwisko} na zawody „${event.title}” zostało zapisane.`,
-          }),
-        });
-      }
-
+      await submitRegistration(eventId, child.id);
+      await loadRegistrations();
       toast.success(`${child.imie} ${child.nazwisko} zgłoszone na „${event.title}”.`);
     } catch (error) {
-      console.error(error);
-      toast.error("Błąd podczas zgłoszenia.");
+      const message =
+        error instanceof Error ? error.message : "Błąd podczas zgłoszenia.";
+      toast.error(message);
     } finally {
       setRegisteringId(null);
     }
@@ -188,9 +166,6 @@ export default function ZgloszenieNaZawodyPage() {
             <h1 className="font-[family-name:var(--font-heading)] text-3xl font-bold uppercase text-white">
               Nie znaleziono zawodów
             </h1>
-            <p className="mt-3 text-zks-text-muted">
-              Te zawody mogły zostać usunięte lub link jest nieaktualny.
-            </p>
             <Link
               href="/zawody"
               className="zks-btn-primary mt-8 inline-flex items-center gap-2 px-6 py-3 text-sm"
@@ -261,10 +236,7 @@ export default function ZgloszenieNaZawodyPage() {
             <p className="mt-4 text-zks-text-muted">
               Zaloguj się jako rodzic, aby zgłosić dziecko na zawody.
             </p>
-            <Link
-              href="/login"
-              className="zks-btn-primary mt-6 inline-flex px-6 py-3 text-sm"
-            >
+            <Link href="/login" className="zks-btn-primary mt-6 inline-flex px-6 py-3 text-sm">
               Zaloguj się
             </Link>
           </div>
@@ -286,49 +258,70 @@ export default function ZgloszenieNaZawodyPage() {
           </div>
         ) : (
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {children.map((child) => (
-              <article
-                key={child.id}
-                className="zks-card rounded-2xl p-5 transition hover:border-zks-gold-mid/40"
-              >
-                <h3 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white">
-                  {child.imie} {child.nazwisko}
-                </h3>
+            {children.map((child) => {
+              const existing = getChildRegistration(child.id);
+              const status = existing
+                ? normalizeRegistrationStatus(existing.status)
+                : null;
 
-                <dl className="mt-4 space-y-2 text-sm text-zks-text-muted">
-                  <div className="flex justify-between gap-4">
-                    <dt>Rok urodzenia</dt>
-                    <dd className="text-zks-text">{child.rokUrodzenia}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt>Płeć</dt>
-                    <dd className="text-zks-text">{child.plec}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt>Kategoria wagowa</dt>
-                    <dd className="text-zks-text">{child.kategoriaWagowa} kg</dd>
-                  </div>
-                </dl>
-
-                <button
-                  type="button"
-                  disabled={!canRegister || registeringId === child.id}
-                  onClick={() => registerChild(child)}
-                  className="zks-btn-primary mt-5 inline-flex w-full items-center justify-center gap-2 px-4 py-3 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+              return (
+                <article
+                  key={child.id}
+                  className="zks-card rounded-2xl p-5 transition hover:border-zks-gold-mid/40"
                 >
-                  {registeringId === child.id ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Zgłaszanie...
-                    </>
-                  ) : canRegister ? (
-                    "Zgłoś na zawody"
+                  <h3 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white">
+                    {child.imie} {child.nazwisko}
+                  </h3>
+
+                  <dl className="mt-4 space-y-2 text-sm text-zks-text-muted">
+                    <div className="flex justify-between gap-4">
+                      <dt>Rok urodzenia</dt>
+                      <dd className="text-zks-text">{child.rokUrodzenia}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt>Płeć</dt>
+                      <dd className="text-zks-text">{child.plec}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt>Kategoria wagowa</dt>
+                      <dd className="text-zks-text">{child.kategoriaWagowa} kg</dd>
+                    </div>
+                  </dl>
+
+                  {existing ? (
+                    <p
+                      className={`mt-5 rounded-lg border px-4 py-3 text-center text-xs font-bold uppercase tracking-wide ${
+                        status === "approved"
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                          : status === "rejected"
+                            ? "border-red-500/30 bg-red-500/10 text-red-400"
+                            : "border-zks-gold-mid/30 bg-zks-gold/10 text-zks-gold-bright"
+                      }`}
+                    >
+                      {registrationStatusLabel(existing.status)}
+                    </p>
                   ) : (
-                    "Zapisy zamknięte"
+                    <button
+                      type="button"
+                      disabled={!canRegister || registeringId === child.id}
+                      onClick={() => registerChild(child)}
+                      className="zks-btn-primary mt-5 inline-flex w-full items-center justify-center gap-2 px-4 py-3 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {registeringId === child.id ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Zgłaszanie...
+                        </>
+                      ) : canRegister ? (
+                        "Zgłoś na zawody"
+                      ) : (
+                        "Zapisy zamknięte"
+                      )}
+                    </button>
                   )}
-                </button>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

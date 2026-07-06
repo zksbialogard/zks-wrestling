@@ -1,25 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { Loader2 } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { fetchEvents } from "@/lib/events";
-import { db } from "@/lib/firebase";
-
-type Registration = {
-  id: string;
-  childName: string;
-  childSurname: string;
-  eventId: string;
-  status: string;
-  childBirthYear?: string;
-  childWeight?: string;
-};
+import {
+  registrationStatusLabel,
+  normalizeRegistrationStatus,
+} from "@/lib/registration-types";
+import {
+  fetchMyRegistrations,
+  type RegistrationItem,
+} from "@/lib/registrations-client";
 
 export default function MojeZgloszeniaPage() {
   const { user } = useAuth();
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [registrations, setRegistrations] = useState<RegistrationItem[]>([]);
   const [eventNames, setEventNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
@@ -30,28 +28,12 @@ export default function MojeZgloszeniaPage() {
       setLoading(true);
 
       try {
-        const events = await fetchEvents();
-        const names = Object.fromEntries(events.map((event) => [event.id, event.title]));
-        setEventNames(names);
+        const [events, mine] = await Promise.all([
+          fetchEvents(),
+          fetchMyRegistrations(),
+        ]);
 
-        const userSnap = await getDocs(
-          query(collection(db, "users"), where("uid", "==", user.uid))
-        );
-
-        const phone = userSnap.docs[0]?.data()?.telefon;
-
-        const snapshot = await getDocs(collection(db, "registrations"));
-        const all = snapshot.docs.map((item) => ({
-          id: item.id,
-          ...(item.data() as Omit<Registration, "id">),
-        }));
-
-        const mine = all.filter(
-          (reg) =>
-            (reg as Registration & { parentUid?: string }).parentUid === user.uid ||
-            (phone && (reg as Registration & { parentPhone?: string }).parentPhone === phone)
-        );
-
+        setEventNames(Object.fromEntries(events.map((event) => [event.id, event.title])));
         setRegistrations(mine);
       } catch (error) {
         console.error(error);
@@ -63,12 +45,6 @@ export default function MojeZgloszeniaPage() {
     load();
   }, [user]);
 
-  const statusLabel = (status: string) => {
-    if (status === "approved" || status === "accepted") return "Zaakceptowane";
-    if (status === "rejected") return "Odrzucone";
-    return "Oczekujące";
-  };
-
   return (
     <div>
       <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-white">
@@ -79,24 +55,45 @@ export default function MojeZgloszeniaPage() {
       </p>
 
       {loading ? (
-        <p className="mt-6 text-zks-text-muted">Ładowanie...</p>
+        <div className="zks-card mt-6 flex items-center gap-3 p-6 text-zks-text-muted">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Ładowanie zgłoszeń...
+        </div>
       ) : registrations.length === 0 ? (
         <div className="zks-card mt-6 p-6 text-zks-text-muted">
-          Brak zgłoszeń. Przejdź do sekcji Zawody, aby zgłosić dziecko.
+          Brak zgłoszeń.{" "}
+          <Link href="/zawody" className="text-zks-gold-bright underline">
+            Przejdź do zawodów
+          </Link>
+          , aby zgłosić dziecko.
         </div>
       ) : (
         <div className="mt-6 space-y-4">
-          {registrations.map((reg) => (
-            <div key={reg.id} className="zks-card p-5">
-              <h3 className="text-lg font-bold text-white">
-                {reg.childName} {reg.childSurname}
-              </h3>
-              <p className="mt-2 text-sm text-zks-gold-bright">
-                {eventNames[reg.eventId] || "Zawody klubowe"}
-              </p>
-              <p className="mt-1 text-sm text-zks-text-muted">{statusLabel(reg.status)}</p>
-            </div>
-          ))}
+          {registrations.map((reg) => {
+            const status = normalizeRegistrationStatus(reg.status);
+
+            return (
+              <div key={reg.id} className="zks-card p-5">
+                <h3 className="text-lg font-bold text-white">
+                  {reg.child_name} {reg.child_surname}
+                </h3>
+                <p className="mt-2 text-sm text-zks-gold-bright">
+                  {eventNames[reg.event_id] || "Zawody klubowe"}
+                </p>
+                <p
+                  className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${
+                    status === "approved"
+                      ? "bg-emerald-500/15 text-emerald-400"
+                      : status === "rejected"
+                        ? "bg-red-500/15 text-red-400"
+                        : "bg-zks-gold/15 text-zks-gold-bright"
+                  }`}
+                >
+                  {registrationStatusLabel(reg.status)}
+                </p>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
