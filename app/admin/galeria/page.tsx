@@ -20,7 +20,10 @@ import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AuthField from "@/components/auth/AuthField";
 import { deleteGalleryPhoto, registerGalleryPhoto } from "@/lib/gallery-admin";
-import { compressImageForUpload } from "@/lib/gallery-image-utils";
+import {
+  formatCompressionSummary,
+  prepareGalleryImages,
+} from "@/lib/gallery-image-utils";
 import type { GalleryItem } from "@/lib/gallery-types";
 import { hasNotifyIssues, sanitizeNotifyResult } from "@/lib/notify-result-utils";
 import type { NotifyResult } from "@/lib/notify-service";
@@ -33,6 +36,9 @@ export default function AdminGaleriaPage() {
   const [notifyMembers, setNotifyMembers] = useState(true);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadPhase, setUploadPhase] = useState<
+    "idle" | "optimizing" | "uploading" | "saving"
+  >("idle");
 
   const loadGallery = async () => {
     setLoading(true);
@@ -53,7 +59,9 @@ export default function AdminGaleriaPage() {
             id: item.id,
             title: (data.title as string) || "",
             url: (data.url as string) || "",
+            thumbUrl: data.thumbUrl as string | undefined,
             storagePath: data.storagePath as string | undefined,
+            thumbStoragePath: data.thumbStoragePath as string | undefined,
             createdAt,
           };
         })
@@ -79,42 +87,60 @@ export default function AdminGaleriaPage() {
     }
 
     setUploading(true);
+    setUploadPhase("optimizing");
 
     try {
-      const compressed = await compressImageForUpload(file);
-      const safeName = compressed.name.replace(/\s+/g, "-");
-      const storagePath = `gallery/${Date.now()}-${safeName}`;
-      const storageRef = ref(storage, storagePath);
+      const prepared = await prepareGalleryImages(file);
+      const timestamp = Date.now();
+      const baseName = prepared.full.name.replace(/\s+/g, "-");
+      const fullStoragePath = `gallery/${timestamp}-${baseName}`;
+      const thumbStoragePath = `gallery/${timestamp}-${prepared.thumb.name.replace(/\s+/g, "-")}`;
 
-      await uploadBytes(storageRef, compressed);
-      const url = await getDownloadURL(storageRef);
+      setUploadPhase("uploading");
+
+      const uploadFile = async (uploadFile: File, path: string) => {
+        const storageRef = ref(storage, path);
+        await uploadBytes(storageRef, uploadFile);
+        return getDownloadURL(storageRef);
+      };
+
+      const [url, thumbUrl] = await Promise.all([
+        uploadFile(prepared.full, fullStoragePath),
+        uploadFile(prepared.thumb, thumbStoragePath),
+      ]);
+
+      setUploadPhase("saving");
 
       const result = await registerGalleryPhoto({
-        title: title || safeName,
+        title: title || baseName,
         url,
-        storagePath,
+        thumbUrl,
+        storagePath: fullStoragePath,
+        thumbStoragePath,
         notify: notifyMembers,
       });
+
+      const compressionNote = formatCompressionSummary(prepared);
 
       if (result.notifyResult) {
         const clean = sanitizeNotifyResult(result.notifyResult as NotifyResult);
 
         if (hasNotifyIssues(clean)) {
           toast.warning(
-            `Zdjęcie dodane. Powiadomienia: ${clean.inAppSent} w aplikacji, ${clean.pushSent} push.`
+            `Zdjęcie dodane (${compressionNote}). Powiadomienia: ${clean.inAppSent} w aplikacji, ${clean.pushSent} push.`
           );
         } else if (notifyMembers) {
           toast.success(
-            `Zdjęcie dodane. Powiadomiono ${clean.inAppSent} członków klubu.`
+            `Zdjęcie dodane (${compressionNote}). Powiadomiono ${clean.inAppSent} członków klubu.`
           );
         } else {
-          toast.success("Zdjęcie dodane do galerii.");
+          toast.success(`Zdjęcie dodane do galerii. ${compressionNote}`);
         }
       } else {
         toast.success(
           notifyMembers
-            ? "Zdjęcie dodane do galerii."
-            : "Zdjęcie dodane do galerii (bez powiadomień)."
+            ? `Zdjęcie dodane do galerii. ${compressionNote}`
+            : `Zdjęcie dodane (bez powiadomień). ${compressionNote}`
         );
       }
 
@@ -129,6 +155,7 @@ export default function AdminGaleriaPage() {
       );
     } finally {
       setUploading(false);
+      setUploadPhase("idle");
     }
   };
 
@@ -138,6 +165,10 @@ export default function AdminGaleriaPage() {
     try {
       if (item.storagePath) {
         await deleteObject(ref(storage, item.storagePath));
+      }
+
+      if (item.thumbStoragePath) {
+        await deleteObject(ref(storage, item.thumbStoragePath));
       }
 
       await deleteGalleryPhoto(item.id);
@@ -180,6 +211,11 @@ export default function AdminGaleriaPage() {
           />
         </label>
 
+        <p className="text-xs text-zks-text-muted">
+          Zdjęcia są automatycznie zmniejszane (max 1600 px, dobra jakość) i zapisywane z
+          miniaturą do szybkiego ładowania galerii.
+        </p>
+
         <label className="flex cursor-pointer items-center gap-3 text-sm text-zks-text">
           <input
             type="checkbox"
@@ -200,7 +236,13 @@ export default function AdminGaleriaPage() {
           ) : (
             <ImagePlus className="h-4 w-4" />
           )}
-          {uploading ? "Wysyłanie..." : "Dodaj do galerii"}
+          {uploadPhase === "optimizing"
+            ? "Optymalizacja..."
+            : uploadPhase === "uploading"
+              ? "Wysyłanie..."
+              : uploadPhase === "saving"
+                ? "Zapisywanie..."
+                : "Dodaj do galerii"}
         </button>
       </form>
 
@@ -214,7 +256,7 @@ export default function AdminGaleriaPage() {
             <div key={item.id} className="zks-card overflow-hidden">
               <div className="relative aspect-[4/3] bg-zks-black">
                 <Image
-                  src={item.url}
+                  src={item.thumbUrl || item.url}
                   alt={item.title}
                   fill
                   className="object-cover"

@@ -30,7 +30,7 @@ function GalleryTile({
       )}
 
       <Image
-        src={item.url}
+        src={item.thumbUrl || item.url}
         alt={item.title}
         fill
         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"

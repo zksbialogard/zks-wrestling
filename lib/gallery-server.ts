@@ -45,7 +45,9 @@ export async function getGalleryItems(): Promise<GalleryItem[]> {
         id: item.id,
         title: (data.title as string) || "",
         url: (data.url as string) || "",
+        thumbUrl: data.thumbUrl as string | undefined,
         storagePath: data.storagePath as string | undefined,
+        thumbStoragePath: data.thumbStoragePath as string | undefined,
         createdAt,
       };
     });
@@ -59,11 +61,15 @@ export async function addGalleryItem(input: {
   title: string;
   url: string;
   storagePath?: string;
+  thumbUrl?: string;
+  thumbStoragePath?: string;
 }) {
   const docRef = await addDoc(collection(getDb(), "gallery"), {
     title: input.title,
     url: input.url,
+    thumbUrl: input.thumbUrl || null,
     storagePath: input.storagePath || null,
+    thumbStoragePath: input.thumbStoragePath || null,
     createdAt: serverTimestamp(),
   });
 

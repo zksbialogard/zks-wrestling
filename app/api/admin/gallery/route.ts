@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { title, url, storagePath, notify = true } = body;
+    const { title, url, storagePath, thumbUrl, thumbStoragePath, notify = true } = body;
 
     if (!title || !url) {
       return NextResponse.json(
@@ -25,7 +25,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const id = await addGalleryItem({ title, url, storagePath });
+    const id = await addGalleryItem({
+      title,
+      url,
+      storagePath,
+      thumbUrl,
+      thumbStoragePath,
+    });
 
     revalidatePath("/galeria");
 

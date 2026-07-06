@@ -19,6 +19,8 @@ export async function registerGalleryPhoto(data: {
   title: string;
   url: string;
   storagePath?: string;
+  thumbUrl?: string;
+  thumbStoragePath?: string;
   notify?: boolean;
 }) {
   const headers = await getAuthHeader();
