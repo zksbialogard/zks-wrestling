@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/reminders",
       "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/cron/training-reminders/12",
+      "schedule": "0 10,11 * * *"
+    },
+    {
+      "path": "/api/cron/training-reminders/15",
+      "schedule": "0 13,14 * * *"
     }
   ],
   "headers": [

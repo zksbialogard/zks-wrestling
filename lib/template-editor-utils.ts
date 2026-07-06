@@ -31,7 +31,7 @@ export const TEMPLATE_WHEN: Record<TemplateKey, string> = {
   registration_accepted: "Automatycznie po akceptacji zgłoszenia dziecka.",
   registration_rejected: "Automatycznie po odrzuceniu zgłoszenia.",
   training_cancelled: "Z listy zawodów — dzwonek → szablon „Odwołanie treningu”.",
-  training_reminder: "Automatycznie dzień przed treningiem (cron o 18:00).",
+  training_reminder: "Automatycznie w dniu treningu o 12:00 i 15:00 (cron) — osobno dla każdej grupy.",
   news_published: "Przy publikacji aktualności (gdy włączysz SMS).",
   gallery_published: "Po dodaniu zdjęcia do galerii — gdy włączysz powiadomienia.",
 };
@@ -40,7 +40,7 @@ export const SMS_AUTO_TRIGGERS = [
   "Zgłoszenie dziecka — powiadomienie w aplikacji + push (automatycznie)",
   "Akceptacja / odrzucenie zgłoszenia — aplikacja + push (automatycznie)",
   "Nowe zawody / przypomnienie — aplikacja + push przy wysyłce z panelu",
-  "Treningi — automatyczne przypomnienie dzień przed (cron)",
+  "Treningi — automatyczne przypomnienia o 12:00 i 15:00 w dniu treningu (cron, per grupa)",
   "SMS — tylko gdy zaznaczysz opcję SMS i masz aktywne konto SMSAPI",
 ] as const;
 

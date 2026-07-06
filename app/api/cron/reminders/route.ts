@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { runDailyReminders } from "@/lib/cron-reminders";
+import { runEventReminders } from "@/lib/cron-reminders";
 
 function isAuthorized(request: Request): boolean {
   const cronSecret = process.env.CRON_SECRET?.trim();
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await runDailyReminders();
+    const result = await runEventReminders();
 
     return NextResponse.json({ ok: true, result });
   } catch (error) {

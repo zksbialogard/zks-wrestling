@@ -56,3 +56,23 @@ export function relativeDayLabel(dateKey: string, todayKey = dateKeyInWarsaw()):
 
   return date.toLocaleDateString("pl-PL", { weekday: "short", day: "numeric", month: "short" });
 }
+
+export function hourInWarsaw(date = new Date()): number {
+  const hour = new Intl.DateTimeFormat("en-GB", {
+    timeZone: WARSAW_TIMEZONE,
+    hour: "numeric",
+    hour12: false,
+  }).format(date);
+
+  return Number(hour);
+}
+
+export function formatTrainingSessionDateLabel(dateKey: string): string {
+  const relative = relativeDayLabel(dateKey);
+
+  if (relative === "Dziś" || relative === "Jutro") {
+    return `${relative} · ${formatDateKeyPl(dateKey)}`;
+  }
+
+  return formatDateKeyPl(dateKey);
+}
