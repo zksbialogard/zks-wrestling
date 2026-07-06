@@ -76,6 +76,12 @@ export default function DashboardGrid() {
   }, [ready, loadingProfile, user]);
 
   async function loadStats() {
+    if (!user) {
+      return;
+    }
+
+    const parentUid = user.uid;
+
     try {
       setLoading(true);
 
@@ -83,7 +89,7 @@ export default function DashboardGrid() {
       today.setHours(0, 0, 0, 0);
 
       const childrenSnapshot = await getDocs(
-        query(collection(db, "children"), where("parentUid", "==", user!.uid))
+        query(collection(db, "children"), where("parentUid", "==", parentUid))
       );
 
       const children: ParentChild[] = childrenSnapshot.docs.map((item) => ({

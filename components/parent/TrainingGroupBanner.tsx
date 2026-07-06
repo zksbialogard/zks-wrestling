@@ -22,10 +22,12 @@ export default function TrainingGroupBanner() {
       return;
     }
 
+    const parentUid = user.uid;
+
     async function load() {
       try {
         const snapshot = await getDocs(
-          query(collection(db, "children"), where("parentUid", "==", user.uid))
+          query(collection(db, "children"), where("parentUid", "==", parentUid))
         );
 
         const children: ParentChild[] = snapshot.docs.map((item) => ({
