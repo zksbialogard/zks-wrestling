@@ -15,6 +15,7 @@ import {
   Trophy,
   User,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -22,14 +23,21 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import ClubLogo from "@/components/ui/ClubLogo";
 import { fetchNotifications } from "@/lib/notifications-client";
 
-const primaryLinks = [
+type NavLink = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  badge?: boolean;
+};
+
+const primaryLinks: NavLink[] = [
   { href: "/panel-rodzica", label: "Panel", icon: Home },
   { href: "/panel-rodzica/moje-dzieci", label: "Dzieci", icon: Baby },
   { href: "/panel-rodzica/moje-zgloszenia", label: "Zgłoszenia", icon: ClipboardList },
   { href: "/panel-rodzica/powiadomienia", label: "Powiadomienia", icon: Bell, badge: true },
 ];
 
-const moreLinks = [
+const moreLinks: NavLink[] = [
   { href: "/zawody", label: "Zawody", icon: CalendarDays },
   { href: "/aktualnosci", label: "Aktualności", icon: Newspaper },
   { href: "/panel-rodzica/wyniki", label: "Wyniki", icon: Trophy },
@@ -78,7 +86,7 @@ export default function ParentMobileNav() {
           {primaryLinks.map((link) => {
             const Icon = link.icon;
             const active = isActive(pathname, link.href);
-            const showBadge = link.badge && unreadCount > 0;
+            const showBadge = Boolean(link.badge) && unreadCount > 0;
 
             return (
               <Link
@@ -163,7 +171,7 @@ export default function ParentMobileNav() {
                 {[...primaryLinks, ...moreLinks].map((link) => {
                   const Icon = link.icon;
                   const active = isActive(pathname, link.href);
-                  const showBadge = "badge" in link && link.badge && unreadCount > 0;
+                  const showBadge = Boolean(link.badge) && unreadCount > 0;
 
                   return (
                     <Link
