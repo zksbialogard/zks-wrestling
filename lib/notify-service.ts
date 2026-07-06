@@ -306,6 +306,8 @@ export async function notifyParents(input: {
 
   return sanitizeNotifyResult(result);
 }
+
+export async function savePushPreference(uid: string, enabled: boolean) {
   try {
     const snapshot = await getDocs(
       query(collection(getDb(), "users"), where("uid", "==", uid))
