@@ -146,7 +146,7 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
               onChange={() => setSendEmail(!sendEmail)}
               className="accent-zks-gold"
             />
-            E-mail do rodziców
+            E-mail do rodziców (wymaga RESEND_API_KEY)
           </label>
 
           <label className="flex items-center gap-3 text-sm text-zks-text">

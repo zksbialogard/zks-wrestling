@@ -292,6 +292,20 @@ export async function notifyParents(input: {
             result.errors.push(`${parent.imie || parent.uid}: ${bulk.errors[0]}`);
           }
         }
+
+        if (input.channels.push) {
+          const pushResult = await sendWebPushToUsers([parent.uid], {
+            title: rendered.pushTitle,
+            body: rendered.pushBody,
+            url: input.link || "/panel-rodzica/powiadomienia",
+          });
+
+          result.pushSent += pushResult.sent;
+
+          if (pushResult.sent === 0 && pushResult.errors.length) {
+            result.warnings.push(...pushResult.errors.slice(0, 1));
+          }
+        }
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Nieznany błąd powiadomienia.";

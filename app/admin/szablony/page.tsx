@@ -5,6 +5,7 @@ import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import EmailSettingsCard from "@/components/admin/EmailSettingsCard";
 import { auth } from "@/lib/firebase";
 import type { MessageTemplate } from "@/lib/message-templates";
 
@@ -100,6 +101,8 @@ export default function AdminSzablonyPage() {
         title="Szablony wiadomości"
         description="Edytuj treści e-mail, SMS i powiadomień w aplikacji. Użyj zmiennych: {{title}}, {{location}}, {{eventDate}}, {{registrationDeadline}}, {{childName}}, {{message}}, {{content}}, {{link}}."
       />
+
+      <EmailSettingsCard />
 
       {loading ? (
         <p className="text-zks-text-muted">Ładowanie szablonów...</p>

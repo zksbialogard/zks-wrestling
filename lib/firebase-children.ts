@@ -78,6 +78,16 @@ export async function getChildForParent(childId: string, parentUid: string) {
 }
 
 export async function getParentPhone(parentUid: string) {
+  const profile = await getParentProfile(parentUid);
+  return profile.telefon || "";
+}
+
+export async function getParentEmail(parentUid: string) {
+  const profile = await getParentProfile(parentUid);
+  return profile.email || "";
+}
+
+async function getParentProfile(parentUid: string) {
   try {
     const response = await fetch(
       `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents:runQuery`,
@@ -105,7 +115,7 @@ export async function getParentPhone(parentUid: string) {
     );
 
     if (!response.ok) {
-      return "";
+      return { email: "", telefon: "" };
     }
 
     const rows = (await response.json()) as Array<{
@@ -115,9 +125,12 @@ export async function getParentPhone(parentUid: string) {
     const document = rows.find((row) => row.document)?.document;
     const fields = parseFirestoreFields(document?.fields);
 
-    return fields.telefon || "";
+    return {
+      email: fields.email || "",
+      telefon: fields.telefon || "",
+    };
   } catch (error) {
-    console.error("getParentPhone:", error);
-    return "";
+    console.error("getParentProfile:", error);
+    return { email: "", telefon: "" };
   }
 }

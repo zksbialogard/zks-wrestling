@@ -1,5 +1,5 @@
 import { getEventRegistrationStatus } from "./event-utils";
-import { getChildForParent, getParentPhone } from "./firebase-children";
+import { getChildForParent, getParentEmail, getParentPhone } from "./firebase-children";
 import { createSupabaseAdmin } from "./supabase";
 import { notifyParents } from "./notify-service";
 import {
@@ -10,7 +10,8 @@ import {
   updateRegistrationStatus,
 } from "./registrations-db";
 import type { RegistrationStatus } from "./registration-types";
-import { sendSmsMessage } from "./messaging";
+import { sendEmailMessage, sendSmsMessage } from "./messaging";
+import { absoluteAppLink } from "./email-layout";
 
 export async function submitRegistration(input: {
   eventId: string;
@@ -45,6 +46,8 @@ export async function submitRegistration(input: {
   }
 
   const parentPhone = await getParentPhone(input.parentUid);
+  const parentEmail = await getParentEmail(input.parentUid);
+  const eventDate = new Date(event.event_date).toLocaleDateString("pl-PL");
 
   const registration = await createRegistration({
     event_id: input.eventId,
@@ -62,6 +65,15 @@ export async function submitRegistration(input: {
     await sendSmsMessage({
       phone: parentPhone,
       message: `ZKS Białogard: zgłoszenie ${child.imie} ${child.nazwisko} na „${event.title}” zostało zapisane.`,
+    });
+  }
+
+  if (parentEmail) {
+    await sendEmailMessage({
+      to: parentEmail,
+      subject: `ZKS Białogard — zgłoszenie zapisane (${event.title})`,
+      html: `<p>Cześć!</p><p>Zapisaliśmy zgłoszenie <strong>${child.imie} ${child.nazwisko}</strong> na zawody <strong>${event.title}</strong>.</p><p>Miejsce: ${event.location}<br />Data: ${eventDate}</p><p>Status: <strong>oczekuje na akceptację klubu</strong>.</p><p><a href="${absoluteAppLink("/panel-rodzica/moje-zgloszenia")}" style="color:#f7d154;">Sprawdź status zgłoszenia</a></p>`,
+      text: `ZKS Białogard: zgłoszenie ${child.imie} ${child.nazwisko} na ${event.title} zostało zapisane. Status: oczekuje na akceptację.`,
     });
   }
 
@@ -108,18 +120,11 @@ export async function changeRegistrationStatus(
         eventDate,
         link: `/panel-rodzica/moje-zgloszenia`,
       },
-      channels: { email: false, sms: false, inApp: true, push: false },
+      channels: { email: true, sms: Boolean(registration.parent_phone), inApp: true, push: true },
       type: "registration",
       link: "/panel-rodzica/moje-zgloszenia",
       targetUid: registration.parent_uid,
     });
-
-    if (registration.parent_phone) {
-      await sendSmsMessage({
-        phone: registration.parent_phone,
-        message: `ZKS Białogard: zgłoszenie ${childName} na „${event.title}” zostało zaakceptowane.`,
-      });
-    }
   }
 
   if (status === "rejected") {
@@ -132,7 +137,7 @@ export async function changeRegistrationStatus(
         eventDate,
         link: `/panel-rodzica/moje-zgloszenia`,
       },
-      channels: { email: false, sms: false, inApp: true, push: false },
+      channels: { email: true, sms: false, inApp: true, push: true },
       type: "registration",
       link: "/panel-rodzica/moje-zgloszenia",
       targetUid: registration.parent_uid,

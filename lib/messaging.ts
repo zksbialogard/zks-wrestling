@@ -8,15 +8,23 @@ export function normalizePhone(phone: string) {
   return digits;
 }
 
+export function isEmailConfigured() {
+  return Boolean(process.env.RESEND_API_KEY?.trim());
+}
+
+export function getEmailFromAddress() {
+  return process.env.EMAIL_FROM?.trim() || "ZKS Białogard <onboarding@resend.dev>";
+}
+
 export async function sendEmailMessage(input: {
   to: string;
   subject: string;
   html?: string;
   text?: string;
+  wrapHtml?: boolean;
 }) {
   const resendKey = process.env.RESEND_API_KEY;
-  const from =
-    process.env.EMAIL_FROM || "ZKS Białogard <onboarding@resend.dev>";
+  const from = getEmailFromAddress();
 
   if (!resendKey) {
     console.warn("RESEND_API_KEY brak — email nie wysłany:", input.to, input.subject);
@@ -26,6 +34,12 @@ export async function sendEmailMessage(input: {
       error: "Brak RESEND_API_KEY na Vercel.",
     };
   }
+
+  const { wrapEmailHtml } = await import("./email-layout");
+  const html =
+    input.html && input.wrapHtml !== false
+      ? wrapEmailHtml(input.html, input.text?.slice(0, 120))
+      : input.html;
 
   try {
     const response = await fetch("https://api.resend.com/emails", {
@@ -38,7 +52,7 @@ export async function sendEmailMessage(input: {
         from,
         to: [input.to],
         subject: input.subject,
-        html: input.html,
+        html,
         text: input.text,
       }),
     });

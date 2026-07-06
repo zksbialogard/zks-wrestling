@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { sendEmailMessage } from "@/lib/messaging";
+
 export async function POST(request: Request) {
   try {
     const { to, subject, html, text } = await request.json();
@@ -11,44 +13,30 @@ export async function POST(request: Request) {
       );
     }
 
-    const resendKey = process.env.RESEND_API_KEY;
-    const from =
-      process.env.EMAIL_FROM || "ZKS Białogard <onboarding@resend.dev>";
-
-    if (!resendKey) {
-      console.warn("RESEND_API_KEY brak — email nie został wysłany:", to, subject);
-      return NextResponse.json({
-        ok: true,
-        simulated: true,
-        message: "Email zapisany lokalnie (brak RESEND_API_KEY).",
-      });
-    }
-
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [to],
-        subject,
-        html,
-        text,
-      }),
+    const result = await sendEmailMessage({
+      to,
+      subject,
+      html,
+      text,
+      wrapHtml: false,
     });
 
-    const data = await response.json();
+    if (!result.ok) {
+      if (result.simulated) {
+        return NextResponse.json({
+          ok: true,
+          simulated: true,
+          message: "Email zapisany lokalnie (brak RESEND_API_KEY).",
+        });
+      }
 
-    if (!response.ok) {
       return NextResponse.json(
-        { error: data?.message || "Błąd wysyłki email." },
-        { status: response.status }
+        { error: result.error || "Błąd wysyłki email." },
+        { status: 400 }
       );
     }
 
-    return NextResponse.json({ ok: true, data });
+    return NextResponse.json({ ok: true, data: result.data });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Błąd wysyłania email." }, { status: 500 });
