@@ -20,7 +20,7 @@ export default function StatCard({
     <motion.div
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
-      className="zks-card p-6"
+      className="zks-card zks-card-pad"
     >
       <div className="flex items-center justify-between gap-4">
         <div>

@@ -13,7 +13,7 @@ type Props = {
 
 export default function UpcomingEventsTable({ events, loading = false }: Props) {
   return (
-    <section className="zks-card p-6 sm:p-8">
+    <section className="zks-card zks-card-pad">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white">

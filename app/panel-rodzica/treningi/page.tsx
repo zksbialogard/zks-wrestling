@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { PanelLoadingState, PanelPage, PanelPageHeader, PanelSection } from "@/components/layout/PanelLayout";
 import TrainingWeekSchedule from "@/components/training/TrainingWeekSchedule";
 import { db } from "@/lib/firebase";
 import { fetchTrainingExceptions } from "@/lib/training-exceptions-client";
@@ -130,56 +131,59 @@ export default function ParentTrainingsPage() {
   }, [groupIds, children]);
 
   if (loadingChildren) {
-    return <p className="text-zks-text-muted">Ładowanie...</p>;
+    return <PanelLoadingState label="Ładowanie planu treningów..." />;
   }
 
   if (!children.length) {
     return (
-      <div className="zks-card p-6 text-zks-text-muted">
-        Nie masz jeszcze dodanych dzieci. Dodaj je w sekcji „Moje dzieci”, aby zobaczyć plan
-        treningów.
-      </div>
+      <PanelPage>
+        <PanelPageHeader
+          title="Treningi"
+          description="Plan tygodniowy i ewentualne zmiany w grupach treningowych Twoich dzieci."
+        />
+        <div className="zks-card zks-card-pad text-sm text-zks-text-muted">
+          Nie masz jeszcze dodanych dzieci. Dodaj je w sekcji „Moje dzieci”, aby zobaczyć plan
+          treningów.
+        </div>
+      </PanelPage>
     );
   }
 
   if (!groupIds.length) {
     return (
-      <div className="zks-card p-6 text-zks-text-muted">
-        Twoim dzieciom nie przypisano jeszcze grup treningowych. Uzupełnij je w sekcji „Moje
-        dzieci”.
-      </div>
+      <PanelPage>
+        <PanelPageHeader
+          title="Treningi"
+          description="Plan tygodniowy i ewentualne zmiany w grupach treningowych Twoich dzieci."
+        />
+        <div className="zks-card zks-card-pad text-sm text-zks-text-muted">
+          Twoim dzieciom nie przypisano jeszcze grup treningowych. Uzupełnij je w sekcji „Moje
+          dzieci”.
+        </div>
+      </PanelPage>
     );
   }
 
   return (
-    <div className="min-w-0 space-y-8">
-      <div>
-        <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-white sm:text-3xl">
-          Treningi
-        </h2>
-        <p className="mt-2 text-sm text-zks-text-muted">
-          Plan tygodniowy i ewentualne zmiany w grupach treningowych Twoich dzieci.
-        </p>
-      </div>
+    <PanelPage>
+      <PanelPageHeader
+        title="Treningi"
+        description="Plan tygodniowy i ewentualne zmiany w grupach treningowych Twoich dzieci."
+      />
 
       {groupSections.map((section) => (
-        <section key={section.groupId} className="space-y-4">
-          <div>
-            <h3 className="font-[family-name:var(--font-heading)] text-lg font-bold uppercase text-white">
-              {getTrainingGroupLabel(section.groupId)}
-            </h3>
-            <p className="mt-1 text-sm text-zks-text-muted">
-              {section.childNames.join(", ")}
-            </p>
-          </div>
-
+        <PanelSection
+          key={section.groupId}
+          title={getTrainingGroupLabel(section.groupId)}
+          description={section.childNames.join(", ")}
+        >
           <TrainingWeekSchedule
             groupId={section.groupId}
             exceptions={section.exceptions}
             loading={section.loading}
           />
-        </section>
+        </PanelSection>
       ))}
-    </div>
+    </PanelPage>
   );
 }

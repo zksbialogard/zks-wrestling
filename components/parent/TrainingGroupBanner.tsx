@@ -65,7 +65,7 @@ export default function TrainingGroupBanner() {
       : `${missingNames.slice(0, 2).join(", ")}${missingNames.length > 2 ? ` i ${missingNames.length - 2} więcej` : ""}`;
 
   return (
-    <div className="mb-6 rounded-xl border border-amber-500/35 bg-amber-500/10 p-4">
+    <div className="mb-6 rounded-xl border border-amber-500/35 bg-amber-500/10 p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />

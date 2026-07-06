@@ -2,18 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import {
-  ArrowRight,
-  Baby,
-  Bell,
-  CalendarClock,
-  CalendarDays,
-  ClipboardList,
-  Loader2,
-  Newspaper,
-  Trophy,
-  User,
-} from "lucide-react";
+import { ArrowRight, Baby, Bell, CalendarClock, CalendarDays, ClipboardList, Newspaper, Trophy, User } from "lucide-react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -37,6 +26,12 @@ import { isTrainingGroupId, type TrainingGroupId } from "@/lib/training-groups";
 import DashboardCard from "./DashboardCard";
 import DashboardStatCard from "./DashboardStatCard";
 import PushOnboardingDashboardCard from "@/components/notifications/PushOnboardingDashboardCard";
+import {
+  PanelLoadingState,
+  PanelPage,
+  PanelPageHeader,
+  PanelSection,
+} from "@/components/layout/PanelLayout";
 
 type DashboardStats = {
   pendingRegistrations: number;
@@ -161,27 +156,19 @@ export default function DashboardGrid() {
     : "Dodaj grupę treningową dziecku";
 
   return (
-    <div className="min-w-0 space-y-8">
-      <div>
-        <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-white sm:text-3xl">
-          Witaj, {displayName}!
-        </h2>
-        <p className="mt-2 max-w-2xl text-sm text-zks-text-muted sm:text-base">
-          Tu znajdziesz szybki podgląd zgłoszeń, powiadomień i wyników swoich
-          zawodników.
-        </p>
-      </div>
+    <PanelPage>
+      <PanelPageHeader
+        title={`Witaj, ${displayName}!`}
+        description="Tu znajdziesz szybki podgląd zgłoszeń, powiadomień i wyników swoich zawodników."
+      />
 
       <PushOnboardingDashboardCard role="rodzic" />
 
       {loading ? (
-        <div className="zks-card flex items-center gap-3 p-5 text-zks-text-muted">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          Ładowanie podsumowania...
-        </div>
+        <PanelLoadingState label="Ładowanie podsumowania..." />
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="panel-grid-stats">
             <DashboardStatCard
               href="/panel-rodzica/treningi"
               icon={CalendarClock}
@@ -237,7 +224,7 @@ export default function DashboardGrid() {
           {trainingOverview?.upcomingChange && (
             <Link
               href="/panel-rodzica/treningi"
-              className="zks-card block border-amber-500/30 p-5 transition hover:border-amber-500/50"
+              className="zks-card zks-card-pad block border-amber-500/30 transition hover:border-amber-500/50"
             >
               <p className="text-xs font-medium uppercase tracking-wide text-amber-300">
                 Zmiana w planie treningów
@@ -255,7 +242,7 @@ export default function DashboardGrid() {
         </>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="panel-actions">
         <Link
           href="/zawody"
           className="zks-btn-primary inline-flex min-h-[44px] items-center gap-2 px-5 py-2.5 text-xs sm:text-sm"
@@ -288,15 +275,11 @@ export default function DashboardGrid() {
         )}
       </div>
 
-      <div>
-        <h3 className="font-[family-name:var(--font-heading)] text-lg font-bold uppercase text-white sm:text-xl">
-          Szybki dostęp
-        </h3>
-        <p className="mt-1 text-sm text-zks-text-muted">
-          Zarządzaj danymi dzieci, zgłoszeniami i informacjami klubowymi.
-        </p>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <PanelSection
+        title="Szybki dostęp"
+        description="Zarządzaj danymi dzieci, zgłoszeniami i informacjami klubowymi."
+      >
+        <div className="panel-grid-cards">
           <DashboardCard
             href="/panel-rodzica/treningi"
             icon={CalendarClock}
@@ -340,7 +323,7 @@ export default function DashboardGrid() {
             description="Najnowsze informacje i komunikaty od klubu."
           />
         </div>
-      </div>
-    </div>
+      </PanelSection>
+    </PanelPage>
   );
 }

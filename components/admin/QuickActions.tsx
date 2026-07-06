@@ -38,7 +38,7 @@ const actions = [
 
 export default function QuickActions() {
   return (
-    <section className="zks-card p-6 sm:p-8">
+    <section className="zks-card zks-card-pad">
       <div className="mb-6">
         <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white">
           Szybkie akcje

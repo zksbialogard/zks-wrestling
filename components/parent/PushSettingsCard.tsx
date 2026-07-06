@@ -96,7 +96,7 @@ export default function PushSettingsCard({ role = "rodzic" }: Props) {
   const iosBlocked = status === "ios_needs_pwa";
 
   return (
-    <section className="zks-card space-y-4 p-5 sm:p-6">
+    <section className="zks-card zks-card-pad space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-zks-gold-mid/30 bg-zks-gold/10">

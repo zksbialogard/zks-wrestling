@@ -1,6 +1,7 @@
 "use client";
 
 import AuthGuard from "@/components/auth/AuthGuard";
+import { PanelAlerts, PanelMain } from "@/components/layout/PanelLayout";
 import ParentHeader from "@/components/parent/ParentHeader";
 import ParentNav from "@/components/parent/ParentNav";
 import ParentPushBootstrap from "@/components/parent/ParentPushBootstrap";
@@ -14,17 +15,19 @@ export default function ParentLayout({
 }) {
   return (
     <AuthGuard requireRole="rodzic">
-      <div className="min-h-screen overflow-x-hidden bg-zks-black pb-24 text-white lg:pb-0">
+      <div className="panel-shell text-white">
         <ParentPushBootstrap />
         <ParentHeader />
 
         <div className="mx-auto flex max-w-7xl">
           <ParentNav />
-          <section className="min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8">
-            <PushPrompt role="rodzic" />
-            <TrainingGroupBanner />
+          <PanelMain>
+            <PanelAlerts>
+              <PushPrompt role="rodzic" />
+              <TrainingGroupBanner />
+            </PanelAlerts>
             {children}
-          </section>
+          </PanelMain>
         </div>
       </div>
     </AuthGuard>

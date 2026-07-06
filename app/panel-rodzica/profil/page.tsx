@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { Loader2, Mail, Phone, User } from "lucide-react";
+import { Mail, Phone, User } from "lucide-react";
 import { toast } from "sonner";
 
 import AuthField from "@/components/auth/AuthField";
 import { useAuth } from "@/components/auth/AuthProvider";
 import PushSettingsCard from "@/components/parent/PushSettingsCard";
+import { PanelLoadingState, PanelPage, PanelPageHeader } from "@/components/layout/PanelLayout";
 import { db } from "@/lib/firebase";
 
 function formatPhoneDisplay(value: string) {
@@ -81,28 +82,19 @@ export default function ParentProfilePage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center gap-3 text-zks-text-muted">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        Ładowanie profilu...
-      </div>
-    );
+    return <PanelLoadingState label="Ładowanie profilu..." />;
   }
 
   const fullName = [imie, nazwisko].filter(Boolean).join(" ") || "Rodzic";
 
   return (
-    <div className="min-w-0 space-y-6">
-      <div>
-        <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-white sm:text-3xl">
-          Moje dane
-        </h2>
-        <p className="mt-2 text-sm text-zks-text-muted">
-          Edytuj dane kontaktowe powiązane z kontem rodzica.
-        </p>
-      </div>
+    <PanelPage>
+      <PanelPageHeader
+        title="Moje dane"
+        description="Edytuj dane kontaktowe powiązane z kontem rodzica."
+      />
 
-      <div className="zks-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
+      <div className="zks-card zks-card-pad flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-zks-gold-mid/30 bg-zks-gold/10">
           <User className="h-7 w-7 text-zks-gold-bright" />
         </div>
@@ -129,10 +121,8 @@ export default function ParentProfilePage() {
 
       <PushSettingsCard role="rodzic" />
 
-      <form onSubmit={save} className="zks-card space-y-5 p-5 sm:max-w-2xl sm:p-6">
-        <h3 className="font-[family-name:var(--font-heading)] text-lg font-bold uppercase text-white">
-          Edycja danych
-        </h3>
+      <form onSubmit={save} className="zks-card zks-card-pad space-y-5 sm:max-w-2xl">
+        <h3 className="panel-section-title">Edycja danych</h3>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <AuthField label="Imię" value={imie} onChange={(e) => setImie(e.target.value)} />
@@ -170,6 +160,6 @@ export default function ParentProfilePage() {
           {saving ? "Zapisywanie..." : "Zapisz zmiany"}
         </button>
       </form>
-    </div>
+    </PanelPage>
   );
 }

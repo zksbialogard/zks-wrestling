@@ -2,11 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, BellOff, CheckCheck, Loader2 } from "lucide-react";
+import { Bell, BellOff, CheckCheck } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import {
+  PanelEmptyState,
+  PanelList,
+  PanelLoadingState,
+  PanelPage,
+  PanelPageHeader,
+} from "@/components/layout/PanelLayout";
 import {
   fetchNotifications,
   markAllNotificationsAsRead,
@@ -85,69 +92,57 @@ export default function NotificationsPanel({ profileHref }: Props) {
   }
 
   return (
-    <div className="min-w-0 space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-white sm:text-3xl">
-              Powiadomienia
-            </h1>
-            {unreadCount > 0 && (
-              <span className="inline-flex items-center rounded-full bg-red-500/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-red-400 ring-1 ring-inset ring-red-500/30">
-                {unreadCount} {unreadCount === 1 ? "nowe" : "nowych"}
-              </span>
-            )}
-          </div>
-          <p className="mt-2 text-sm text-zks-text-muted">
-            Komunikaty od klubu o treningach, zawodach i ważnych informacjach.
-          </p>
-        </div>
-
-        {unreadCount > 0 && (
-          <button
-            type="button"
-            disabled={markingAll}
-            onClick={handleMarkAllRead}
-            className="zks-btn-primary inline-flex min-h-[44px] w-full items-center justify-center gap-2 px-5 py-2.5 text-xs sm:w-auto sm:text-sm disabled:opacity-60"
-          >
-            {markingAll ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <CheckCheck className="h-4 w-4" />
-            )}
-            Oznacz wszystkie jako przeczytane
-          </button>
-        )}
-      </div>
+    <PanelPage>
+      <PanelPageHeader
+        title="Powiadomienia"
+        description="Komunikaty od klubu o treningach, zawodach i ważnych informacjach."
+        badge={
+          unreadCount > 0 ? (
+            <span className="inline-flex items-center rounded-full bg-red-500/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-red-400 ring-1 ring-inset ring-red-500/30">
+              {unreadCount} {unreadCount === 1 ? "nowe" : "nowych"}
+            </span>
+          ) : undefined
+        }
+        action={
+          unreadCount > 0 ? (
+            <button
+              type="button"
+              disabled={markingAll}
+              onClick={handleMarkAllRead}
+              className="zks-btn-primary inline-flex min-h-[44px] w-full items-center justify-center gap-2 px-5 py-2.5 text-xs sm:w-auto sm:text-sm disabled:opacity-60"
+            >
+              {markingAll ? (
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-zks-black/20 border-t-zks-black" />
+              ) : (
+                <CheckCheck className="h-4 w-4" />
+              )}
+              Oznacz wszystkie jako przeczytane
+            </button>
+          ) : undefined
+        }
+      />
 
       {loading ? (
-        <div className="zks-card flex min-h-[120px] items-center gap-3 p-6 text-zks-text-muted">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          Ładowanie powiadomień...
-        </div>
+        <PanelLoadingState label="Ładowanie powiadomień..." />
       ) : notifications.length === 0 ? (
-        <div className="zks-card rounded-2xl p-8 text-center sm:p-12">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-zks-gold-mid/30 bg-zks-gold/10">
-            <BellOff className="h-7 w-7 text-zks-gold-mid" />
-          </div>
-          <h2 className="mt-5 font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white">
-            Brak nowych powiadomień
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm text-zks-text-muted">
-            Włącz push w profilu, żeby nie przegapić odwołań treningów i informacji o zawodach.
-          </p>
-          <Link
-            href={profileHref}
-            className="zks-btn-outline mt-6 inline-flex min-h-[44px] items-center gap-2 px-6 py-2.5 text-xs sm:text-sm"
-          >
-            <Bell className="h-4 w-4" />
-            Ustawienia powiadomień
-          </Link>
-        </div>
+        <PanelEmptyState
+          icon={<BellOff className="h-7 w-7 text-zks-gold-mid" />}
+          title="Brak nowych powiadomień"
+          description="Włącz push w profilu, żeby nie przegapić odwołań treningów i informacji o zawodach."
+          action={
+            <Link
+              href={profileHref}
+              className="zks-btn-outline inline-flex min-h-[44px] items-center gap-2 px-6 py-2.5 text-xs sm:text-sm"
+            >
+              <Bell className="h-4 w-4" />
+              Ustawienia powiadomień
+            </Link>
+          }
+        />
       ) : (
-        <div className="space-y-3">
+        <PanelList>
           {notifications.map((item) => (
-            <article key={item.id} className="zks-card border-zks-gold-bright/30 p-4 sm:p-5">
+            <article key={item.id} className="zks-card zks-card-pad border-zks-gold-bright/30">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <h2 className="text-base font-bold text-white sm:text-lg">{item.title}</h2>
@@ -189,8 +184,8 @@ export default function NotificationsPanel({ profileHref }: Props) {
               </div>
             </article>
           ))}
-        </div>
+        </PanelList>
       )}
-    </div>
+    </PanelPage>
   );
 }

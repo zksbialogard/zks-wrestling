@@ -56,7 +56,7 @@ export default function PushOnboardingDashboardCard({ role = "rodzic" }: Props) 
   return (
     <Link
       href={profileHref}
-      className="zks-card group block border-amber-500/25 bg-amber-500/5 p-4 transition hover:-translate-y-0.5 hover:border-amber-500/45 sm:p-5"
+      className="zks-card zks-card-pad group block border-amber-500/25 bg-amber-500/5 transition hover:-translate-y-0.5 hover:border-amber-500/45"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">

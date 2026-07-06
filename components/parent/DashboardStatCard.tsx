@@ -21,7 +21,7 @@ export default function DashboardStatCard({
   return (
     <Link
       href={href}
-      className={`zks-card group block min-h-[44px] p-4 transition hover:-translate-y-0.5 hover:border-zks-gold-mid/50 sm:p-5 ${
+      className={`zks-card zks-card-pad group block min-h-[44px] transition hover:-translate-y-0.5 hover:border-zks-gold-mid/50 ${
         highlight ? "border-zks-gold-bright/30 bg-zks-gold/5" : ""
       }`}
     >

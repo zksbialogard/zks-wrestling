@@ -15,7 +15,7 @@ type Props = {
 
 export default function ChildCard({ child, onEdit, onDelete }: Props) {
   return (
-    <div className="zks-card p-6">
+    <div className="zks-card zks-card-pad">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
           <h2 className="text-xl font-bold text-zks-gold-bright">

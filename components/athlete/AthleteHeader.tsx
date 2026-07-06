@@ -18,7 +18,7 @@ export default function AthleteHeader() {
 
   return (
     <header className="border-b border-zks-gold-mid/20 bg-zks-black/95 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <ClubLogo size={44} glow />
           <div className="min-w-0">

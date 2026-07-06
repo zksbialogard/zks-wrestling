@@ -9,6 +9,7 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import QuickActions from "@/components/admin/QuickActions";
 import StatCard from "@/components/admin/StatCard";
 import UpcomingEventsTable from "@/components/admin/UpcomingEventsTable";
+import { PanelPage, PanelSection } from "@/components/layout/PanelLayout";
 import { fetchAdminDashboardStats } from "@/lib/admin-dashboard-client";
 import type { AdminDashboardStats } from "@/lib/admin-dashboard";
 
@@ -41,13 +42,13 @@ export default function AdminDashboard() {
       : "Profile dzieci w bazie klubu";
 
   return (
-    <>
+    <PanelPage>
       <AdminPageHeader
         title="Dashboard"
         description="Zarządzaj klubem, zawodami, aktualnościami i użytkownikami z poziomu aplikacji."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="panel-grid-admin">
         <StatCard
           title="Zawodnicy"
           value={loading ? "—" : stats?.athleteCount ?? 0}
@@ -82,13 +83,13 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      <section className="mt-8">
+      <PanelSection>
         <QuickActions />
-      </section>
+      </PanelSection>
 
-      <section className="mt-8">
+      <PanelSection>
         <UpcomingEventsTable events={stats?.upcomingEvents ?? []} loading={loading} />
-      </section>
-    </>
+      </PanelSection>
+    </PanelPage>
   );
 }

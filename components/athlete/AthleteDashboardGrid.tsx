@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, Bell, CalendarDays, Dumbbell, Loader2 } from "lucide-react";
+import { ArrowRight, Bell, CalendarDays, Dumbbell } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { fetchEvents } from "@/lib/events";
@@ -15,6 +15,12 @@ import {
 } from "@/lib/training-groups";
 
 import PushOnboardingDashboardCard from "@/components/notifications/PushOnboardingDashboardCard";
+import {
+  PanelLoadingState,
+  PanelPage,
+  PanelPageHeader,
+  PanelSection,
+} from "@/components/layout/PanelLayout";
 
 export default function AthleteDashboardGrid() {
   const { profile, user, ready, loadingProfile } = useAuth();
@@ -76,60 +82,50 @@ export default function AthleteDashboardGrid() {
   const displayName = profile?.imie || "Zawodniku";
 
   return (
-    <div className="min-w-0 space-y-8">
-      <div>
-        <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-white sm:text-3xl">
-          Witaj, {displayName}!
-        </h2>
-        <p className="mt-2 max-w-2xl text-sm text-zks-text-muted sm:text-base">
-          Twój panel zawodnika — treningi, zawody i komunikaty od klubu.
-        </p>
-      </div>
+    <PanelPage>
+      <PanelPageHeader
+        title={`Witaj, ${displayName}!`}
+        description="Twój panel zawodnika — treningi, zawody i komunikaty od klubu."
+      />
 
       <PushOnboardingDashboardCard role="zawodnik" />
 
       {loading ? (
-        <div className="zks-card flex items-center gap-3 p-5 text-zks-text-muted">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          Ładowanie podsumowania...
-        </div>
+        <PanelLoadingState label="Ładowanie podsumowania..." />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <div className="zks-card p-5">
+        <div className="panel-grid-stats-3">
+          <div className="zks-card zks-card-pad">
             <p className="text-xs uppercase tracking-[0.15em] text-zks-gold-mid">
               Grupa treningowa
             </p>
-            <p className="mt-2 font-[family-name:var(--font-heading)] text-xl font-bold text-white">
-              {groupLabel}
-            </p>
+            <p className="panel-section-title mt-2">{groupLabel}</p>
           </div>
 
-          <div className="zks-card p-5">
+          <div className="zks-card zks-card-pad">
             <div className="flex items-center gap-2 text-zks-gold-mid">
               <Dumbbell className="h-4 w-4" />
               <p className="text-xs uppercase tracking-[0.15em]">Najbliższy trening</p>
             </div>
-            <p className="mt-2 text-sm text-white">
+            <p className="mt-2 text-sm leading-relaxed text-white">
               {nextTrainingLabel || "Brak zaplanowanych treningów w najbliższym czasie."}
             </p>
           </div>
 
-          <div className="zks-card p-5">
+          <div className="zks-card zks-card-pad">
             <div className="flex items-center gap-2 text-zks-gold-mid">
               <CalendarDays className="h-4 w-4" />
               <p className="text-xs uppercase tracking-[0.15em]">Nadchodzące zawody</p>
             </div>
-            <p className="mt-2 font-[family-name:var(--font-heading)] text-xl font-bold text-white">
-              {upcomingEvents}
-            </p>
-            <p className="mt-1 text-sm text-zks-text-muted">
+            <p className="panel-section-title mt-2">{upcomingEvents}</p>
+            <p className="panel-section-description">
               {nextEventTitle ?? "Sprawdź terminy startów"}
             </p>
           </div>
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <PanelSection>
+        <div className="panel-actions">
         <Link
           href="/panel-zawodnika/zawody"
           className="zks-btn-primary inline-flex min-h-[44px] items-center gap-2 px-5 py-2.5 text-xs sm:text-sm"
@@ -153,7 +149,8 @@ export default function AthleteDashboardGrid() {
             {unreadNotifications} nowych
           </Link>
         )}
-      </div>
-    </div>
+        </div>
+      </PanelSection>
+    </PanelPage>
   );
 }

@@ -129,7 +129,7 @@ export default function PushOnboardingBanner({ role = "rodzic", compact = false 
   }
 
   return (
-    <div className="mb-6 rounded-xl border border-zks-gold-mid/30 bg-gradient-to-br from-zks-gold/10 to-zks-black/20 p-4 sm:p-5">
+    <div className="rounded-xl border border-zks-gold-mid/30 bg-gradient-to-br from-zks-gold/10 to-zks-black/20 p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zks-gold-mid/30 bg-zks-gold/10">

@@ -42,7 +42,7 @@ export default function TrainingWeekSchedule({
 
   if (loading) {
     return (
-      <div className="zks-card flex items-center gap-3 p-6 text-zks-text-muted">
+      <div className="zks-card zks-card-pad flex items-center gap-3 text-sm text-zks-text-muted">
         <Loader2 className="h-5 w-5 animate-spin" />
         Ładowanie planu treningów...
       </div>
@@ -50,7 +50,7 @@ export default function TrainingWeekSchedule({
   }
 
   return (
-    <div className="space-y-3">
+        <div className="panel-list">
       {weekSchedule.map((session) => {
         const exception = exceptionsByDate.get(session.dateKey);
 
@@ -58,7 +58,7 @@ export default function TrainingWeekSchedule({
           return (
             <article
               key={session.dateKey}
-              className="zks-card border-red-500/30 p-5"
+              className="zks-card zks-card-pad border-red-500/30"
             >
               <div className="flex items-start gap-3">
                 <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
@@ -83,7 +83,7 @@ export default function TrainingWeekSchedule({
           return (
             <article
               key={session.dateKey}
-              className="zks-card border-amber-500/30 p-5"
+              className="zks-card zks-card-pad border-amber-500/30"
             >
               <div className="flex items-start gap-3">
                 <CalendarClock className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
@@ -112,7 +112,7 @@ export default function TrainingWeekSchedule({
         }
 
         return (
-          <article key={session.dateKey} className="zks-card p-5">
+          <article key={session.dateKey} className="zks-card zks-card-pad">
             <p className="font-bold text-white">
               {session.dayName}, {session.date.toLocaleDateString("pl-PL")}
             </p>
