@@ -57,7 +57,17 @@ function truncateSmsMessage(message: string) {
   return `${trimmed.slice(0, maxLength - 1)}…`;
 }
 
-function parseSmsApiError(data: unknown) {
+function humanizeSmsError(message: string, sender: string) {
+  if (/invalid from/i.test(message)) {
+    return sender
+      ? `Pole nadawcy „${sender}” nie jest zatwierdzone w SMSAPI. Dodaj je w panelu smsapi.pl → Pola nadawcy, albo ustaw krótszą nazwę (np. ZKS) w SMSAPI_FROM na Vercel.`
+      : "Niepoprawne pole nadawcy w SMSAPI. Sprawdź SMSAPI_FROM na Vercel.";
+  }
+
+  return message;
+}
+
+function parseSmsApiError(data: unknown, sender = "") {
   if (!data || typeof data !== "object") {
     return "Błąd wysyłki SMS.";
   }
@@ -71,12 +81,12 @@ function parseSmsApiError(data: unknown) {
   if (payload.list?.length) {
     const first = payload.list.find((item) => item.error);
     if (first?.message) {
-      return first.message;
+      return humanizeSmsError(first.message, sender);
     }
   }
 
   if (payload.message) {
-    return payload.message;
+    return humanizeSmsError(payload.message, sender);
   }
 
   if (payload.error) {
@@ -84,6 +94,45 @@ function parseSmsApiError(data: unknown) {
   }
 
   return "Błąd wysyłki SMS.";
+}
+
+function smsApiHasError(data: {
+  error?: number | string;
+  list?: Array<{ error?: number | string; message?: string }>;
+}) {
+  return Boolean(data.error || data.list?.some((item) => item.error));
+}
+
+function isInvalidFromError(data: {
+  message?: string;
+  list?: Array<{ message?: string }>;
+}) {
+  const messages = [
+    data.message,
+    ...(data.list?.map((item) => item.message) || []),
+  ].filter(Boolean);
+
+  return messages.some((item) => /invalid from/i.test(item || ""));
+}
+
+async function requestSmsApi(token: string, params: URLSearchParams) {
+  const response = await fetch("https://api.smsapi.pl/sms.do", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: params,
+  });
+
+  const data = (await response.json()) as {
+    error?: number | string;
+    message?: string;
+    count?: number;
+    list?: Array<{ error?: number | string; message?: string }>;
+  };
+
+  return { response, data };
 }
 
 export function isEmailConfigured() {
@@ -192,28 +241,19 @@ export async function sendSmsMessage(input: { phone: string | unknown; message: 
   }
 
   try {
-    const response = await fetch("https://api.smsapi.pl/sms.do", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: params,
-    });
+    let { response, data } = await requestSmsApi(token, params);
 
-    const data = (await response.json()) as {
-      error?: number | string;
-      message?: string;
-      count?: number;
-      list?: Array<{ error?: number | string; message?: string }>;
-    };
+    if (sender && smsApiHasError(data) && isInvalidFromError(data)) {
+      const fallbackParams = new URLSearchParams(params);
+      fallbackParams.delete("from");
+      ({ response, data } = await requestSmsApi(token, fallbackParams));
+    }
 
-    const listError = data.list?.find((item) => item.error);
-    if (data.error || listError?.error) {
+    if (smsApiHasError(data)) {
       return {
         ok: false as const,
         skipped: false,
-        error: parseSmsApiError(data),
+        error: parseSmsApiError(data, sender),
       };
     }
 
@@ -221,7 +261,7 @@ export async function sendSmsMessage(input: { phone: string | unknown; message: 
       return {
         ok: false as const,
         skipped: false,
-        error: parseSmsApiError(data),
+        error: parseSmsApiError(data, sender),
       };
     }
 

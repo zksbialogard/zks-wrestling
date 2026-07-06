@@ -136,6 +136,12 @@ export default function SmsSettingsCard() {
                 </p>
               </div>
 
+              <p className="text-xs text-zks-text-muted">
+                Nazwa nadawcy musi być zatwierdzona w SMSAPI → Pola nadawcy. Jeśli test
+                pada z błędem „Invalid from field”, ustaw na Vercel krótszą nazwę, np.{" "}
+                <strong className="text-white">SMSAPI_FROM=ZKS</strong>.
+              </p>
+
               <p className="text-sm text-zks-text-muted">{status.hint}</p>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
