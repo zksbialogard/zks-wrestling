@@ -3,6 +3,7 @@ import Navbar from "@/components/navbar/Navbar";
 import LogoFilters from "@/components/ui/LogoFilters";
 import AppProviders from "@/components/providers/AppProviders";
 import InstallPrompt from "@/components/pwa/InstallPrompt";
+import PwaUpdatePrompt from "@/components/pwa/PwaUpdatePrompt";
 import { Oswald, Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
@@ -68,6 +69,7 @@ export default function RootLayout({
           />
 
           <InstallPrompt />
+          <PwaUpdatePrompt />
         </AppProviders>
       </body>
     </html>
