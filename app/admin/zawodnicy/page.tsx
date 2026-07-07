@@ -96,13 +96,10 @@ export default function AdminZawodnicyPage() {
       }
 
       await addDoc(collection(db, "children"), {
-        imie,
-        nazwisko,
-        rokUrodzenia,
+        ...identity,
         plec,
         kategoriaWagowa,
         grupaTreningowa,
-        ...identity,
         parentUid: parentUid || "admin",
         parentUids: parentUid ? [parentUid] : ["admin"],
         createdAt: new Date(),

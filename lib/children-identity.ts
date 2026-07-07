@@ -37,7 +37,9 @@ export function getChildIdentityKey(child: ChildRecordFields) {
   return buildChildIdentityKey(child.imie, child.nazwisko, child.rokUrodzenia);
 }
 
-export function getParentUids(child: ChildRecordFields): string[] {
+export type ParentLinkFields = Pick<ChildRecordFields, "parentUid" | "parentUids">;
+
+export function getParentUids(child: ParentLinkFields): string[] {
   const fromArray = Array.isArray(child.parentUids)
     ? child.parentUids.filter(Boolean)
     : [];
@@ -53,7 +55,7 @@ export function getParentUids(child: ChildRecordFields): string[] {
   return [];
 }
 
-export function isParentLinkedToChild(child: ChildRecordFields, parentUid: string) {
+export function isParentLinkedToChild(child: ParentLinkFields, parentUid: string) {
   return getParentUids(child).includes(parentUid);
 }
 

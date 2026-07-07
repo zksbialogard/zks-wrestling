@@ -67,6 +67,9 @@ export async function getChildForParent(childId: string, parentUid: string) {
     const fields = parseFirestoreFields(document.fields);
 
     const childRecord = {
+      imie: String(fields.imie ?? ""),
+      nazwisko: String(fields.nazwisko ?? ""),
+      rokUrodzenia: String(fields.rokUrodzenia ?? ""),
       parentUid: String(fields.parentUid ?? ""),
       parentUids: Array.isArray(fields.parentUids) ? fields.parentUids : undefined,
     };
@@ -138,8 +141,8 @@ async function getParentProfile(parentUid: string) {
     const fields = parseFirestoreFields(document?.fields);
 
     return {
-      email: fields.email || "",
-      telefon: fields.telefon || "",
+      email: String(fields.email ?? ""),
+      telefon: String(fields.telefon ?? ""),
     };
   } catch (error) {
     console.error("getParentProfile:", error);

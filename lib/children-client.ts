@@ -20,7 +20,12 @@ import {
   isParentLinkedToChild,
 } from "./children-identity";
 
-export type StoredChild = ChildRecordFields & { id: string };
+export type StoredChild = Omit<ChildRecordFields, "plec" | "kategoriaWagowa" | "parentUids"> & {
+  id: string;
+  plec: string;
+  kategoriaWagowa: string;
+  parentUids: string[];
+};
 
 function parseChildDoc(id: string, data: Record<string, unknown>): StoredChild {
   const parentUids = getParentUids(data as ChildRecordFields);
@@ -30,8 +35,8 @@ function parseChildDoc(id: string, data: Record<string, unknown>): StoredChild {
     imie: String(data.imie ?? ""),
     nazwisko: String(data.nazwisko ?? ""),
     rokUrodzenia: String(data.rokUrodzenia ?? ""),
-    plec: data.plec ? String(data.plec) : undefined,
-    kategoriaWagowa: data.kategoriaWagowa ? String(data.kategoriaWagowa) : undefined,
+    plec: data.plec ? String(data.plec) : "M",
+    kategoriaWagowa: data.kategoriaWagowa ? String(data.kategoriaWagowa) : "",
     parentUid: data.parentUid ? String(data.parentUid) : parentUids[0],
     parentUids,
     identityKey: data.identityKey ? String(data.identityKey) : undefined,

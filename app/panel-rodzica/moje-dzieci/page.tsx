@@ -111,7 +111,7 @@ export default function MojeDzieciPage() {
           grupaTreningowa: form.grupaTreningowa,
         });
 
-        if (linked.parentUids.length > 1) {
+        if ((linked.parentUids?.length ?? 0) > 1) {
           toast.success("To dziecko jest już w klubie — powiązaliśmy je z Twoim kontem.");
         } else {
           toast.success("Dziecko dodane.");
@@ -132,9 +132,9 @@ export default function MojeDzieciPage() {
       imie: child.imie,
       nazwisko: child.nazwisko,
       rokUrodzenia: child.rokUrodzenia,
-      plec: child.plec,
-      kategoriaWagowa: child.kategoriaWagowa,
-      grupaTreningowa: child.grupaTreningowa || "srednia",
+      plec: child.plec ?? "M",
+      kategoriaWagowa: child.kategoriaWagowa ?? "",
+      grupaTreningowa: (child.grupaTreningowa as TrainingGroupId | undefined) || "srednia",
     });
     setShowForm(true);
   };
