@@ -1,3 +1,5 @@
+import { isParentLinkedToChild } from "./children-identity";
+
 const firebaseConfig = {
   apiKey:
     process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
@@ -8,20 +10,25 @@ const firebaseConfig = {
 type FirestoreField = {
   stringValue?: string;
   integerValue?: string;
+  arrayValue?: { values?: Array<{ stringValue?: string }> };
 };
 
 function parseFirestoreFields(fields: Record<string, FirestoreField> | undefined) {
   if (!fields) {
-    return {} as Record<string, string>;
+    return {} as Record<string, string | string[]>;
   }
 
-  const result: Record<string, string> = {};
+  const result: Record<string, string | string[]> = {};
 
   for (const [key, value] of Object.entries(fields)) {
     if (value.stringValue !== undefined) {
       result[key] = value.stringValue;
     } else if (value.integerValue !== undefined) {
       result[key] = value.integerValue;
+    } else if (value.arrayValue?.values) {
+      result[key] = value.arrayValue.values
+        .map((item) => item.stringValue)
+        .filter((item): item is string => Boolean(item));
     }
   }
 
@@ -59,17 +66,22 @@ export async function getChildForParent(childId: string, parentUid: string) {
 
     const fields = parseFirestoreFields(document.fields);
 
-    if (fields.parentUid !== parentUid) {
+    const childRecord = {
+      parentUid: String(fields.parentUid ?? ""),
+      parentUids: Array.isArray(fields.parentUids) ? fields.parentUids : undefined,
+    };
+
+    if (!isParentLinkedToChild(childRecord, parentUid)) {
       return null;
     }
 
     return {
       id: childId,
-      imie: fields.imie || "",
-      nazwisko: fields.nazwisko || "",
-      rokUrodzenia: fields.rokUrodzenia || "",
-      plec: fields.plec || "",
-      kategoriaWagowa: fields.kategoriaWagowa || "",
+      imie: String(fields.imie ?? ""),
+      nazwisko: String(fields.nazwisko ?? ""),
+      rokUrodzenia: String(fields.rokUrodzenia ?? ""),
+      plec: String(fields.plec ?? ""),
+      kategoriaWagowa: String(fields.kategoriaWagowa ?? ""),
     } satisfies VerifiedChild;
   } catch (error) {
     console.error("getChildForParent:", error);

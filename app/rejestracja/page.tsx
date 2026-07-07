@@ -133,7 +133,7 @@ export default function RejestracjaPage() {
           <span className="text-xs font-medium uppercase tracking-[0.15em] text-zks-gold-mid">
             Typ konta
           </span>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => setAccountType("rodzic")}

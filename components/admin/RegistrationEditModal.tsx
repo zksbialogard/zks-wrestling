@@ -69,8 +69,8 @@ export default function RegistrationEditModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-      <div className="zks-card w-full max-w-lg p-6 sm:p-8">
+    <div className="zks-modal-overlay">
+      <div className="zks-modal-panel zks-card p-6 sm:p-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white">

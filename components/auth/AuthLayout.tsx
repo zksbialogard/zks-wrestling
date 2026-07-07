@@ -15,12 +15,12 @@ export default function AuthLayout({
   footer,
 }: AuthLayoutProps) {
   return (
-    <main className="flex min-h-screen items-start justify-center bg-zks-black px-4 pb-12 pt-28 sm:px-6">
-      <div className="w-full max-w-md">
+    <main className="app-page flex min-h-screen items-start justify-center">
+      <div className="app-page-inner w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
           <ClubLogo size={88} glow priority />
           <p className="zks-label mt-5">ZKS Białogard — Manager</p>
-          <h1 className="mt-3 font-[family-name:var(--font-heading)] text-3xl font-bold uppercase text-white">
+          <h1 className="mt-3 font-[family-name:var(--font-heading)] text-[clamp(1.5rem,6vw,1.875rem)] font-bold uppercase text-white">
             {title}
           </h1>
           {subtitle && (

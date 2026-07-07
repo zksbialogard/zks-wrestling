@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AlertTriangle, ArrowRight, X } from "lucide-react";
-import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { loadChildrenForParent } from "@/lib/children-client";
 import { db } from "@/lib/firebase";
 import {
   getChildrenMissingGroup,
@@ -26,15 +26,13 @@ export default function TrainingGroupBanner() {
 
     async function load() {
       try {
-        const snapshot = await getDocs(
-          query(collection(db, "children"), where("parentUid", "==", parentUid))
-        );
+        const list = await loadChildrenForParent(db, parentUid);
 
-        const children: ParentChild[] = snapshot.docs.map((item) => ({
+        const children: ParentChild[] = list.map((item) => ({
           id: item.id,
-          imie: item.data().imie as string,
-          nazwisko: item.data().nazwisko as string,
-          grupaTreningowa: item.data().grupaTreningowa as string | undefined,
+          imie: item.imie,
+          nazwisko: item.nazwisko,
+          grupaTreningowa: item.grupaTreningowa,
         }));
 
         if (!children.length) {

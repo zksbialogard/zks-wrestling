@@ -85,7 +85,7 @@ export default function ParentMobileNav() {
 
   return (
     <>
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-zks-gold-mid/20 bg-zks-black/95 backdrop-blur-xl lg:hidden">
+      <nav className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-zks-gold-mid/20 bg-zks-black/95 backdrop-blur-xl lg:hidden">
         <div className="mx-auto grid max-w-lg grid-cols-5 gap-0.5 px-1 py-1.5">
           {primaryLinks.map((link) => {
             const Icon = link.icon;

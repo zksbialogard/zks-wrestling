@@ -17,19 +17,19 @@ export default function ClubLogo({
   glow = false,
   fluid = false,
 }: ClubLogoProps) {
-  const filter = glow
-    ? "url(#zks-logo-knockout) drop-shadow(0 0 28px rgba(247, 209, 84, 0.42))"
-    : "url(#zks-logo-knockout)";
+  const imageFilter = glow
+    ? "url(#zks-logo-soft) drop-shadow(0 6px 22px rgba(247, 209, 84, 0.2))"
+    : "url(#zks-logo-soft)";
 
   return (
     <div
-      className={cn("relative shrink-0", fluid && "h-auto w-full", className)}
+      className={cn("club-logo relative shrink-0", fluid && "h-auto w-full", className)}
       style={fluid ? undefined : { width: size, height: size }}
     >
       {glow && (
         <div
           aria-hidden
-          className="absolute inset-[10%] rounded-full bg-zks-gold/15 blur-2xl"
+          className="club-logo-glow absolute inset-[12%] rounded-full"
         />
       )}
 
@@ -42,11 +42,11 @@ export default function ClubLogo({
         decoding="async"
         fetchPriority={priority ? "high" : "auto"}
         className={cn(
-          "relative z-10 object-contain",
+          "club-logo-image relative z-10 object-contain",
           fluid ? "h-auto w-full" : "h-full w-full",
           imageClassName
         )}
-        style={{ filter }}
+        style={{ filter: imageFilter }}
       />
     </div>
   );

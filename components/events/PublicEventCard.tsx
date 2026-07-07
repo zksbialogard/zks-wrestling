@@ -12,19 +12,23 @@ type Props = {
   event: Event;
   showAction?: boolean;
   actionLabel?: string;
+  className?: string;
 };
 
 export default function PublicEventCard({
   event,
   showAction = true,
   actionLabel = "Zgłoś dziecko",
+  className = "",
 }: Props) {
   const status = getEventRegistrationStatus(event);
   const registrationOpen = status === "open";
 
   return (
-    <article className="group zks-card overflow-hidden rounded-2xl transition duration-300 hover:border-zks-gold-mid/50 hover:shadow-gold-glow-sm">
-      <div className="p-6 sm:p-8">
+    <article
+      className={`group zks-card flex h-full flex-col overflow-hidden rounded-2xl transition duration-300 hover:border-zks-gold-mid/50 hover:shadow-gold-glow-sm ${className}`.trim()}
+    >
+      <div className="flex flex-1 flex-col p-6 sm:p-8">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <PublicEventStatusBadge status={status} />
           <span className="text-xs uppercase tracking-wide text-zks-text-muted">
@@ -57,7 +61,7 @@ export default function PublicEventCard({
         </ul>
 
         {showAction && (
-          <div className="mt-8">
+          <div className="mt-auto pt-8">
             {registrationOpen ? (
               <Link
                 href={`/zawody/${event.id}`}

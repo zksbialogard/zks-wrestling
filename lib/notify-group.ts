@@ -5,6 +5,7 @@ import {
   getFirestore,
 } from "firebase/firestore";
 
+import { getParentUids } from "./children-identity";
 import { renderTemplate, type TemplateKey } from "./message-templates";
 import { coercePhoneValue, sendEmailMessage, sendSmsMessage, isSmsConfigured } from "./messaging";
 import {
@@ -57,9 +58,8 @@ async function loadGroupMemberUids(groupId: TrainingGroupId): Promise<Set<string
       continue;
     }
 
-    const parentUid = data.parentUid as string | undefined;
-    if (parentUid) {
-      uids.add(parentUid);
+    for (const uid of getParentUids(data as { parentUid?: string; parentUids?: string[] })) {
+      uids.add(uid);
     }
   }
 

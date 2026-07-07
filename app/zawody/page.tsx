@@ -28,11 +28,11 @@ export default function ZawodyPage() {
   }, []);
 
   return (
-    <main className="relative min-h-screen overflow-hidden pb-20">
+    <main className="app-page relative overflow-hidden">
       <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-zks-gold/10 blur-[120px]" />
       <div className="pointer-events-none absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-zks-gold-deep/10 blur-[140px]" />
 
-      <section className="relative mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
+      <section className="relative mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
         <EventsSectionHero
           title="Zawody"
           titleAccent="ZKS Białogard"
@@ -44,7 +44,7 @@ export default function ZawodyPage() {
         ) : events.length === 0 ? (
           <EventsEmptyState />
         ) : (
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {events.map((event) => (
               <PublicEventCard key={event.id} event={event} />
             ))}

@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowRight, Baby, Bell, CalendarClock, CalendarDays, ClipboardList, Images, Newspaper, Trophy, User } from "lucide-react";
-import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { fetchMyCompetitionResults } from "@/lib/competition-results-client";
 import { fetchEvents } from "@/lib/events";
+import { loadChildrenForParent } from "@/lib/children-client";
 import { db } from "@/lib/firebase";
 import { fetchNotifications } from "@/lib/notifications-client";
 import {
@@ -86,15 +86,13 @@ export default function DashboardGrid() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const childrenSnapshot = await getDocs(
-        query(collection(db, "children"), where("parentUid", "==", parentUid))
-      );
+      const childrenSnapshot = await loadChildrenForParent(db, parentUid);
 
-      const children: ParentChild[] = childrenSnapshot.docs.map((item) => ({
+      const children: ParentChild[] = childrenSnapshot.map((item) => ({
         id: item.id,
-        imie: item.data().imie as string,
-        nazwisko: item.data().nazwisko as string,
-        grupaTreningowa: item.data().grupaTreningowa as string | undefined,
+        imie: item.imie,
+        nazwisko: item.nazwisko,
+        grupaTreningowa: item.grupaTreningowa,
       }));
 
       const groupIds = Array.from(

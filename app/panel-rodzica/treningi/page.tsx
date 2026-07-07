@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { PanelLoadingState, PanelPage, PanelPageHeader, PanelSection } from "@/components/layout/PanelLayout";
 import TrainingWeekSchedule from "@/components/training/TrainingWeekSchedule";
+import { loadChildrenForParent } from "@/lib/children-client";
 import { db } from "@/lib/firebase";
 import { fetchTrainingExceptions } from "@/lib/training-exceptions-client";
 import type { TrainingException } from "@/lib/training-exceptions-db";
@@ -62,16 +62,14 @@ export default function ParentTrainingsPage() {
       setLoadingChildren(true);
 
       try {
-        const snapshot = await getDocs(
-          query(collection(db, "children"), where("parentUid", "==", user.uid))
-        );
+        const list = await loadChildrenForParent(db, user.uid);
 
         setChildren(
-          snapshot.docs.map((item) => ({
+          list.map((item) => ({
             id: item.id,
-            imie: item.data().imie as string,
-            nazwisko: item.data().nazwisko as string,
-            grupaTreningowa: item.data().grupaTreningowa as TrainingGroupId | undefined,
+            imie: item.imie,
+            nazwisko: item.nazwisko,
+            grupaTreningowa: item.grupaTreningowa as TrainingGroupId | undefined,
           }))
         );
       } catch {

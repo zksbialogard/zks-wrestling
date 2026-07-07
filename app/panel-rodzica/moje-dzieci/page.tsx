@@ -2,14 +2,8 @@
 
 import { useEffect, useState } from "react";
 import {
-  addDoc,
-  collection,
-  deleteDoc,
   doc,
-  getDocs,
-  query,
   updateDoc,
-  where,
 } from "firebase/firestore";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
@@ -17,22 +11,21 @@ import { Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import AuthField from "@/components/auth/AuthField";
 import ChildCard from "@/components/children/ChildCard";
+import {
+  createChildForParent,
+  findChildByIdentityKey,
+  loadChildrenForParent,
+  unlinkParentFromChild,
+  type StoredChild,
+} from "@/lib/children-client";
+import { childIdentityPayload, isParentLinkedToChild } from "@/lib/children-identity";
 import { db } from "@/lib/firebase";
 import {
   TRAINING_GROUP_OPTIONS,
   type TrainingGroupId,
 } from "@/lib/training-groups";
 
-type Child = {
-  id: string;
-  imie: string;
-  nazwisko: string;
-  rokUrodzenia: string;
-  plec: string;
-  kategoriaWagowa: string;
-  parentUid: string;
-  grupaTreningowa?: TrainingGroupId;
-};
+type Child = StoredChild;
 
 const emptyForm = {
   imie: "",
@@ -57,16 +50,8 @@ export default function MojeDzieciPage() {
     setLoading(true);
 
     try {
-      const snapshot = await getDocs(
-        query(collection(db, "children"), where("parentUid", "==", user.uid))
-      );
-
-      setChildren(
-        snapshot.docs.map((item) => ({
-          id: item.id,
-          ...(item.data() as Omit<Child, "id">),
-        }))
-      );
+      const list = await loadChildrenForParent(db, user.uid);
+      setChildren(list);
     } catch (error) {
       console.error(error);
       toast.error("Nie udało się wczytać listy dzieci.");
@@ -97,7 +82,27 @@ export default function MojeDzieciPage() {
 
     try {
       if (editingId) {
+        const identity = childIdentityPayload(form.imie, form.nazwisko, form.rokUrodzenia);
+
         await updateDoc(doc(db, "children", editingId), {
+          ...identity,
+          plec: form.plec,
+          kategoriaWagowa: form.kategoriaWagowa,
+          grupaTreningowa: form.grupaTreningowa,
+        });
+        toast.success("Dane dziecka zaktualizowane.");
+      } else {
+        const identity = childIdentityPayload(form.imie, form.nazwisko, form.rokUrodzenia);
+        const existing = await findChildByIdentityKey(db, identity.identityKey);
+
+        if (existing && isParentLinkedToChild(existing, user.uid)) {
+          toast.info("To dziecko jest już na Twojej liście.");
+          resetForm();
+          await loadChildren();
+          return;
+        }
+
+        const linked = await createChildForParent(db, user.uid, {
           imie: form.imie,
           nazwisko: form.nazwisko,
           rokUrodzenia: form.rokUrodzenia,
@@ -105,14 +110,12 @@ export default function MojeDzieciPage() {
           kategoriaWagowa: form.kategoriaWagowa,
           grupaTreningowa: form.grupaTreningowa,
         });
-        toast.success("Dane dziecka zaktualizowane.");
-      } else {
-        await addDoc(collection(db, "children"), {
-          ...form,
-          parentUid: user.uid,
-          createdAt: new Date(),
-        });
-        toast.success("Dziecko dodane.");
+
+        if (linked.parentUids.length > 1) {
+          toast.success("To dziecko jest już w klubie — powiązaliśmy je z Twoim kontem.");
+        } else {
+          toast.success("Dziecko dodane.");
+        }
       }
 
       resetForm();
@@ -137,11 +140,13 @@ export default function MojeDzieciPage() {
   };
 
   const removeChild = async (id: string) => {
-    if (!confirm("Usunąć profil dziecka?")) return;
+    if (!user) return;
+
+    if (!confirm("Odłączyć dziecko od Twojego konta?")) return;
 
     try {
-      await deleteDoc(doc(db, "children", id));
-      toast.success("Dziecko usunięte.");
+      await unlinkParentFromChild(db, id, user.uid);
+      toast.success("Dziecko odłączone od konta.");
       await loadChildren();
     } catch (error) {
       console.error(error);

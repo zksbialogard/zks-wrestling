@@ -1,117 +1,78 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  Shield,
-  Dumbbell,
-  Users,
-  Trophy,
-} from "lucide-react";
+import { Dumbbell, Shield, Trophy, Users } from "lucide-react";
 
 const cards = [
   {
     icon: Shield,
-    title: "CHARAKTER",
+    title: "Charakter",
     text: "Budujemy ludzi silnych psychicznie i fizycznie. Uczymy szacunku, dyscypliny oraz odpowiedzialności.",
   },
   {
     icon: Dumbbell,
-    title: "WALKA",
+    title: "Walka",
     text: "Każdy trening przybliża do sukcesu. Rozwijamy technikę, siłę, szybkość i wytrzymałość.",
   },
   {
     icon: Users,
-    title: "RODZINA",
+    title: "Rodzina",
     text: "Tworzymy zespół, w którym każdy zawodnik może liczyć na wsparcie trenerów i kolegów.",
   },
   {
     icon: Trophy,
-    title: "SUKCES",
+    title: "Sukces",
     text: "Setki medali, dziesiątki turniejów i nieustanny rozwój naszych zawodników.",
   },
 ];
 
 export default function WhyUs() {
   return (
-    <section className="relative py-28 px-6 overflow-hidden">
+    <section className="home-why-section relative w-full overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-zks-black via-zks-black-soft to-zks-black" />
+      <div className="pointer-events-none absolute left-1/2 top-0 h-[min(70vw,22rem)] w-[min(70vw,22rem)] -translate-x-1/2 rounded-full bg-zks-gold/10 blur-[120px]" />
 
-      {/* Tło */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-950 to-black" />
-
-      <div className="absolute left-1/2 top-0 h-[450px] w-[450px] -translate-x-1/2 rounded-full bg-yellow-500/10 blur-[170px]" />
-
-      <div className="relative max-w-7xl mx-auto">
-
-        <motion.div
-          initial={{ opacity: 0, y: 25 }}
+      <div className="home-why-inner relative mx-auto w-full max-w-6xl">
+        <motion.header
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: .7 }}
-          className="text-center mb-20"
+          transition={{ duration: 0.5 }}
+          className="home-why-header"
         >
-          <p className="uppercase tracking-[8px] text-yellow-400 font-semibold">
-            ZKS BIAŁOGARD
-          </p>
-
-          <h2 className="mt-4 text-5xl md:text-7xl font-black text-white">
-            Dlaczego
-            <span className="text-yellow-400"> ZKS?</span>
+          <p className="home-why-kicker">ZKS Białogard</p>
+          <h2 className="home-why-title">
+            Dlaczego <span className="text-gradient-gold">ZKS?</span>
           </h2>
-
-          <p className="mt-8 max-w-3xl mx-auto text-zinc-400 text-xl leading-8">
-            Zapasy to nie tylko sport.
-            To charakter, dyscyplina i ciężka praca.
-            Każdy zawodnik rozwija się nie tylko na macie,
-            ale również poza nią.
+          <p className="home-why-lead">
+            Zapasy to nie tylko sport. To charakter, dyscyplina i ciężka praca. Każdy zawodnik
+            rozwija się nie tylko na macie, ale również poza nią.
           </p>
-        </motion.div>
+        </motion.header>
 
-        <div className="grid gap-8 md:grid-cols-2">
-
+        <div className="home-why-grid">
           {cards.map((card, index) => {
             const Icon = card.icon;
 
             return (
-              <motion.div
+              <motion.article
                 key={card.title}
-                initial={{ opacity: 0, y: 40 }}
+                initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{
-                  delay: index * .12,
-                  duration: .6,
-                }}
-                whileHover={{
-                  y: -8,
-                  scale: 1.02,
-                }}
-                className="group rounded-3xl border border-yellow-500/20 bg-zinc-900/70 backdrop-blur-xl p-8 transition-all duration-300 hover:border-yellow-400 hover:shadow-[0_0_45px_rgba(255,200,0,.15)]"
+                transition={{ delay: index * 0.08, duration: 0.45 }}
+                className="home-why-card group"
               >
-                <div className="flex items-center justify-center h-20 w-20 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 mb-8 transition-all group-hover:scale-110">
-
-                  <Icon
-                    size={38}
-                    className="text-yellow-400"
-                  />
-
+                <div className="home-why-card-icon">
+                  <Icon className="h-6 w-6 text-zks-gold-bright sm:h-7 sm:w-7" />
                 </div>
-
-                <h3 className="text-3xl font-black text-white mb-4">
-                  {card.title}
-                </h3>
-
-                <p className="text-zinc-400 text-lg leading-8">
-                  {card.text}
-                </p>
-
-              </motion.div>
+                <h3 className="home-why-card-title">{card.title}</h3>
+                <p className="home-why-card-text">{card.text}</p>
+              </motion.article>
             );
           })}
-
         </div>
-
       </div>
-
     </section>
   );
 }

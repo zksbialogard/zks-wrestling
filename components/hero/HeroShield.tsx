@@ -12,13 +12,13 @@ export default function HeroShield() {
       className="relative flex w-full items-center justify-center lg:justify-end"
     >
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center lg:justify-end">
-        <div className="h-48 w-48 rounded-full bg-zks-gold/15 blur-[70px] sm:h-64 sm:w-64 lg:h-80 lg:w-80" />
+        <div className="h-40 w-40 rounded-full bg-zks-gold/10 blur-[52px] sm:h-52 sm:w-52 lg:h-64 lg:w-64" />
       </div>
 
       <motion.div
-        animate={{ scale: [1, 1.02, 1] }}
+        animate={{ scale: [1, 1.015, 1] }}
         transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-        className="relative w-[min(58vw,220px)] sm:w-[min(50vw,320px)] lg:w-[min(42vw,460px)]"
+        className="relative w-[min(52vw,200px)] sm:w-[min(44vw,280px)] lg:w-[min(38vw,400px)]"
       >
         <ClubLogo glow priority fluid />
       </motion.div>

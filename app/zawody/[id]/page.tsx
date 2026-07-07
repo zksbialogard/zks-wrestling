@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs, query, where } from "firebase/firestore";
 import {
   ArrowLeft,
   CalendarDays,
@@ -17,6 +16,7 @@ import { toast } from "sonner";
 
 import EventsLoadingState from "@/components/events/EventsLoadingState";
 import PublicEventStatusBadge from "@/components/events/PublicEventStatusBadge";
+import { loadChildrenForParent } from "@/lib/children-client";
 import { auth, db } from "@/lib/firebase";
 import {
   formatEventDate,
@@ -92,12 +92,17 @@ export default function ZgloszenieNaZawodyPage() {
     try {
       setLoadingChildren(true);
 
-      const q = query(collection(db, "children"), where("parentUid", "==", uid));
-      const snapshot = await getDocs(q);
+      const list = await loadChildrenForParent(db, uid);
 
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Child, "id">),
+      const data = list.map((item) => ({
+        id: item.id,
+        imie: item.imie,
+        nazwisko: item.nazwisko,
+        rokUrodzenia: item.rokUrodzenia,
+        plec: item.plec ?? "",
+        kategoriaWagowa: item.kategoriaWagowa ?? "",
+        parentUid: item.parentUid ?? uid,
+        grupaTreningowa: item.grupaTreningowa,
       }));
 
       setChildren(data);

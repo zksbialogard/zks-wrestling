@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import {
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 
 import Footer from "@/components/home/Footer";
+import ClubLogo from "@/components/ui/ClubLogo";
 import {
   type BeforeInstallPromptEvent,
   detectInstallPlatform,
@@ -186,18 +186,11 @@ export default function DownloadAppClient() {
   };
 
   return (
-    <main className="min-h-screen bg-zks-black px-4 pb-16 pt-28 text-white sm:px-6">
+    <main className="app-page">
       <div className="mx-auto max-w-3xl">
         <div className="text-center">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border border-zks-gold-mid/30 bg-zks-gold/10 p-3">
-            <Image
-              src="/logo-shield.png"
-              alt="ZKS Białogard"
-              width={64}
-              height={64}
-              className="h-full w-full object-contain"
-              priority
-            />
+            <ClubLogo size={64} glow priority />
           </div>
 
           <h1 className="mt-6 font-[family-name:var(--font-heading)] text-4xl font-bold uppercase sm:text-5xl">
