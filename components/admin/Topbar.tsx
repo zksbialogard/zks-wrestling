@@ -2,27 +2,19 @@
 
 import { Bell, Home, LogOut } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-import AdminMobileNav from "@/components/admin/AdminMobileNav";
-import { useAuth } from "@/components/auth/AuthProvider";
+type TopbarProps = {
+  onLogout: () => void;
+};
 
-export default function Topbar() {
-  const router = useRouter();
-  const { logout } = useAuth();
-
-  const handleLogout = async () => {
-    await logout();
-    router.push("/login");
-  };
-
+export default function Topbar({ onLogout }: TopbarProps) {
   return (
-    <header className="flex h-20 items-center justify-between border-b border-zks-gold-mid/15 bg-zks-black/95 px-4 backdrop-blur-xl sm:px-8">
+    <header className="flex h-16 items-center justify-between border-b border-zks-gold-mid/15 bg-zks-black/95 px-4 backdrop-blur-xl sm:h-20 sm:px-8">
       <div className="min-w-0">
-        <h1 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white sm:text-2xl">
+        <h1 className="font-[family-name:var(--font-heading)] text-lg font-bold uppercase text-white sm:text-2xl">
           Panel admina
         </h1>
-        <p className="truncate text-xs text-zks-text-muted sm:text-sm">
+        <p className="truncate text-[11px] text-zks-text-muted sm:text-sm">
           ZKS Białogard — Manager
         </p>
       </div>
@@ -47,14 +39,12 @@ export default function Topbar() {
 
         <button
           type="button"
-          onClick={handleLogout}
+          onClick={onLogout}
           className="hidden items-center gap-2 rounded-xl border border-red-500/40 px-4 py-2.5 text-sm text-red-300 transition hover:bg-red-500/10 lg:inline-flex"
         >
           <LogOut className="h-4 w-4" />
           Wyloguj
         </button>
-
-        <AdminMobileNav onLogout={handleLogout} />
       </div>
     </header>
   );

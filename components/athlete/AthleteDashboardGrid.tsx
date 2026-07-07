@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowRight, Bell, CalendarDays, Dumbbell, Images } from "lucide-react";
 
+import PanelFeaturedCard from "@/components/panel/PanelFeaturedCard";
+import PanelQuickScroll from "@/components/panel/PanelQuickScroll";
+
 import { useAuth } from "@/components/auth/AuthProvider";
 import { fetchEvents } from "@/lib/events";
 import { fetchNotifications } from "@/lib/notifications-client";
@@ -90,6 +93,17 @@ export default function AthleteDashboardGrid() {
 
       <PushOnboardingDashboardCard role="zawodnik" />
 
+      {!loading && nextTrainingLabel ? (
+        <PanelFeaturedCard
+          kicker="Najbliższy trening"
+          title={nextTrainingLabel}
+          description={groupLabel}
+          href="/panel-zawodnika/treningi"
+          cta="Plan treningów"
+          icon={Dumbbell}
+        />
+      ) : null}
+
       {loading ? (
         <PanelLoadingState label="Ładowanie podsumowania..." />
       ) : (
@@ -123,6 +137,22 @@ export default function AthleteDashboardGrid() {
           </div>
         </div>
       )}
+
+      {!loading ? (
+        <PanelQuickScroll
+          links={[
+            { href: "/panel-zawodnika/treningi", label: "Treningi", icon: Dumbbell },
+            { href: "/panel-zawodnika/zawody", label: "Zawody", icon: CalendarDays },
+            {
+              href: "/panel-zawodnika/powiadomienia",
+              label: "Powiadomienia",
+              icon: Bell,
+              badge: unreadNotifications,
+            },
+            { href: "/panel-zawodnika/galeria", label: "Galeria", icon: Images },
+          ]}
+        />
+      ) : null}
 
       <PanelSection>
         <div className="panel-actions">

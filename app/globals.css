@@ -403,6 +403,291 @@ img {
   }
 }
 
+.admin-shell {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+  .admin-shell {
+    padding-bottom: 0;
+  }
+}
+
+.admin-bottom-nav {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 40;
+  border-top: 1px solid color-mix(in srgb, var(--zks-gold-mid) 20%, transparent);
+  background: color-mix(in srgb, var(--zks-black) 95%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+.admin-bottom-nav-inner {
+  display: grid;
+  max-width: 32rem;
+  margin-inline: auto;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.125rem;
+  padding: 0.375rem 0.25rem;
+}
+
+.admin-bottom-nav-item {
+  display: flex;
+  min-height: 3.25rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--zks-text-muted);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.admin-bottom-nav-item-active {
+  background: color-mix(in srgb, var(--zks-gold) 10%, transparent);
+  color: var(--zks-gold-bright);
+}
+
+.panel-quick-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.panel-quick-scroll {
+  display: flex;
+  gap: 0.625rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.panel-quick-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.panel-quick-tile {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  display: flex;
+  min-width: 5.25rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--zks-gold-mid) 18%, transparent);
+  background: color-mix(in srgb, var(--zks-charcoal) 70%, transparent);
+  padding: 0.875rem 0.625rem;
+  text-align: center;
+  transition: border-color 0.2s, background-color 0.2s, transform 0.2s;
+}
+
+.panel-quick-tile:active {
+  transform: scale(0.97);
+}
+
+.panel-quick-tile:hover {
+  border-color: color-mix(in srgb, var(--zks-gold-mid) 35%, transparent);
+  background: color-mix(in srgb, var(--zks-charcoal) 90%, transparent);
+}
+
+.panel-quick-tile-icon {
+  position: relative;
+  display: flex;
+  height: 2.75rem;
+  width: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.875rem;
+  background: color-mix(in srgb, var(--zks-gold) 8%, transparent);
+}
+
+.panel-quick-tile-badge {
+  position: absolute;
+  right: -0.25rem;
+  top: -0.25rem;
+  display: flex;
+  height: 1rem;
+  min-width: 1rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #ef4444;
+  padding-inline: 0.25rem;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  color: white;
+}
+
+.panel-quick-tile-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--zks-text);
+}
+
+.panel-featured-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--zks-gold-mid) 28%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--zks-charcoal) 95%, transparent) 0%,
+    color-mix(in srgb, var(--zks-black) 100%, transparent) 55%,
+    color-mix(in srgb, var(--zks-gold) 12%, transparent) 100%
+  );
+  padding: 1.25rem 1.375rem;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.panel-featured-card:hover {
+  border-color: color-mix(in srgb, var(--zks-gold-mid) 45%, transparent);
+}
+
+.panel-featured-card-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at top right,
+    color-mix(in srgb, var(--zks-gold) 18%, transparent),
+    transparent 55%
+  );
+  pointer-events: none;
+}
+
+.panel-featured-kicker {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--zks-gold-mid);
+}
+
+.panel-featured-title {
+  margin-top: 0.375rem;
+  font-family: var(--font-heading), "Oswald", sans-serif;
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-transform: uppercase;
+  color: var(--zks-white);
+}
+
+.panel-featured-description {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--zks-text-muted);
+}
+
+.panel-featured-cta {
+  margin-top: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--zks-gold-bright);
+}
+
+.panel-featured-icon {
+  display: flex;
+  height: 3.5rem;
+  width: 3.5rem;
+  shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--zks-gold-mid) 25%, transparent);
+  background: color-mix(in srgb, var(--zks-gold) 8%, transparent);
+}
+
+.home-news-section {
+  isolation: isolate;
+}
+
+.home-news-feed {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.home-news-feed::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .home-news-feed {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+}
+
+.home-news-card {
+  position: relative;
+  flex: 0 0 min(85vw, 20rem);
+  scroll-snap-align: start;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--zks-gold-mid) 22%, transparent);
+  background: color-mix(in srgb, var(--zks-charcoal) 75%, transparent);
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+@media (min-width: 1024px) {
+  .home-news-card {
+    flex: initial;
+  }
+}
+
+.home-news-card:hover {
+  border-color: color-mix(in srgb, var(--zks-gold-mid) 40%, transparent);
+  transform: translateY(-2px);
+}
+
+.home-news-card-accent {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 3px;
+  background: var(--zks-gradient-gold);
+}
+
+.home-news-card-index {
+  font-family: var(--font-heading), "Oswald", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--zks-gold-mid);
+}
+
+.home-news-empty {
+  max-width: 28rem;
+  margin-inline: auto;
+}
+
 .zks-btn-primary {
   background: var(--zks-gradient-gold);
   color: var(--zks-black);

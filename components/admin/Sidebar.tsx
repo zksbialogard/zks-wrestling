@@ -2,34 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  ClipboardList,
-  Dumbbell,
-  Home,
-  Images,
-  LayoutDashboard,
-  LogOut,
-  Mail,
-  Newspaper,
-  Trophy,
-  UserRound,
-  Users,
-} from "lucide-react";
+import { Home, LogOut } from "lucide-react";
 
 import ClubLogo from "@/components/ui/ClubLogo";
+import { ADMIN_NAV_ITEMS, isAdminNavActive } from "@/lib/admin-nav";
 import { publicLinks } from "@/components/navbar/navLinks";
-
-const menu = [
-  { id: "dashboard", name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { id: "zawody", name: "Zawody", href: "/admin/zawody", icon: Trophy },
-  { id: "zawodnicy", name: "Zawodnicy", href: "/admin/zawodnicy", icon: Users },
-  { id: "treningi", name: "Treningi", href: "/admin/treningi", icon: Dumbbell },
-  { id: "rodzice", name: "Rodzice", href: "/admin/uzytkownicy", icon: UserRound },
-  { id: "zgloszenia", name: "Zgłoszenia", href: "/admin/zgloszenia", icon: ClipboardList },
-  { id: "aktualnosci", name: "Aktualności", href: "/admin/aktualnosci", icon: Newspaper },
-  { id: "szablony", name: "Szablony", href: "/admin/szablony", icon: Mail },
-  { id: "galeria", name: "Galeria", href: "/admin/galeria", icon: Images },
-];
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -49,11 +26,9 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-4">
-        {menu.map((item) => {
+        {ADMIN_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const active =
-            pathname === item.href ||
-            (item.href !== "/admin" && pathname.startsWith(item.href));
+          const active = isAdminNavActive(pathname, item.href);
 
           return (
             <Link
@@ -96,4 +71,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-

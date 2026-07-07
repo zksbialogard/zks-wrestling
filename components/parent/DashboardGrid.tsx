@@ -25,6 +25,8 @@ import { isTrainingGroupId, type TrainingGroupId } from "@/lib/training-groups";
 
 import DashboardCard from "./DashboardCard";
 import DashboardStatCard from "./DashboardStatCard";
+import PanelFeaturedCard from "@/components/panel/PanelFeaturedCard";
+import PanelQuickScroll from "@/components/panel/PanelQuickScroll";
 import PushOnboardingDashboardCard from "@/components/notifications/PushOnboardingDashboardCard";
 import {
   PanelLoadingState,
@@ -164,6 +166,17 @@ export default function DashboardGrid() {
 
       <PushOnboardingDashboardCard role="rodzic" />
 
+      {!loading && trainingOverview?.nextSessionLabel ? (
+        <PanelFeaturedCard
+          kicker="Najbliższy trening"
+          title={trainingOverview.nextSessionLabel}
+          description={trainingHint}
+          href="/panel-rodzica/treningi"
+          cta="Plan treningów"
+          icon={CalendarClock}
+        />
+      ) : null}
+
       {loading ? (
         <PanelLoadingState label="Ładowanie podsumowania..." />
       ) : (
@@ -241,6 +254,29 @@ export default function DashboardGrid() {
           )}
         </>
       )}
+
+      {!loading ? (
+        <PanelQuickScroll
+          links={[
+            { href: "/panel-rodzica/treningi", label: "Treningi", icon: CalendarClock },
+            {
+              href: "/panel-rodzica/moje-zgloszenia",
+              label: "Zgłoszenia",
+              icon: ClipboardList,
+              badge: stats.pendingRegistrations,
+            },
+            {
+              href: "/panel-rodzica/powiadomienia",
+              label: "Powiadomienia",
+              icon: Bell,
+              badge: stats.unreadNotifications,
+            },
+            { href: "/zawody", label: "Zawody", icon: CalendarDays },
+            { href: "/panel-rodzica/galeria", label: "Galeria", icon: Images },
+            { href: "/panel-rodzica/moje-dzieci", label: "Dzieci", icon: Baby },
+          ]}
+        />
+      ) : null}
 
       <div className="panel-actions">
         <Link

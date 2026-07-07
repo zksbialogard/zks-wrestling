@@ -32,9 +32,9 @@ export default async function Home() {
 
       <WhyUs />
 
-      <UpcomingEvents events={events} />
-
       <News aktualnosci={aktualnosci} />
+
+      <UpcomingEvents events={events} />
 
       <Contact />
 
