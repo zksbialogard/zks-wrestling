@@ -14,8 +14,6 @@ import ClubLogo from "@/components/ui/ClubLogo";
 
 import {
 
-  aboutFacts,
-
   aboutHighlights,
 
   aboutIntro,
@@ -500,47 +498,16 @@ function ClubIdentityCard() {
 
         </p>
 
-      </div>
-
-
-
-      <div className="mt-6 grid grid-cols-1 gap-2.5 sm:mt-8 sm:grid-cols-3 sm:gap-3">
-
-        {aboutFacts.map((fact) => {
-
-          const Icon = fact.icon;
-
-
-
-          return (
-
-            <div
-
-              key={fact.label}
-
-              className="rounded-xl border border-zks-gold-mid/20 bg-zks-black/60 p-3 text-center sm:p-4"
-
+        <div className="mt-6 flex flex-wrap justify-center gap-2 sm:mt-8">
+          {["Treningi", "Zawody", "Rodzina"].map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full border border-zks-gold-mid/25 bg-zks-black/50 px-3 py-1 text-[10px] font-medium uppercase tracking-wide text-zks-gold-mid sm:text-[11px]"
             >
-
-              <Icon className="mx-auto h-4 w-4 text-zks-gold-mid sm:h-5 sm:w-5" />
-
-              <p className="mt-1.5 font-[family-name:var(--font-heading)] text-lg font-bold text-zks-gold-bright sm:mt-2 sm:text-xl">
-
-                {fact.value}
-
-              </p>
-
-              <p className="mt-0.5 text-[10px] uppercase leading-tight tracking-wide text-zks-text-muted sm:text-[11px]">
-
-                {fact.label}
-
-              </p>
-
-            </div>
-
-          );
-
-        })}
+              {tag}
+            </span>
+          ))}
+        </div>
 
       </div>
 

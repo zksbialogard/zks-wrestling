@@ -1,4 +1,4 @@
-import { Award, Dumbbell, Heart, MapPin, Users } from "lucide-react";
+import { Award, Dumbbell, Heart } from "lucide-react";
 
 export const clubDiscipline = "Zapasy w stylu wolnym";
 
@@ -50,14 +50,4 @@ export const aboutTimeline = [
     title: "ZKS Manager",
     text: "Nowoczesna aplikacja klubowa — zgłoszenia, aktualności i komunikacja z rodzicami w jednym miejscu.",
   },
-];
-
-export const aboutFacts = [
-  { icon: Users, label: "Aktywni zawodnicy", value: "100+" },
-  {
-    icon: Award,
-    label: "Medali łącznie",
-    value: "1500+",
-  },
-  { icon: MapPin, label: "Siedziba", value: "Białogard" },
 ];
