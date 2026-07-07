@@ -9,8 +9,8 @@ import {
 } from "firebase/firestore";
 
 import { fetchParentUsersFromFirestore } from "./firebase-parents";
+import { coercePhoneValue } from "./messaging";
 import { sanitizeNotifyResult } from "./notify-result-utils";
-import { sendEmailMessage, sendSmsMessage, isSmsConfigured, coercePhoneValue, isSmsAccountLimitedError } from "./messaging";
 import { renderTemplate, type TemplateKey } from "./message-templates";
 import {
   createNotificationRecordsBulk,
@@ -58,6 +58,13 @@ export type NotifyResult = {
   errors: string[];
   warnings: string[];
 };
+
+function resolveAppChannels(channels: NotifyChannels) {
+  return {
+    inApp: channels.inApp !== false,
+    push: channels.push !== false,
+  };
+}
 
 function mergeParentUsers(...lists: ParentUser[][]) {
   const merged = new Map<string, ParentUser>();
@@ -218,12 +225,9 @@ export async function notifyParents(input: {
   };
 
   try {
+    const channels = resolveAppChannels(input.channels);
     const template = await getMessageTemplate(input.templateKey);
     const rendered = {
-      subject: renderTemplate(template.subject, input.variables),
-      text: renderTemplate(template.body_text, input.variables),
-      html: renderTemplate(template.body_html, input.variables),
-      sms: renderTemplate(template.sms_text, input.variables),
       pushTitle: renderTemplate(template.push_title, input.variables),
       pushBody: renderTemplate(template.push_body, input.variables),
     };
@@ -242,35 +246,12 @@ export async function notifyParents(input: {
       return result;
     }
 
-    if (input.channels.sms && !isSmsConfigured()) {
-      result.warnings.push(
-        "Brak SMSAPI_TOKEN (lub SMSAPI_KEY) na Vercel — SMS nie zostały wysłane."
-      );
-    }
-
-    if (input.channels.sms) {
-      const withoutPhone = parents.filter((parent) => !parent.telefon?.trim()).length;
-
-      if (withoutPhone > 0) {
-        result.warnings.push(
-          `${withoutPhone} rodziców bez numeru telefonu — SMS pominięty dla nich.`
-        );
-      }
-    }
-
     const activeChannels = [
-      input.channels.email ? "email" : null,
-      input.channels.sms ? "sms" : null,
-      input.channels.inApp !== false ? "in_app" : null,
-      input.channels.push ? "push" : null,
+      channels.inApp ? "in_app" : null,
+      channels.push ? "push" : null,
     ].filter(Boolean) as string[];
 
-    const inAppOnly =
-      input.channels.inApp !== false &&
-      !input.channels.email &&
-      !input.channels.sms;
-
-    if (inAppOnly) {
+    if (channels.inApp) {
       const bulk = await createNotificationRecordsBulk(
         parents.map((parent) => ({
           user_uid: parent.uid,
@@ -285,6 +266,14 @@ export async function notifyParents(input: {
       result.inAppSent = bulk.created;
       result.errors.push(...bulk.errors);
 
+      if (bulk.created < parents.length) {
+        result.warnings.push(
+          `Zapisano ${bulk.created} z ${parents.length} powiadomień w aplikacji.`
+        );
+      }
+    }
+
+    if (channels.push) {
       const pushResult = await sendWebPushToUsers(
         parents.map((parent) => parent.uid),
         {
@@ -298,92 +287,6 @@ export async function notifyParents(input: {
 
       if (pushResult.sent === 0 && pushResult.errors.length) {
         result.warnings.push(...pushResult.errors.slice(0, 2));
-      }
-
-      if (bulk.created < parents.length) {
-        result.warnings.push(
-          `Zapisano ${bulk.created} z ${parents.length} powiadomień w aplikacji.`
-        );
-      }
-
-      return sanitizeNotifyResult(result);
-    }
-
-    for (const parent of parents) {
-      try {
-        if (input.channels.email && parent.email) {
-          const emailResult = await sendEmailMessage({
-            to: parent.email,
-            subject: rendered.subject,
-            html: rendered.html,
-            text: rendered.text,
-          });
-
-          if (emailResult.ok && !emailResult.simulated) {
-            result.emailsSent += 1;
-          } else if (emailResult.simulated) {
-            result.warnings.push(
-              `${parent.email}: brak RESEND_API_KEY — email nie wysłany.`
-            );
-          } else if ("error" in emailResult && emailResult.error) {
-            result.errors.push(`${parent.email}: ${emailResult.error}`);
-          }
-        }
-
-        if (input.channels.sms && parent.telefon) {
-          const smsResult = await sendSmsMessage({
-            phone: parent.telefon,
-            message: rendered.sms,
-          });
-
-          if (smsResult.ok) {
-            result.smsSent += 1;
-          } else if (!smsResult.skipped && "error" in smsResult && smsResult.error) {
-            if (isSmsAccountLimitedError(smsResult.error)) {
-              result.errors.push(smsResult.error);
-              break;
-            }
-
-            result.errors.push(`${parent.telefon}: ${smsResult.error}`);
-          }
-        }
-
-        if (input.channels.inApp !== false) {
-          const bulk = await createNotificationRecordsBulk([
-            {
-              user_uid: parent.uid,
-              type: input.type || input.templateKey,
-              title: rendered.pushTitle,
-              body: rendered.pushBody,
-              link: input.link,
-              channels: activeChannels,
-            },
-          ]);
-
-          if (bulk.created) {
-            result.inAppSent += 1;
-          } else if (bulk.errors.length) {
-            result.errors.push(`${parent.imie || parent.uid}: ${bulk.errors[0]}`);
-          }
-        }
-
-        if (input.channels.push) {
-          const pushResult = await sendWebPushToUsers([parent.uid], {
-            title: rendered.pushTitle,
-            body: rendered.pushBody,
-            url: input.link || "/panel-rodzica/powiadomienia",
-          });
-
-          result.pushSent += pushResult.sent;
-
-          if (pushResult.sent === 0 && pushResult.errors.length) {
-            result.warnings.push(...pushResult.errors.slice(0, 1));
-          }
-        }
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Nieznany błąd powiadomienia.";
-        result.errors.push(`${parent.email || parent.uid}: ${message}`);
       }
     }
   } catch (error) {
@@ -414,12 +317,9 @@ export async function notifyClubMembers(input: {
   };
 
   try {
+    const channels = resolveAppChannels(input.channels);
     const template = await getMessageTemplate(input.templateKey);
     const rendered = {
-      subject: renderTemplate(template.subject, input.variables),
-      text: renderTemplate(template.body_text, input.variables),
-      html: renderTemplate(template.body_html, input.variables),
-      sms: renderTemplate(template.sms_text, input.variables),
       pushTitle: renderTemplate(template.push_title, input.variables),
       pushBody: renderTemplate(template.push_body, input.variables),
     };
@@ -438,27 +338,9 @@ export async function notifyClubMembers(input: {
       return result;
     }
 
-    if (input.channels.sms && !isSmsConfigured()) {
-      result.warnings.push(
-        "Brak SMSAPI_TOKEN (lub SMSAPI_KEY) na Vercel — SMS nie zostały wysłane."
-      );
-    }
-
-    if (input.channels.sms) {
-      const withoutPhone = members.filter((member) => !member.telefon?.trim()).length;
-
-      if (withoutPhone > 0) {
-        result.warnings.push(
-          `${withoutPhone} użytkowników bez numeru telefonu — SMS pominięty dla nich.`
-        );
-      }
-    }
-
     const activeChannels = [
-      input.channels.email ? "email" : null,
-      input.channels.sms ? "sms" : null,
-      input.channels.inApp !== false ? "in_app" : null,
-      input.channels.push ? "push" : null,
+      channels.inApp ? "in_app" : null,
+      channels.push ? "push" : null,
     ].filter(Boolean) as string[];
 
     const urlsByUid = Object.fromEntries(
@@ -468,12 +350,7 @@ export async function notifyClubMembers(input: {
       ])
     );
 
-    const inAppOnly =
-      input.channels.inApp !== false &&
-      !input.channels.email &&
-      !input.channels.sms;
-
-    if (inAppOnly) {
+    if (channels.inApp) {
       const bulk = await createNotificationRecordsBulk(
         members.map((member) => ({
           user_uid: member.uid,
@@ -488,107 +365,27 @@ export async function notifyClubMembers(input: {
       result.inAppSent = bulk.created;
       result.errors.push(...bulk.errors);
 
-      if (input.channels.push) {
-        const pushResult = await sendWebPushToUsers(
-          members.map((member) => member.uid),
-          {
-            title: rendered.pushTitle,
-            body: rendered.pushBody,
-            urlsByUid,
-          }
-        );
-
-        result.pushSent = pushResult.sent;
-
-        if (pushResult.sent === 0 && pushResult.errors.length) {
-          result.warnings.push(...pushResult.errors.slice(0, 2));
-        }
-      }
-
       if (bulk.created < members.length) {
         result.warnings.push(
           `Zapisano ${bulk.created} z ${members.length} powiadomień w aplikacji.`
         );
       }
-
-      return sanitizeNotifyResult(result);
     }
 
-    for (const member of members) {
-      try {
-        if (input.channels.email && member.email) {
-          const emailResult = await sendEmailMessage({
-            to: member.email,
-            subject: rendered.subject,
-            html: rendered.html,
-            text: rendered.text,
-          });
-
-          if (emailResult.ok && !emailResult.simulated) {
-            result.emailsSent += 1;
-          } else if (emailResult.simulated) {
-            result.warnings.push(
-              `${member.email}: brak RESEND_API_KEY — email nie wysłany.`
-            );
-          } else if ("error" in emailResult && emailResult.error) {
-            result.errors.push(`${member.email}: ${emailResult.error}`);
-          }
+    if (channels.push) {
+      const pushResult = await sendWebPushToUsers(
+        members.map((member) => member.uid),
+        {
+          title: rendered.pushTitle,
+          body: rendered.pushBody,
+          urlsByUid,
         }
+      );
 
-        if (input.channels.sms && member.telefon) {
-          const smsResult = await sendSmsMessage({
-            phone: member.telefon,
-            message: rendered.sms,
-          });
+      result.pushSent = pushResult.sent;
 
-          if (smsResult.ok) {
-            result.smsSent += 1;
-          } else if (!smsResult.skipped && "error" in smsResult && smsResult.error) {
-            if (isSmsAccountLimitedError(smsResult.error)) {
-              result.errors.push(smsResult.error);
-              break;
-            }
-
-            result.errors.push(`${member.telefon}: ${smsResult.error}`);
-          }
-        }
-
-        if (input.channels.inApp !== false) {
-          const bulk = await createNotificationRecordsBulk([
-            {
-              user_uid: member.uid,
-              type: input.type || input.templateKey,
-              title: rendered.pushTitle,
-              body: rendered.pushBody,
-              link: urlsByUid[member.uid],
-              channels: activeChannels,
-            },
-          ]);
-
-          if (bulk.created) {
-            result.inAppSent += 1;
-          } else if (bulk.errors.length) {
-            result.errors.push(`${member.imie || member.uid}: ${bulk.errors[0]}`);
-          }
-        }
-
-        if (input.channels.push) {
-          const pushResult = await sendWebPushToUsers([member.uid], {
-            title: rendered.pushTitle,
-            body: rendered.pushBody,
-            urlsByUid,
-          });
-
-          result.pushSent += pushResult.sent;
-
-          if (pushResult.sent === 0 && pushResult.errors.length) {
-            result.warnings.push(...pushResult.errors.slice(0, 1));
-          }
-        }
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Nieznany błąd powiadomienia.";
-        result.errors.push(`${member.email || member.uid}: ${message}`);
+      if (pushResult.sent === 0 && pushResult.errors.length) {
+        result.warnings.push(...pushResult.errors.slice(0, 2));
       }
     }
   } catch (error) {

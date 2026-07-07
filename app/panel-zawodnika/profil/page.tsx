@@ -167,7 +167,7 @@ export default function AthleteProfilePage() {
             }
           />
           <p className="mt-1.5 text-xs text-zks-text-muted">
-            9 cyfr bez prefiksu — używany do SMS od klubu.
+            9 cyfr bez prefiksu — numer kontaktowy w profilu klubowym.
           </p>
         </div>
 

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CalendarPlus, Loader2, X } from "lucide-react";
 
 import { createEvent } from "@/lib/events";
-import { formatNotifyResultMessage, getNotifySmsFailureAlert } from "@/lib/notifications-client";
+import { formatNotifyResultMessage } from "@/lib/notifications-client";
 import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 
 type Props = {
@@ -20,7 +20,6 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
   const [location, setLocation] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [registrationDeadline, setRegistrationDeadline] = useState("");
-  const [sendSms, setSendSms] = useState(false);
   const [sendInApp, setSendInApp] = useState(true);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -42,7 +41,6 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
         event_date: eventDate,
         registration_deadline: registrationDeadline,
         notify: {
-          sms: sendSms,
           inApp: sendInApp,
           push: sendInApp,
         },
@@ -60,19 +58,13 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
 
       if (notifyResult) {
         const clean = sanitizeNotifyResult(notifyResult);
-        const smsFailure = getNotifySmsFailureAlert(clean, sendSms);
-
-        if (smsFailure) {
-          toast.error(smsFailure, { duration: 12000 });
-        } else {
-          toast.success(formatNotifyResultMessage(clean));
-        }
+        toast.success(formatNotifyResultMessage(clean));
 
         if (clean.warnings?.length) {
           toast.warning(clean.warnings.slice(0, 2).join(" "));
         }
 
-        if (clean.errors.length && !smsFailure) {
+        if (clean.errors.length) {
           toast.error(clean.errors.slice(0, 3).join(" "));
         }
       }
@@ -154,17 +146,7 @@ export default function AddEventModal({ open, onClose, onCreated }: Props) {
               onChange={() => setSendInApp(!sendInApp)}
               className="accent-zks-gold"
             />
-            Powiadom rodziców w aplikacji + push (darmowe, zalecane)
-          </label>
-
-          <label className="flex items-center gap-3 text-sm text-zks-text-muted">
-            <input
-              type="checkbox"
-              checked={sendSms}
-              onChange={() => setSendSms(!sendSms)}
-              className="accent-zks-gold"
-            />
-            SMS (opcjonalnie — wymaga aktywnego konta SMSAPI)
+            Powiadom rodziców w aplikacji + push
           </label>
         </div>
 

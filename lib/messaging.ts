@@ -182,6 +182,7 @@ export async function sendEmailMessage(input: {
   html?: string;
   text?: string;
   wrapHtml?: boolean;
+  replyTo?: string;
 }) {
   const resendKey = process.env.RESEND_API_KEY;
   const from = getEmailFromAddress();
@@ -214,6 +215,7 @@ export async function sendEmailMessage(input: {
         subject: input.subject,
         html,
         text: input.text,
+        ...(input.replyTo ? { reply_to: input.replyTo } : {}),
       }),
     });
 

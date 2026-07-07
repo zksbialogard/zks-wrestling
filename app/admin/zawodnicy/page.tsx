@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Trash2, UserPlus } from "lucide-react";
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import ChildrenDeduplicationPanel from "@/components/admin/ChildrenDeduplicationPanel";
 import AuthField from "@/components/auth/AuthField";
 import {
   childIdentityPayload,
@@ -160,6 +161,8 @@ export default function AdminZawodnicyPage() {
         title="Zawodnicy"
         description="Przeglądaj, dodawaj i usuwaj profile zawodników klubu."
       />
+
+      <ChildrenDeduplicationPanel />
 
       <form onSubmit={addChild} className="zks-card mb-8 grid gap-4 p-6 md:grid-cols-2">
         <h2 className="md:col-span-2 font-[family-name:var(--font-heading)] text-lg font-bold uppercase text-white">

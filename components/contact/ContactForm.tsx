@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 
-import { clubContact, contactTopics } from "./contact-content";
+import { contactTopics } from "./contact-content";
 
 export default function ContactForm() {
   const [name, setName] = useState("");
@@ -12,6 +12,7 @@ export default function ContactForm() {
   const [phone, setPhone] = useState("");
   const [topic, setTopic] = useState(contactTopics[0]);
   const [message, setMessage] = useState("");
+  const [website, setWebsite] = useState("");
   const [sending, setSending] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -25,26 +26,16 @@ export default function ContactForm() {
     setSending(true);
 
     try {
-      const subject = `[Kontakt ZKS] ${topic} — ${name.trim()}`;
-      const text = [
-        `Imię i nazwisko: ${name.trim()}`,
-        `E-mail: ${email.trim()}`,
-        phone.trim() ? `Telefon: ${phone.trim()}` : null,
-        `Temat: ${topic}`,
-        "",
-        message.trim(),
-      ]
-        .filter(Boolean)
-        .join("\n");
-
       const response = await fetch("/api/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          to: clubContact.email,
-          subject,
-          text,
-          html: text.replace(/\n/g, "<br />"),
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          topic,
+          message: message.trim(),
+          website,
         }),
       });
 
@@ -65,6 +56,7 @@ export default function ContactForm() {
       setPhone("");
       setTopic(contactTopics[0]);
       setMessage("");
+      setWebsite("");
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Nie udało się wysłać wiadomości.";
@@ -156,6 +148,17 @@ export default function ContactForm() {
           className="w-full resize-none rounded-lg border border-zks-gold-mid/30 bg-zks-black px-4 py-3 text-sm text-white outline-none transition placeholder:text-zks-text-muted focus:border-zks-gold-mid focus:shadow-gold-glow-sm"
         />
       </label>
+
+      <input
+        type="text"
+        name="website"
+        value={website}
+        onChange={(e) => setWebsite(e.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="hidden"
+      />
 
       <button
         type="submit"

@@ -89,8 +89,6 @@ export async function POST(request: Request) {
       groupId: body.group_id,
       message: defaultMessage,
       channels: {
-        email: body.notify?.email ?? false,
-        sms: body.notify?.sms ?? false,
         inApp: body.notify?.inApp ?? true,
         push: body.notify?.push ?? true,
       },

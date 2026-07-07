@@ -16,8 +16,6 @@ import {
   updateAdminRegistrationStatus,
   type RegistrationItem,
 } from "@/lib/registrations-client";
-import { getNotifySmsFailureAlert } from "@/lib/notifications-client";
-import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 
 export default function AdminZgloszeniaPage() {
   const [registrations, setRegistrations] = useState<RegistrationItem[]>([]);
@@ -53,14 +51,7 @@ export default function AdminZgloszeniaPage() {
       const { registration, notifyResult } = await updateAdminRegistrationStatus(id, "approved");
 
       if (notifyResult) {
-        const clean = sanitizeNotifyResult(notifyResult);
-        const smsFailure = getNotifySmsFailureAlert(clean, Boolean(registration.parent_phone));
-
-        if (smsFailure) {
-          toast.error(smsFailure, { duration: 12000 });
-        } else {
-          toast.success("Zgłoszenie zaakceptowane. Rodzic dostał powiadomienie.");
-        }
+        toast.success("Zgłoszenie zaakceptowane. Rodzic dostał powiadomienie w aplikacji.");
       } else {
         toast.success("Zgłoszenie zaakceptowane.");
       }
@@ -76,14 +67,7 @@ export default function AdminZgloszeniaPage() {
       const { registration, notifyResult } = await updateAdminRegistrationStatus(id, "rejected");
 
       if (notifyResult) {
-        const clean = sanitizeNotifyResult(notifyResult);
-        const smsFailure = getNotifySmsFailureAlert(clean, Boolean(registration.parent_phone));
-
-        if (smsFailure) {
-          toast.error(smsFailure, { duration: 12000 });
-        } else {
-          toast.success("Zgłoszenie odrzucone.");
-        }
+        toast.success("Zgłoszenie odrzucone. Rodzic dostał powiadomienie w aplikacji.");
       } else {
         toast.success("Zgłoszenie odrzucone.");
       }

@@ -1,13 +1,12 @@
-import { initializeApp, getApps } from "firebase/app";
 import {
   collection,
   getDocs,
   getFirestore,
 } from "firebase/firestore";
+import { initializeApp, getApps } from "firebase/app";
 
 import { getParentUids } from "./children-identity";
 import { renderTemplate, type TemplateKey } from "./message-templates";
-import { coercePhoneValue, sendEmailMessage, sendSmsMessage, isSmsConfigured } from "./messaging";
 import {
   createNotificationRecordsBulk,
   getMessageTemplate,
@@ -31,8 +30,6 @@ const firebaseConfig = {
 
 type GroupMember = {
   uid: string;
-  email?: string;
-  telefon?: string;
   imie?: string;
   rola?: string;
 };
@@ -101,8 +98,6 @@ async function loadGroupMembers(groupId: TrainingGroupId): Promise<GroupMember[]
 
     members.push({
       uid,
-      email: data.email as string | undefined,
-      telefon: coercePhoneValue(data.telefon) || undefined,
       imie: data.imie as string | undefined,
       rola: data.rola as string | undefined,
     });
@@ -139,10 +134,6 @@ export async function notifyTrainingGroup(input: {
 
     const template = await getMessageTemplate(templateKey);
     const rendered = {
-      subject: renderTemplate(template.subject, variables),
-      text: renderTemplate(template.body_text, variables),
-      html: renderTemplate(template.body_html, variables),
-      sms: renderTemplate(template.sms_text, variables),
       pushTitle: renderTemplate(template.push_title, variables),
       pushBody: renderTemplate(template.push_body, variables),
     };
@@ -157,23 +148,13 @@ export async function notifyTrainingGroup(input: {
       return sanitizeNotifyResult(result);
     }
 
-    const channels: NotifyChannels = {
-      email: input.channels?.email ?? false,
-      sms: input.channels?.sms ?? false,
-      inApp: input.channels?.inApp ?? true,
-      push: input.channels?.push ?? true,
+    const channels = {
+      inApp: input.channels?.inApp !== false,
+      push: input.channels?.push !== false,
     };
 
-    if (channels.sms && !isSmsConfigured()) {
-      result.warnings.push(
-        "Brak SMSAPI_TOKEN (lub SMSAPI_KEY) na Vercel — SMS nie zostały wysłane."
-      );
-    }
-
     const activeChannels = [
-      channels.email ? "email" : null,
-      channels.sms ? "sms" : null,
-      channels.inApp !== false ? "in_app" : null,
+      channels.inApp ? "in_app" : null,
       channels.push ? "push" : null,
     ].filter(Boolean) as string[];
 
@@ -185,7 +166,7 @@ export async function notifyTrainingGroup(input: {
       ])
     );
 
-    if (channels.inApp !== false) {
+    if (channels.inApp) {
       const bulk = await createNotificationRecordsBulk(
         members.map((member) => ({
           user_uid: member.uid,
@@ -212,48 +193,6 @@ export async function notifyTrainingGroup(input: {
 
       if (pushResult.sent === 0 && pushResult.errors.length) {
         result.warnings.push(...pushResult.errors.slice(0, 2));
-      }
-    }
-
-    if (channels.email || channels.sms) {
-      for (const member of members) {
-        try {
-          if (channels.email && member.email) {
-            const emailResult = await sendEmailMessage({
-              to: member.email,
-              subject: rendered.subject,
-              html: rendered.html,
-              text: rendered.text,
-            });
-
-            if (emailResult.ok && !emailResult.simulated) {
-              result.emailsSent += 1;
-            } else if (emailResult.simulated) {
-              result.warnings.push(
-                `${member.email}: brak RESEND_API_KEY — email nie wysłany.`
-              );
-            } else if ("error" in emailResult && emailResult.error) {
-              result.errors.push(`${member.email}: ${emailResult.error}`);
-            }
-          }
-
-          if (channels.sms && member.telefon) {
-            const smsResult = await sendSmsMessage({
-              phone: member.telefon,
-              message: rendered.sms,
-            });
-
-            if (smsResult.ok) {
-              result.smsSent += 1;
-            } else if (!smsResult.skipped && "error" in smsResult && smsResult.error) {
-              result.errors.push(`${member.telefon}: ${smsResult.error}`);
-            }
-          }
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : "Nieznany błąd powiadomienia.";
-          result.errors.push(`${member.email || member.uid}: ${message}`);
-        }
       }
     }
   } catch (error) {

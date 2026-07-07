@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
-import { sendAdminNotify, formatNotifyResultMessage, getNotifySmsFailureAlert } from "@/lib/notifications-client";
+import { sendAdminNotify, formatNotifyResultMessage } from "@/lib/notifications-client";
 import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 import { syncParentsFromFirebaseToSupabase } from "@/lib/parents-admin-client";
 import type { EventItem } from "./EventRow";
@@ -24,7 +24,6 @@ const TEMPLATE_OPTIONS = [
 export default function NotifyEventModal({ open, event, onClose }: Props) {
   const [templateKey, setTemplateKey] =
     useState<(typeof TEMPLATE_OPTIONS)[number]["key"]>("event_reminder");
-  const [sendSms, setSendSms] = useState(false);
   const [sendInApp, setSendInApp] = useState(true);
   const [customMessage, setCustomMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,7 +53,6 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
             message: customMessage || `Zmiana dotycząca zawodów ${event!.title}.`,
           },
           channels: {
-            sms: sendSms,
             inApp: sendInApp,
             push: sendInApp,
           },
@@ -63,21 +61,15 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
         })
       );
 
-      const smsFailure = getNotifySmsFailureAlert(result, sendSms);
-
-      if (smsFailure) {
-        toast.error(smsFailure, { duration: 12000 });
-      } else {
-        toast.success(
-          `${formatNotifyResultMessage(result)} (zsynchronizowano ${syncedCount} rodziców)`
-        );
-      }
+      toast.success(
+        `${formatNotifyResultMessage(result)} (zsynchronizowano ${syncedCount} rodziców)`
+      );
 
       if (result.warnings.length) {
         toast.warning(result.warnings.slice(0, 2).join(" "));
       }
 
-      if (result.errors.length && !smsFailure) {
+      if (result.errors.length) {
         toast.error(result.errors.slice(0, 3).join(" "));
       }
 
@@ -150,17 +142,7 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
               onChange={() => setSendInApp(!sendInApp)}
               className="accent-zks-gold"
             />
-            Powiadomienie w aplikacji + push (darmowe, zalecane)
-          </label>
-
-          <label className="flex items-center gap-3 text-sm text-zks-text-muted">
-            <input
-              type="checkbox"
-              checked={sendSms}
-              onChange={() => setSendSms(!sendSms)}
-              className="accent-zks-gold"
-            />
-            SMS (opcjonalnie — wymaga aktywnego konta SMSAPI)
+            Powiadomienie w aplikacji + push
           </label>
         </div>
 

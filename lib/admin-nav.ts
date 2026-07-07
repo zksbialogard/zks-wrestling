@@ -1,10 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import {
   ClipboardList,
+  Bell,
   Dumbbell,
   Images,
   LayoutDashboard,
-  Mail,
   Newspaper,
   Trophy,
   UserRound,
@@ -26,7 +26,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: "rodzice", name: "Rodzice", href: "/admin/uzytkownicy", icon: UserRound },
   { id: "zgloszenia", name: "Zgłoszenia", href: "/admin/zgloszenia", icon: ClipboardList },
   { id: "aktualnosci", name: "Aktualności", href: "/admin/aktualnosci", icon: Newspaper },
-  { id: "szablony", name: "Szablony", href: "/admin/szablony", icon: Mail },
+  { id: "szablony", name: "Powiadomienia", href: "/admin/szablony", icon: Bell },
   { id: "galeria", name: "Galeria", href: "/admin/galeria", icon: Images },
 ];
 

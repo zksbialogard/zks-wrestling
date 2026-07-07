@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import SmsSettingsCard from "@/components/admin/SmsSettingsCard";
 import TemplateEditor, { type EditableTemplate } from "@/components/admin/TemplateEditor";
 import { auth } from "@/lib/firebase";
 import type { MessageTemplate } from "@/lib/message-templates";
@@ -14,7 +13,6 @@ function toEditableTemplate(template: MessageTemplate): EditableTemplate {
   return {
     key: template.key,
     name: template.name,
-    sms_text: technicalToFriendly(template.sms_text),
     push_title: technicalToFriendly(template.push_title),
     push_body: technicalToFriendly(template.push_body),
   };
@@ -27,7 +25,6 @@ function mergeSavedTemplate(
   return {
     ...original,
     name: draft.name,
-    sms_text: friendlyToTechnical(draft.sms_text),
     push_title: friendlyToTechnical(draft.push_title),
     push_body: friendlyToTechnical(draft.push_body),
   };
@@ -39,22 +36,10 @@ export default function AdminSzablonyPage() {
   const [draft, setDraft] = useState<EditableTemplate | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [parentsWithPhone, setParentsWithPhone] = useState(0);
 
   useEffect(() => {
     loadTemplates();
-    loadSmsStatus();
   }, []);
-
-  async function loadSmsStatus() {
-    try {
-      const response = await fetch("/api/admin/sms");
-      const result = await response.json();
-      setParentsWithPhone(result.parentsWithPhone || 0);
-    } catch {
-      setParentsWithPhone(0);
-    }
-  }
 
   async function loadTemplates() {
     try {
@@ -141,11 +126,9 @@ export default function AdminSzablonyPage() {
   return (
     <>
       <AdminPageHeader
-        title="Szablony SMS"
-        description="Szablony powiadomień — domyślnie aplikacja + push. SMS opcjonalnie po aktywacji SMSAPI."
+        title="Szablony powiadomień"
+        description="Edytuj treści powiadomień w aplikacji i push wysyłanych do rodziców i zawodników."
       />
-
-      <SmsSettingsCard />
 
       {loading ? (
         <p className="text-zks-text-muted">Ładowanie szablonów...</p>
@@ -178,7 +161,6 @@ export default function AdminSzablonyPage() {
           <TemplateEditor
             draft={draft}
             saving={saving}
-            parentsWithPhone={parentsWithPhone}
             onChange={setDraft}
             onSave={saveTemplate}
           />

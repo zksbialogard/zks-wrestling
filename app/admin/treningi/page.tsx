@@ -21,8 +21,6 @@ export default function AdminTreningiPage() {
   const [message, setMessage] = useState("");
   const [notifyInApp, setNotifyInApp] = useState(true);
   const [notifyPush, setNotifyPush] = useState(true);
-  const [notifySms, setNotifySms] = useState(false);
-  const [notifyEmail, setNotifyEmail] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const submit = async (event: React.FormEvent) => {
@@ -51,8 +49,6 @@ export default function AdminTreningiPage() {
         notify: {
           inApp: notifyInApp,
           push: notifyPush,
-          sms: notifySms,
-          email: notifyEmail,
         },
       });
 
@@ -178,24 +174,6 @@ export default function AdminTreningiPage() {
                 className="accent-zks-gold"
               />
               Push
-            </label>
-            <label className="flex items-center gap-2 text-sm text-zks-text">
-              <input
-                type="checkbox"
-                checked={notifySms}
-                onChange={(e) => setNotifySms(e.target.checked)}
-                className="accent-zks-gold"
-              />
-              SMS
-            </label>
-            <label className="flex items-center gap-2 text-sm text-zks-text">
-              <input
-                type="checkbox"
-                checked={notifyEmail}
-                onChange={(e) => setNotifyEmail(e.target.checked)}
-                className="accent-zks-gold"
-              />
-              Email
             </label>
           </div>
         </div>

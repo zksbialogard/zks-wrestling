@@ -23,7 +23,7 @@ import {
   updateAdminRegistrationStatus,
   type RegistrationItem,
 } from "@/lib/registrations-client";
-import { getNotifySmsFailureAlert, sendAdminNotify } from "@/lib/notifications-client";
+import { sendAdminNotify } from "@/lib/notifications-client";
 import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 import { exportStartListToExcel, buildStartListRows } from "@/lib/start-list-export";
 
@@ -62,15 +62,14 @@ export default function AdminEventRegistrationsPage() {
 
   const updateStatus = async (id: string, status: "pending" | "approved" | "rejected") => {
     try {
-      const { registration, notifyResult } = await updateAdminRegistrationStatus(id, status);
-      const clean = notifyResult ? sanitizeNotifyResult(notifyResult) : null;
-      const smsFailure =
-        clean && (status === "approved" || status === "rejected")
-          ? getNotifySmsFailureAlert(clean, Boolean(registration.parent_phone))
-          : null;
+      const { notifyResult } = await updateAdminRegistrationStatus(id, status);
 
-      if (smsFailure) {
-        toast.error(smsFailure, { duration: 12000 });
+      if (notifyResult && (status === "approved" || status === "rejected")) {
+        toast.success(
+          status === "approved"
+            ? "Zgłoszenie zaakceptowane. Rodzic dostał powiadomienie w aplikacji."
+            : "Zgłoszenie odrzucone. Rodzic dostał powiadomienie w aplikacji."
+        );
       } else {
         toast.success(
           status === "approved"

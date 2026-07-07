@@ -1,13 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Eye, Info, Loader2, Save, Send } from "lucide-react";
-import { toast } from "sonner";
+import { Eye, Info, Loader2, Save } from "lucide-react";
 
-import { auth } from "@/lib/firebase";
 import type { MessageTemplate } from "@/lib/message-templates";
-import { estimateSmsParts, smsUsesUnicode } from "@/lib/messaging";
-import { getNotifySmsFailureAlert } from "@/lib/notifications-client";
 import {
   friendlyToTechnical,
   getVariablesForTemplate,
@@ -18,7 +14,6 @@ import {
 export type EditableTemplate = {
   key: MessageTemplate["key"];
   name: string;
-  sms_text: string;
   push_title: string;
   push_body: string;
 };
@@ -26,12 +21,11 @@ export type EditableTemplate = {
 type TemplateEditorProps = {
   draft: EditableTemplate;
   saving: boolean;
-  parentsWithPhone: number;
   onChange: (draft: EditableTemplate) => void;
   onSave: () => void;
 };
 
-type FieldKey = "sms_text" | "push_title" | "push_body";
+type FieldKey = "push_title" | "push_body";
 
 function VariableChips({
   templateKey,
@@ -93,19 +87,19 @@ function fillPreview(text: string) {
     .replace(/\[Imię zawodnika\]/g, "Jan Kowalski")
     .replace(/\[Treść wiadomości\]/g, "Trening odwołany — sala w remoncie.")
     .replace(/\[Treść aktualności\]/g, "Zapraszamy na sparingi w sobotę.")
-    .replace(/\[Link do aplikacji\]/g, "zks-wrestling.vercel.app");
+    .replace(/\[Link do aplikacji\]/g, "zks-wrestling.vercel.app")
+    .replace(/\[Grupa treningowa\]/g, "Grupa starsza")
+    .replace(/\[Data treningu\]/g, "poniedziałek, 10 marca")
+    .replace(/\[Godziny treningu\]/g, "18:00–19:30");
 }
 
 export default function TemplateEditor({
   draft,
   saving,
-  parentsWithPhone,
   onChange,
   onSave,
 }: TemplateEditorProps) {
-  const [broadcasting, setBroadcasting] = useState(false);
   const refs = {
-    sms_text: useRef<HTMLTextAreaElement>(null),
     push_title: useRef<HTMLInputElement>(null),
     push_body: useRef<HTMLInputElement>(null),
   };
@@ -131,126 +125,26 @@ export default function TemplateEditor({
     });
   }
 
-  const previewSms = fillPreview(draft.sms_text);
-  const smsParts = estimateSmsParts(previewSms);
-  const unicode = smsUsesUnicode(previewSms);
-
-  async function broadcastToAll() {
-    const technical = friendlyToTechnical(draft.sms_text).trim();
-
-    if (!technical) {
-      toast.error("Uzupełnij treść SMS.");
-      return;
-    }
-
-    if (/\[[^\]]+\]/.test(draft.sms_text)) {
-      toast.error("Usuń placeholdery typu [Tytuł] albo wstaw konkretne dane przed wysyłką.");
-      return;
-    }
-
-    if (
-      !window.confirm(
-        `Wyślesz SMS do ${parentsWithPhone} rodziców z numerem telefonu.\n\nTreść:\n${technical}\n\nKoszt: ok. ${smsParts} SMS na osobę. Kontynuować?`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setBroadcasting(true);
-      const user = auth.currentUser;
-
-      if (!user) {
-        throw new Error("Brak sesji administratora.");
-      }
-
-      const token = await user.getIdToken();
-      const response = await fetch("/api/admin/sms/broadcast", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: technical, confirmed: true }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        const err = result.error || "Nie udało się wysłać SMS.";
-        const alert = getNotifySmsFailureAlert(
-          { smsSent: result.result?.smsSent ?? 0, errors: [err] },
-          true
-        );
-
-        toast.error(alert || `${err} Rodzice NIE otrzymali wiadomości SMS.`, {
-          duration: 12000,
-        });
-        return;
-      }
-
-      toast.success(result.message);
-
-      if (result.result?.errors?.length) {
-        const alert = getNotifySmsFailureAlert(result.result, true);
-
-        if (alert) {
-          toast.error(alert, { duration: 12000 });
-        } else {
-          toast.warning(result.result.errors.slice(0, 2).join(" "));
-        }
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Błąd wysyłki masowej.");
-    } finally {
-      setBroadcasting(false);
-    }
-  }
+  const previewTitle = fillPreview(draft.push_title);
+  const previewBody = fillPreview(draft.push_body);
 
   return (
     <div className="space-y-6">
       <div className="flex gap-3 rounded-xl border border-zks-gold-mid/20 bg-zks-gold/5 p-4">
         <Info className="mt-0.5 h-5 w-5 shrink-0 text-zks-gold-bright" />
         <div>
-          <p className="text-sm font-medium text-white">Kiedy wysyłany jest ten SMS?</p>
+          <p className="text-sm font-medium text-white">Kiedy wysyłane jest to powiadomienie?</p>
           <p className="mt-1 text-sm text-zks-text-muted">{TEMPLATE_WHEN[draft.key]}</p>
         </div>
       </div>
-
-      <section className="zks-card p-6">
-        <h3 className="mb-4 font-[family-name:var(--font-heading)] text-lg font-bold text-white">
-          Treść SMS
-        </h3>
-
-        <FieldBlock
-          label="Wiadomość na telefon rodzica"
-          hint="Polskie znaki działają (ą, ę, ó, ł, ś, ź, ż). Przy polskich znakach 1 SMS = max 70 znaków."
-        >
-          <textarea
-            ref={refs.sms_text}
-            value={draft.sms_text}
-            onChange={(e) => onChange({ ...draft, sms_text: e.target.value })}
-            rows={4}
-            className={fieldClassName}
-            placeholder="np. ZKS: nowe zawody [Tytuł], [Miejsce], [Data zawodów]."
-          />
-          <VariableChips
-            templateKey={draft.key}
-            onInsert={(label) => insertIntoField("sms_text", label)}
-          />
-          <p className="mt-2 text-xs text-zks-text-muted">
-            {previewSms.length} znaków · ok. {smsParts} SMS na osobę
-            {unicode ? " (polskie znaki)" : ""}
-          </p>
-        </FieldBlock>
-      </section>
 
       <section className="zks-card p-6">
         <h3 className="mb-1 font-[family-name:var(--font-heading)] text-lg font-bold text-white">
           Powiadomienie w aplikacji
         </h3>
         <p className="mb-4 text-xs text-zks-text-muted">
-          To samo zdarzenie — dodatkowo w panelu rodzica (bez kosztu SMS).
+          Treść widoczna w panelu rodzica i zawodnika. Przy włączonym push użytkownik dostaje też
+          alert na telefonie.
         </p>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -286,46 +180,29 @@ export default function TemplateEditor({
         <div className="mb-3 flex items-center gap-2 text-zks-gold-bright">
           <Eye className="h-4 w-4" />
           <h3 className="font-[family-name:var(--font-heading)] text-sm font-bold uppercase tracking-wide">
-            Podgląd SMS
+            Podgląd
           </h3>
         </div>
         <div className="mx-auto max-w-sm">
           <div className="rounded-2xl border border-zks-gold-mid/20 bg-zks-black p-4">
             <p className="mb-2 text-[10px] uppercase tracking-wider text-zks-text-muted">
-              SMS · ZKS Białogard
+              Powiadomienie · ZKS Białogard
             </p>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-white">{previewSms}</p>
+            <p className="text-sm font-semibold text-white">{previewTitle}</p>
+            <p className="mt-2 text-sm leading-relaxed text-zks-text-muted">{previewBody}</p>
           </div>
         </div>
       </section>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <button
-          type="button"
-          disabled={saving}
-          onClick={onSave}
-          className="zks-btn-primary inline-flex items-center gap-2 px-6 py-3 text-sm disabled:opacity-60"
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {saving ? "Zapisywanie..." : "Zapisz szablon"}
-        </button>
-
-        <button
-          type="button"
-          disabled={broadcasting || parentsWithPhone === 0}
-          onClick={broadcastToAll}
-          className="zks-btn-outline inline-flex items-center gap-2 px-6 py-3 text-sm disabled:opacity-60"
-        >
-          {broadcasting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-          {broadcasting
-            ? "Wysyłanie..."
-            : `Wyślij SMS do wszystkich (${parentsWithPhone})`}
-        </button>
-      </div>
+      <button
+        type="button"
+        disabled={saving}
+        onClick={onSave}
+        className="zks-btn-primary inline-flex items-center gap-2 px-6 py-3 text-sm disabled:opacity-60"
+      >
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        {saving ? "Zapisywanie..." : "Zapisz szablon"}
+      </button>
     </div>
   );
 }

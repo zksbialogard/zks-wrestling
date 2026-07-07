@@ -140,7 +140,7 @@ export async function POST(request: Request) {
 
     let notifyResult = null;
 
-    if (notify.email || notify.sms || notify.inApp || notify.push) {
+    if (notify.inApp || notify.push) {
       try {
         await seedDefaultTemplatesIfEmpty();
         notifyResult = await notifyClubMembers({
@@ -155,8 +155,6 @@ export async function POST(request: Request) {
             link: `/zawody/${data.id}`,
           },
           channels: {
-            email: Boolean(notify.email),
-            sms: Boolean(notify.sms),
             inApp: notify.inApp !== false,
             push: Boolean(notify.push),
           },
