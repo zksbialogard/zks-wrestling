@@ -1,33 +1,12 @@
-"use client";
+import AthleteLayoutClient from "@/components/athlete/AthleteLayoutClient";
+import { createPageMetadata } from "@/lib/site-config";
 
-import AuthGuard from "@/components/auth/AuthGuard";
-import AthleteHeader from "@/components/athlete/AthleteHeader";
-import AthleteNav from "@/components/athlete/AthleteNav";
-import AthletePushBootstrap from "@/components/athlete/AthletePushBootstrap";
-import { PanelAlerts, PanelMain } from "@/components/layout/PanelLayout";
-import PushPrompt from "@/components/parent/PushPrompt";
+export const metadata = createPageMetadata({
+  title: "Panel zawodnika",
+  path: "/panel-zawodnika",
+  noIndex: true,
+});
 
-export default function AthleteLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <AuthGuard requireRole="zawodnik">
-      <div className="panel-shell text-white">
-        <AthletePushBootstrap />
-        <AthleteHeader />
-
-        <div className="mx-auto flex max-w-7xl">
-          <AthleteNav />
-          <PanelMain>
-            <PanelAlerts>
-              <PushPrompt role="zawodnik" />
-            </PanelAlerts>
-            {children}
-          </PanelMain>
-        </div>
-      </div>
-    </AuthGuard>
-  );
+export default function AthleteLayout({ children }: { children: React.ReactNode }) {
+  return <AthleteLayoutClient>{children}</AthleteLayoutClient>;
 }

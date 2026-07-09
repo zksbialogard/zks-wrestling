@@ -1,6 +1,14 @@
 import { getNews } from "@/lib/news";
+import { createPageMetadata } from "@/lib/site-config";
 
 import { PublicPageShell, PublicPageStack } from "@/components/layout/PublicPageShell";
+
+export const metadata = createPageMetadata({
+  title: "Aktualności klubu",
+  description:
+    "Komunikaty ZKS Białogard — informacje o treningach, zawodach, obozach i wydarzeniach klubowych.",
+  path: "/aktualnosci",
+});
 
 export const dynamic = "force-dynamic";
 

@@ -1,6 +1,6 @@
-const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-  "https://zks-wrestling.vercel.app";
+import { getSiteUrl } from "./site-config";
+
+const APP_URL = getSiteUrl();
 
 export function wrapEmailHtml(content: string, previewText?: string) {
   const safeContent = content.trim();

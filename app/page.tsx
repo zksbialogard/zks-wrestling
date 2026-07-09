@@ -5,8 +5,17 @@ import UpcomingEvents from "@/components/home/UpcomingEvents";
 import News from "@/components/home/News";
 import Contact from "@/components/home/Contact";
 import Footer from "@/components/home/Footer";
+import OrganizationJsonLd from "@/components/seo/OrganizationJsonLd";
 import { getEvents } from "@/lib/events-server";
 import { getNews } from "@/lib/news";
+import { createPageMetadata } from "@/lib/site-config";
+
+export const metadata = createPageMetadata({
+  title: "ZKS Białogard — klub zapaśniczy, zawody i treningi",
+  description:
+    "ZKS Białogard — zapasy dla dzieci i młodzieży. Aktualności klubu, nadchodzące zawody, zapisy i panel rodzica w oficjalnej aplikacji.",
+  path: "/",
+});
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +35,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center">
+      <OrganizationJsonLd />
       <Hero />
 
       <About />

@@ -7,7 +7,7 @@ import PwaUpdatePrompt from "@/components/pwa/PwaUpdatePrompt";
 import { Oswald, Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
-import { APP_NAME } from "@/lib/design-tokens";
+import { createRootMetadata } from "@/lib/site-config";
 
 const oswald = Oswald({
   subsets: ["latin", "latin-ext"],
@@ -20,21 +20,7 @@ const inter = Inter({
   variable: "--font-sans",
 });
 
-export const metadata = {
-  title: APP_NAME,
-  description:
-    "Oficjalna aplikacja klubowa ZKS Białogard — zawody, aktualności, panel rodzica i administratora.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "ZKS Manager",
-  },
-  icons: {
-    icon: [{ url: "/logo-shield.png", type: "image/png" }],
-    apple: [{ url: "/logo-shield.png", type: "image/png" }],
-  },
-};
+export const metadata = createRootMetadata();
 
 export const viewport = {
   width: "device-width",
