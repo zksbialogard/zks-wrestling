@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { APP_NAME, CLUB_NAME } from "./design-tokens";
 
 /** Docelowa domena produkcyjna — ustaw w Vercel jako NEXT_PUBLIC_SITE_URL. */
-export const SITE_CANONICAL_HOST = "app.zksbialogard.pl";
+export const SITE_CANONICAL_HOST = "manager.zksbialogard.pl";
 
 export const SITE_DEFAULT_DESCRIPTION =
   "Oficjalna aplikacja klubowa ZKS Białogard — zawody zapasy, aktualności, treningi, panel rodzica i zawodnika.";
