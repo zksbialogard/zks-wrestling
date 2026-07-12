@@ -11,15 +11,19 @@ import EventsTable from "./EventsTable";
 
 type AdminEventsPageProps = {
   initialEvents: Event[];
+  moderatorMode?: boolean;
 };
 
-export default function AdminEventsPage({ initialEvents }: AdminEventsPageProps) {
+export default function AdminEventsPage({
+  initialEvents,
+  moderatorMode = false,
+}: AdminEventsPageProps) {
   const [events, setEvents] = useState(initialEvents);
   const [registrationCounts, setRegistrationCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     async function loadCounts() {
-      if (!initialEvents.length) {
+      if (moderatorMode || !initialEvents.length) {
         return;
       }
 
@@ -32,7 +36,7 @@ export default function AdminEventsPage({ initialEvents }: AdminEventsPageProps)
     }
 
     loadCounts();
-  }, [initialEvents]);
+  }, [initialEvents, moderatorMode]);
 
   const handleDeleted = (id: string) => {
     setEvents((prev) => prev.filter((event) => event.id !== id));
@@ -48,6 +52,10 @@ export default function AdminEventsPage({ initialEvents }: AdminEventsPageProps)
     const data = await fetchEvents();
     setEvents(data);
 
+    if (moderatorMode) {
+      return;
+    }
+
     try {
       const counts = await fetchRegistrationCounts(data.map((event) => event.id));
       setRegistrationCounts(counts);
@@ -58,13 +66,14 @@ export default function AdminEventsPage({ initialEvents }: AdminEventsPageProps)
 
   return (
     <div className="space-y-8">
-      <EventHeader onCreated={handleCreated} />
+      <EventHeader onCreated={handleCreated} moderatorMode={moderatorMode} />
       <EventFilters />
       <EventsTable
         events={events}
         registrationCounts={registrationCounts}
         onDeleted={handleDeleted}
         onUpdated={handleUpdated}
+        moderatorMode={moderatorMode}
       />
     </div>
   );

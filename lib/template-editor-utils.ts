@@ -9,6 +9,7 @@ export const TEMPLATE_VARIABLES = [
   { key: "message", label: "Treść wiadomości" },
   { key: "content", label: "Treść aktualności" },
   { key: "link", label: "Link do aplikacji" },
+  { key: "version", label: "Wersja aplikacji" },
   { key: "groupName", label: "Grupa treningowa" },
   { key: "sessionDate", label: "Data treningu" },
   { key: "sessionTime", label: "Godziny treningu" },
@@ -23,6 +24,8 @@ const VARIABLES_BY_TEMPLATE: Record<TemplateKey, string[]> = {
   training_reminder: ["groupName", "sessionDate", "sessionTime"],
   news_published: ["title", "content"],
   gallery_published: ["title"],
+  app_update: ["version", "link"],
+  event_upcoming: ["title", "location", "eventDate", "registrationDeadline", "link"],
 };
 
 export const TEMPLATE_WHEN: Record<TemplateKey, string> = {
@@ -34,6 +37,8 @@ export const TEMPLATE_WHEN: Record<TemplateKey, string> = {
   training_reminder: "Automatycznie w dniu treningu o 12:00 i 15:00 (cron) — osobno dla każdej grupy.",
   news_published: "Przy publikacji aktualności z włączonym powiadomieniem.",
   gallery_published: "Po dodaniu zdjęcia do galerii z włączonym powiadomieniem.",
+  app_update: "Automatycznie po wdrożeniu nowej wersji aplikacji (cron / wykrycie aktualizacji PWA).",
+  event_upcoming: "Automatycznie 14 dni przed datą imprezy z kalendarza zawodów (cron, rodzice i zawodnicy).",
 };
 
 export const NOTIFICATION_AUTO_TRIGGERS = [
@@ -41,6 +46,8 @@ export const NOTIFICATION_AUTO_TRIGGERS = [
   "Akceptacja / odrzucenie zgłoszenia — aplikacja + push (automatycznie)",
   "Nowe zawody / przypomnienie — aplikacja + push przy wysyłce z panelu",
   "Treningi — automatyczne przypomnienia o 12:00 i 15:00 w dniu treningu (cron, per grupa)",
+  "Aktualizacja aplikacji — push + powiadomienie w aplikacji dla rodziców i zawodników po nowym wdrożeniu",
+  "Kalendarz imprez — przypomnienie 14 dni przed zawodami dla rodziców i zawodników (cron)",
 ] as const;
 
 export function getVariablesForTemplate(key: TemplateKey) {

@@ -6,9 +6,10 @@ export type NavLink = {
 export const publicLinks: NavLink[] = [
   { label: "Strona główna", href: "/" },
   { label: "Klub", href: "/klub/o-klubie" },
-  { label: "Zawody", href: "/zawody" },
+  { label: "Kalendarz imprez", href: "/kalendarz-imprez" },
+  { label: "Wyniki zawodów", href: "/zawody/wyniki-zawodow" },
   { label: "Aktualności", href: "/aktualnosci" },
-  { label: "Pobierz", href: "/pobierz" },
+  { label: "Pobierz Aplikację", href: "/pobierz" },
   { label: "Kontakt", href: "/kontakt" },
 ];
 

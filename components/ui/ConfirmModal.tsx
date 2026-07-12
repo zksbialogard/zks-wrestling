@@ -1,3 +1,5 @@
+import Modal, { ModalBody, ModalFooter, ModalHeader } from "./Modal";
+
 type Props = {
   title: string;
   description: string;
@@ -13,35 +15,23 @@ export default function ConfirmModal({
 }: Props) {
   return (
     <Modal>
+      <ModalHeader>
+        <h2 className="text-3xl font-bold text-yellow-400">{title}</h2>
+      </ModalHeader>
 
-      <h2 className="text-3xl text-yellow-400 font-bold">
-        {title}
-      </h2>
+      <ModalBody>
+        <p className="text-gray-400">{description}</p>
+      </ModalBody>
 
-      <p className="text-gray-400 mt-5">
-        {description}
-      </p>
-
-      <div className="flex justify-end gap-4 mt-10">
-
-        <button
-          onClick={onCancel}
-          className="px-5 py-2 rounded-xl bg-zinc-800"
-        >
+      <ModalFooter>
+        <button onClick={onCancel} className="rounded-xl bg-zinc-800 px-5 py-2">
           Anuluj
         </button>
 
-        <button
-          onClick={onConfirm}
-          className="px-5 py-2 rounded-xl bg-red-600"
-        >
+        <button onClick={onConfirm} className="rounded-xl bg-red-600 px-5 py-2">
           Usuń
         </button>
-
-      </div>
-
+      </ModalFooter>
     </Modal>
   );
 }
-
-import Modal from "./Modal";

@@ -90,6 +90,22 @@ export async function upsertParentUser(user: ParentUser & { nazwisko?: string })
   return true;
 }
 
+export async function removeParentUserFromDb(uid: string) {
+  if (!hasServiceRole()) {
+    return false;
+  }
+
+  const supabase = createSupabaseAdmin();
+  const { error } = await supabase.from("parent_users").delete().eq("uid", uid);
+
+  if (error) {
+    console.error("removeParentUserFromDb:", error);
+    return false;
+  }
+
+  return true;
+}
+
 export async function upsertParentUsers(users: Array<ParentUser & { nazwisko?: string }>) {
   if (!hasServiceRole() || !users.length) {
     return 0;

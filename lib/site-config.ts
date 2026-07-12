@@ -8,6 +8,8 @@ export const SITE_CANONICAL_HOST = "manager.zksbialogard.pl";
 export const SITE_DEFAULT_DESCRIPTION =
   "Oficjalna aplikacja klubowa ZKS Białogard — zawody zapasy, aktualności, treningi, panel rodzica i zawodnika.";
 
+export const CLUB_FACEBOOK_URL = "https://www.facebook.com/zksbialogard";
+
 export const PUBLIC_INDEXABLE_PATHS = [
   "/",
   "/aktualnosci",
@@ -17,6 +19,8 @@ export const PUBLIC_INDEXABLE_PATHS = [
   "/zawody",
   "/zawody/najblizsze-zawody",
   "/zawody/wyniki-zawodow",
+  "/kalendarz-imprez",
+  "/plan-wakacyjny",
   "/pobierz",
 ] as const;
 

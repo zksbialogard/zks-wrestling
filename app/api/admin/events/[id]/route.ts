@@ -2,42 +2,23 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
 import { createSupabaseAdmin } from "@/lib/supabase";
-import { getAdminFromRequest } from "@/lib/verify-admin";
+import { eventPayloadToRow, normalizeEventPayload } from "@/lib/event-api-payload";
+import { getStaffFromRequest } from "@/lib/verify-admin";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-type EventPayload = {
-  title: string;
-  location: string;
-  event_date: string;
-  registration_deadline: string;
-};
-
-function validatePayload(body: unknown): EventPayload | null {
-  if (!body || typeof body !== "object") return null;
-
-  const { title, location, event_date, registration_deadline } = body as EventPayload;
-
-  if (!title?.trim() || !location?.trim() || !event_date || !registration_deadline) {
-    return null;
-  }
-
-  return {
-    title: title.trim(),
-    location: location.trim(),
-    event_date,
-    registration_deadline,
-  };
+function validatePayload(body: unknown) {
+  return normalizeEventPayload(body);
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
-    const admin = await getAdminFromRequest(request);
+    const staff = await getStaffFromRequest(request);
 
-    if (!admin) {
-      return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+    if (!staff) {
+      return NextResponse.json({ error: "Brak uprawnień." }, { status: 401 });
     }
 
     const { id } = await context.params;
@@ -54,7 +35,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
       .from("events")
-      .update(payload)
+      .update(eventPayloadToRow(payload))
       .eq("id", id)
       .select("*")
       .single();
@@ -68,6 +49,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     revalidatePath("/zawody");
     revalidatePath("/zawody/najblizsze-zawody");
     revalidatePath("/admin/zawody");
+    revalidatePath("/moderator/zawody");
+    revalidatePath("/kalendarz-imprez");
+    revalidatePath(`/zawody/${id}`);
 
     return NextResponse.json({ ok: true, data });
   } catch (error) {
@@ -81,10 +65,10 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(request: Request, context: RouteContext) {
   try {
-    const admin = await getAdminFromRequest(request);
+    const staff = await getStaffFromRequest(request);
 
-    if (!admin) {
-      return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+    if (!staff) {
+      return NextResponse.json({ error: "Brak uprawnień." }, { status: 401 });
     }
 
     const { id } = await context.params;
@@ -100,6 +84,8 @@ export async function DELETE(request: Request, context: RouteContext) {
     revalidatePath("/zawody");
     revalidatePath("/zawody/najblizsze-zawody");
     revalidatePath("/admin/zawody");
+    revalidatePath("/moderator/zawody");
+    revalidatePath("/kalendarz-imprez");
 
     return NextResponse.json({ ok: true });
   } catch (error) {

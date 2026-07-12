@@ -13,6 +13,7 @@ interface EventsTableProps {
   registrationCounts?: Record<string, number>;
   onDeleted: (id: string) => void;
   onUpdated: (event: Event) => void;
+  moderatorMode?: boolean;
 }
 
 export default function EventsTable({
@@ -20,6 +21,7 @@ export default function EventsTable({
   registrationCounts = {},
   onDeleted,
   onUpdated,
+  moderatorMode = false,
 }: EventsTableProps) {
   const [editing, setEditing] = useState<EventItem | null>(null);
   const [notifying, setNotifying] = useState<EventItem | null>(null);
@@ -47,6 +49,7 @@ export default function EventsTable({
             onEdit={(item) => setEditing(item)}
             onNotify={(item) => setNotifying(item)}
             onDeleted={onDeleted}
+            moderatorMode={moderatorMode}
           />
         ))}
       </div>

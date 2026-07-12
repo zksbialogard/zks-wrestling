@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 
 import {
@@ -8,12 +8,35 @@ import {
   subscribeToPwaUpdates,
 } from "@/lib/pwa-update";
 
+async function announceAppUpdate() {
+  try {
+    const versionResponse = await fetch("/api/app-version", { cache: "no-store" });
+    if (!versionResponse.ok) return;
+
+    const { version } = (await versionResponse.json()) as { version?: string };
+    if (!version || version === "dev") return;
+
+    await fetch("/api/app-update/announce", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ version }),
+    });
+  } catch {
+    // ignore — powiadomienie ogłasza serwer z deduplikacją
+  }
+}
+
 export default function PwaUpdatePrompt() {
   const [visible, setVisible] = useState(false);
+  const announcedRef = useRef(false);
 
   useEffect(() => {
     return subscribeToPwaUpdates(() => {
       setVisible(true);
+
+      if (announcedRef.current) return;
+      announcedRef.current = true;
+      void announceAppUpdate();
     });
   }, []);
 

@@ -15,6 +15,7 @@ import {
 import { deleteEvent } from "@/lib/events";
 import { fetchAdminRegistrations } from "@/lib/registrations-client";
 import { exportStartListToExcel } from "@/lib/start-list-export";
+import { getEventRegistrationStatus } from "@/lib/event-utils";
 import EventStatusBadge from "./EventStatusBadge";
 
 export type EventItem = {
@@ -23,6 +24,8 @@ export type EventItem = {
   location: string;
   event_date: string;
   registration_deadline: string;
+  event_type?: string;
+  registrations_enabled?: boolean | null;
 };
 
 interface Props {
@@ -31,6 +34,7 @@ interface Props {
   onEdit: (event: EventItem) => void;
   onNotify: (event: EventItem) => void;
   onDeleted: (id: string) => void;
+  moderatorMode?: boolean;
 }
 
 export default function EventRow({
@@ -39,8 +43,10 @@ export default function EventRow({
   onEdit,
   onNotify,
   onDeleted,
+  moderatorMode = false,
 }: Props) {
   const router = useRouter();
+  const registrationStatus = getEventRegistrationStatus(event);
 
   const remove = async () => {
     if (!confirm(`Usunąć zawody „${event.title}"?`)) return;
@@ -99,30 +105,38 @@ export default function EventRow({
           </div>
         </div>
 
-        <EventStatusBadge status="open" />
+        <EventStatusBadge status={registrationStatus} />
       </div>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm font-semibold text-zks-gold-bright">
-          Zgłoszeń: {entries}
-        </div>
+        {!moderatorMode ? (
+          <div className="text-sm font-semibold text-zks-gold-bright">
+            Zgłoszeń: {entries}
+          </div>
+        ) : (
+          <div />
+        )}
 
         <div className="flex flex-wrap gap-2">
-          <Link
-            href={`/admin/zawody/${event.id}`}
-            className="zks-btn-primary px-4 py-2 text-xs"
-          >
-            Zgłoszenia
-          </Link>
+          {!moderatorMode ? (
+            <>
+              <Link
+                href={`/admin/zawody/${event.id}`}
+                className="zks-btn-primary px-4 py-2 text-xs"
+              >
+                Zgłoszenia
+              </Link>
 
-          <button
-            type="button"
-            onClick={downloadStartList}
-            className="zks-btn-outline inline-flex items-center gap-2 px-4 py-2 text-xs"
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            Excel
-          </button>
+              <button
+                type="button"
+                onClick={downloadStartList}
+                className="zks-btn-outline inline-flex items-center gap-2 px-4 py-2 text-xs"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                Excel
+              </button>
+            </>
+          ) : null}
 
           <button
             type="button"

@@ -9,7 +9,7 @@ import {
 import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
 import { notifyClubMembers } from "@/lib/notify-service";
 import { createSupabaseAdmin } from "@/lib/supabase";
-import { getAdminFromRequest } from "@/lib/verify-admin";
+import { getStaffFromRequest } from "@/lib/verify-admin";
 
 function hasSupabaseAdminKey() {
   return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
@@ -17,10 +17,10 @@ function hasSupabaseAdminKey() {
 
 export async function POST(request: Request) {
   try {
-    const admin = await getAdminFromRequest(request);
+    const staff = await getStaffFromRequest(request);
 
-    if (!admin) {
-      return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+    if (!staff) {
+      return NextResponse.json({ error: "Brak uprawnień." }, { status: 401 });
     }
 
     const body = await request.json();

@@ -6,6 +6,7 @@ import News from "@/components/home/News";
 import Contact from "@/components/home/Contact";
 import Footer from "@/components/home/Footer";
 import OrganizationJsonLd from "@/components/seo/OrganizationJsonLd";
+import { dedupeEventsByDateAndTitle, isUpcomingEvent } from "@/lib/event-calendar-utils";
 import { getEvents } from "@/lib/events-server";
 import { getNews } from "@/lib/news";
 import { createPageMetadata } from "@/lib/site-config";
@@ -20,13 +21,15 @@ export const metadata = createPageMetadata({
 export const dynamic = "force-dynamic";
 
 async function getAktualnosci() {
-  const news = await getNews({ fresh: true });
-  return news.slice(0, 4);
+  return getNews({ fresh: true });
 }
 
 async function getUpcomingEvents() {
   const events = await getEvents();
-  return events.slice(0, 4);
+
+  return dedupeEventsByDateAndTitle(events)
+    .filter((event) => isUpcomingEvent(event))
+    .slice(0, 4);
 }
 
 export default async function Home() {
@@ -34,7 +37,7 @@ export default async function Home() {
   const events = await getUpcomingEvents();
 
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center">
+    <main className="min-h-screen w-full bg-black text-white">
       <OrganizationJsonLd />
       <Hero />
 

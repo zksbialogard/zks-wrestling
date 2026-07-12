@@ -45,9 +45,7 @@ export default function AboutClubSection({ variant = "home" }: AboutClubSectionP
     <section
 
       className={`relative w-full overflow-hidden ${
-
-        isPage ? "pb-16 sm:pb-24" : "py-20 sm:py-28"
-
+        isPage ? "pb-16 sm:pb-24" : "py-20 sm:py-24 lg:py-28"
       }`}
 
     >
@@ -64,7 +62,7 @@ export default function AboutClubSection({ variant = "home" }: AboutClubSectionP
 
         className={`relative mx-auto w-full ${
 
-          isPage ? "max-w-6xl px-5 sm:px-8" : "max-w-7xl px-5 sm:px-6 lg:px-8"
+          isPage ? "max-w-7xl px-4 sm:px-6" : "max-w-7xl px-4 sm:px-6"
 
         }`}
 

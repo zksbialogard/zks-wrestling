@@ -4,17 +4,24 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
-import { getPanelHref } from "@/lib/panel-routes";
+import {
+  getPanelHref,
+  isPanelPathAllowedForRole,
+  isProtectedPanelPath,
+} from "@/lib/panel-routes";
+import { canAccessPanel, isGuestRole } from "@/lib/user-roles";
 
 type Props = {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireModerator?: boolean;
   requireRole?: "rodzic" | "zawodnik";
 };
 
 export default function AuthGuard({
   children,
   requireAdmin = false,
+  requireModerator = false,
   requireRole,
 }: Props) {
   const router = useRouter();
@@ -35,7 +42,25 @@ export default function AuthGuard({
       return;
     }
 
+    if (isGuestRole(profile.rola) && isProtectedPanelPath(pathname)) {
+      router.replace("/");
+      return;
+    }
+
+    if (
+      isProtectedPanelPath(pathname) &&
+      !isPanelPathAllowedForRole(pathname, profile.rola)
+    ) {
+      router.replace(getPanelHref(profile.rola));
+      return;
+    }
+
     if (requireAdmin && profile.rola !== "admin") {
+      router.replace(getPanelHref(profile.rola));
+      return;
+    }
+
+    if (requireModerator && profile.rola !== "moderator") {
       router.replace(getPanelHref(profile.rola));
       return;
     }
@@ -48,7 +73,17 @@ export default function AuthGuard({
     if (requireRole === "zawodnik" && profile.rola !== "zawodnik") {
       router.replace(getPanelHref(profile.rola));
     }
-  }, [ready, loadingProfile, user, profile, requireAdmin, requireRole, router, pathname]);
+  }, [
+    ready,
+    loadingProfile,
+    user,
+    profile,
+    requireAdmin,
+    requireModerator,
+    requireRole,
+    router,
+    pathname,
+  ]);
 
   if (!ready || loadingProfile) {
     return (
@@ -62,7 +97,22 @@ export default function AuthGuard({
     return null;
   }
 
+  if (isGuestRole(profile.rola) && isProtectedPanelPath(pathname)) {
+    return null;
+  }
+
+  if (
+    isProtectedPanelPath(pathname) &&
+    !isPanelPathAllowedForRole(pathname, profile.rola)
+  ) {
+    return null;
+  }
+
   if (requireAdmin && profile.rola !== "admin") {
+    return null;
+  }
+
+  if (requireModerator && profile.rola !== "moderator") {
     return null;
   }
 

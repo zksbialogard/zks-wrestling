@@ -22,14 +22,14 @@ export default function ContactSection({ variant = "page" }: ContactSectionProps
   return (
     <section
       className={`relative w-full overflow-hidden ${
-        isPage ? "pb-16 sm:pb-24" : "py-20 sm:py-24"
+        isPage ? "pb-16 sm:pb-24" : "py-20 sm:py-24 lg:py-28"
       }`}
     >
-      <div className="absolute inset-0 bg-gradient-to-b from-zks-black via-zks-black-soft to-zks-black" />
-      <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-zks-gold/10 blur-[120px]" />
-      <div className="pointer-events-none absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-zks-gold-deep/10 blur-[130px]" />
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-zks-black via-zks-black-soft to-zks-black" />
+      <div className="pointer-events-none absolute -left-24 top-24 z-0 h-72 w-72 rounded-full bg-zks-gold/10 blur-[120px]" />
+      <div className="pointer-events-none absolute -right-20 bottom-10 z-0 h-80 w-80 rounded-full bg-zks-gold-deep/10 blur-[130px]" />
 
-      <div className="relative mx-auto w-full max-w-6xl px-5 sm:px-8">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6">
         <motion.header
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -51,7 +51,14 @@ export default function ContactSection({ variant = "page" }: ContactSectionProps
           </p>
         </motion.header>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex w-full justify-center">
+          <div
+            className={`grid w-full gap-6 sm:grid-cols-2 sm:gap-7 lg:gap-8 ${
+              isPage
+                ? "max-w-5xl lg:grid-cols-2 xl:grid-cols-4"
+                : "max-w-3xl sm:max-w-4xl"
+            }`}
+          >
           {contactChannels.map((channel, index) => {
             const Icon = channel.icon;
 
@@ -63,7 +70,7 @@ export default function ContactSection({ variant = "page" }: ContactSectionProps
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.08, duration: 0.45 }}
                 whileHover={{ y: -4 }}
-                className="zks-card flex h-full flex-col p-5 sm:p-6"
+                className="relative z-10 zks-card flex h-full flex-col p-5 sm:p-6"
               >
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-zks-gold-mid/30 bg-zks-gold/10">
                   <Icon className="h-5 w-5 text-zks-gold-bright" />
@@ -93,6 +100,7 @@ export default function ContactSection({ variant = "page" }: ContactSectionProps
               </motion.div>
             );
           })}
+          </div>
         </div>
 
         {isPage ? (

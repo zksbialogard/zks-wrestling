@@ -54,7 +54,7 @@ export default function Navbar() {
 
         <NavbarMenu />
 
-        <div className="flex shrink-0 items-center gap-2 lg:ml-auto lg:gap-3">
+        <div className="flex shrink-0 items-center gap-3 lg:ml-auto lg:gap-4 xl:gap-5">
           <UserMenu onLogout={handleLogout} />
           <MobileMenu onLogout={handleLogout} />
         </div>

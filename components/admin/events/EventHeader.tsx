@@ -4,8 +4,15 @@ import { useState } from "react";
 import { CalendarPlus } from "lucide-react";
 
 import AddEventModal from "./AddEventModal";
+import ImportPlan2026Button from "./ImportPlan2026Button";
 
-export default function EventHeader({ onCreated }: { onCreated?: () => void | Promise<void> }) {
+export default function EventHeader({
+  onCreated,
+  moderatorMode = false,
+}: {
+  onCreated?: () => void | Promise<void>;
+  moderatorMode?: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -18,12 +25,19 @@ export default function EventHeader({ onCreated }: { onCreated?: () => void | Pr
           </h1>
 
           <p className="mt-3 text-lg text-zinc-400">
-            Zarządzaj zawodami, zapisami oraz komunikacją z rodzicami.
+            {moderatorMode
+              ? "Dodawaj, edytuj i usuwaj zawody klubowe."
+              : "Zarządzaj zawodami, zapisami oraz komunikacją z rodzicami."}
           </p>
         </div>
 
-        <button
-          onClick={() => setOpen(true)}
+        <div className="flex flex-col gap-3 sm:items-end">
+          {!moderatorMode ? (
+            <ImportPlan2026Button onImported={onCreated} />
+          ) : null}
+
+          <button
+            onClick={() => setOpen(true)}
           className="
             flex
             items-center
@@ -44,6 +58,7 @@ export default function EventHeader({ onCreated }: { onCreated?: () => void | Pr
           <CalendarPlus size={24} />
           Dodaj zawody
         </button>
+        </div>
 
       </div>
 

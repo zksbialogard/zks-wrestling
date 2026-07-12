@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
+import Modal, { ModalBody, ModalFooter, ModalHeader } from "@/components/ui/Modal";
 import AuthField from "@/components/auth/AuthField";
 import type { RegistrationItem } from "@/lib/registrations-client";
 import { updateAdminRegistrationData } from "@/lib/registrations-client";
@@ -69,9 +70,9 @@ export default function RegistrationEditModal({
   }
 
   return (
-    <div className="zks-modal-overlay">
-      <div className="zks-modal-panel zks-card p-6 sm:p-8">
-        <div className="mb-6 flex items-center justify-between">
+    <Modal open={open}>
+      <ModalHeader>
+        <div className="flex items-center justify-between">
           <div>
             <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white">
               Edytuj zgłoszenie
@@ -88,8 +89,9 @@ export default function RegistrationEditModal({
             <X className="h-5 w-5" />
           </button>
         </div>
+      </ModalHeader>
 
-        <div className="space-y-4">
+      <ModalBody className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <AuthField
               label="Imię"
@@ -136,23 +138,22 @@ export default function RegistrationEditModal({
             onChange={(e) => setParentPhone(e.target.value)}
             placeholder="Opcjonalnie"
           />
-        </div>
+      </ModalBody>
 
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="zks-btn-outline px-5 py-2.5 text-sm">
-            Anuluj
-          </button>
-          <button
-            type="button"
-            disabled={saving}
-            onClick={handleSave}
-            className="zks-btn-primary inline-flex items-center gap-2 px-6 py-2.5 text-sm disabled:opacity-60"
-          >
-            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            Zapisz zmiany
-          </button>
-        </div>
-      </div>
-    </div>
+      <ModalFooter>
+        <button type="button" onClick={onClose} className="zks-btn-outline px-5 py-2.5 text-sm">
+          Anuluj
+        </button>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={handleSave}
+          className="zks-btn-primary inline-flex items-center gap-2 px-6 py-2.5 text-sm disabled:opacity-60"
+        >
+          {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+          Zapisz zmiany
+        </button>
+      </ModalFooter>
+    </Modal>
   );
 }

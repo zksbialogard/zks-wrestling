@@ -1,0 +1,272 @@
+[
+  {
+    "title": "Mistrzostwa Polski U15",
+    "location": "Polska",
+    "event_date": "2026-02-20",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": "U15",
+    "season": 2026,
+    "registration_deadline": "2026-02-12"
+  },
+  {
+    "title": "Turniej Nadziei Olimpijskich",
+    "location": "Polska",
+    "event_date": "2026-02-27",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-02-19"
+  },
+  {
+    "title": "Turniej U20 (17–20 lat)",
+    "location": "Polska",
+    "event_date": "2026-03-01",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": "U20",
+    "season": 2026,
+    "registration_deadline": "2026-02-21"
+  },
+  {
+    "title": "II Puchar Polski U17",
+    "location": "Polska",
+    "event_date": "2026-03-06",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": "U17",
+    "season": 2026,
+    "registration_deadline": "2026-02-26"
+  },
+  {
+    "title": "Turniej — Osielsko",
+    "location": "Osielsko",
+    "event_date": "2026-03-14",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-03-06"
+  },
+  {
+    "title": "Zawody — Białogard",
+    "location": "Białogard",
+    "event_date": "2026-03-21",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-03-13"
+  },
+  {
+    "title": "Mistrzostwa Polski juniorów U20 — Włodawa",
+    "location": "Włodawa",
+    "event_date": "2026-03-27",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": "U20",
+    "season": 2026,
+    "registration_deadline": "2026-03-19"
+  },
+  {
+    "title": "Mistrzostwa Polski juniorek U20 — Chęciny",
+    "location": "Chęciny",
+    "event_date": "2026-04-10",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": "U20",
+    "season": 2026,
+    "registration_deadline": "2026-04-02"
+  },
+  {
+    "title": "Bielawa — U14",
+    "location": "Bielawa",
+    "event_date": "2026-04-12",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": "U14",
+    "season": 2026,
+    "registration_deadline": "2026-04-04"
+  },
+  {
+    "title": "Ogólnopolska Olimpiada Młodzieży U17 — Spała",
+    "location": "Spała",
+    "event_date": "2026-04-13",
+    "end_date": "2026-04-16",
+    "event_type": "zawody",
+    "age_category": "U17",
+    "season": 2026,
+    "registration_deadline": "2026-04-05"
+  },
+  {
+    "title": "MMM (12–14 lat) — Stargard",
+    "location": "Stargard",
+    "event_date": "2026-04-25",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": "U12–14",
+    "season": 2026,
+    "registration_deadline": "2026-04-17"
+  },
+  {
+    "title": "Turniej — Świdwin",
+    "location": "Świdwin",
+    "event_date": "2026-05-15",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-05-07"
+  },
+  {
+    "title": "Mistrzostwa Polski LZS — Pelplin",
+    "location": "Pelplin",
+    "event_date": "2026-05-22",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-05-14"
+  },
+  {
+    "title": "Turniej — Szczecin",
+    "location": "Szczecin",
+    "event_date": "2026-06-06",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-05-29"
+  },
+  {
+    "title": "Turniej — Kołobrzeg",
+    "location": "Kołobrzeg",
+    "event_date": "2026-06-20",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-06-12"
+  },
+  {
+    "title": "Zgrupowanie — Borowice",
+    "location": "Borowice",
+    "event_date": "2026-07-14",
+    "end_date": null,
+    "event_type": "zgrupowanie",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-07-14"
+  },
+  {
+    "title": "Zgrupowanie — Pieczyska",
+    "location": "Pieczyska",
+    "event_date": "2026-08-17",
+    "end_date": null,
+    "event_type": "zgrupowanie",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-08-17"
+  },
+  {
+    "title": "Mistrzostwa szkół podstawowych",
+    "location": "Polska",
+    "event_date": "2026-09-18",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-09-10"
+  },
+  {
+    "title": "Turniej — Kraśnik",
+    "location": "Kraśnik",
+    "event_date": "2026-10-09",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-10-01"
+  },
+  {
+    "title": "EURO CUP",
+    "location": "Polska",
+    "event_date": "2026-10-10",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-10-02"
+  },
+  {
+    "title": "Turniej — Pelplin",
+    "location": "Pelplin",
+    "event_date": "2026-10-16",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-10-08"
+  },
+  {
+    "title": "Turniej — Międzyzdroje",
+    "location": "Międzyzdroje",
+    "event_date": "2026-10-17",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-10-09"
+  },
+  {
+    "title": "Turniej — Wolin",
+    "location": "Wolin",
+    "event_date": "2026-10-24",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-10-16"
+  },
+  {
+    "title": "Mistrzostwa Polski Młodzików U14 — Łódź",
+    "location": "Łódź",
+    "event_date": "2026-11-06",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": "U14",
+    "season": 2026,
+    "registration_deadline": "2026-10-29"
+  },
+  {
+    "title": "Mistrzostwa Polski Młodziczek U14 — Stróża",
+    "location": "Stróża",
+    "event_date": "2026-11-13",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": "U14",
+    "season": 2026,
+    "registration_deadline": "2026-11-05"
+  },
+  {
+    "title": "Turniej — Karlino",
+    "location": "Karlino",
+    "event_date": "2026-11-21",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-11-13"
+  },
+  {
+    "title": "Zawody — Białogard",
+    "location": "Białogard",
+    "event_date": "2026-11-28",
+    "end_date": null,
+    "event_type": "zawody",
+    "age_category": null,
+    "season": 2026,
+    "registration_deadline": "2026-11-20"
+  }
+]

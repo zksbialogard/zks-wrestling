@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
   BellRing,
   CalendarClock,
@@ -16,11 +16,8 @@ import {
 
 import Footer from "@/components/home/Footer";
 import ClubLogo from "@/components/ui/ClubLogo";
-import {
-  type BeforeInstallPromptEvent,
-  detectInstallPlatform,
-  isStandalonePwa,
-} from "@/lib/pwa-install-utils";
+import { usePwaInstall } from "@/components/pwa/PwaInstallProvider";
+import { getSiteUrl } from "@/lib/site-config";
 
 const BENEFITS = [
   { icon: CalendarClock, text: "Treningi, zawody i przypomnienia pod ręką" },
@@ -28,6 +25,25 @@ const BENEFITS = [
   { icon: ClipboardList, text: "Panel rodzica i zawodnika w jednej aplikacji" },
   { icon: Newspaper, text: "Aktualności i galeria bez logowania do przeglądarki" },
 ];
+
+function PageSection({
+  title,
+  children,
+  className = "",
+}: {
+  title: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`w-full ${className}`.trim()}>
+      <h2 className="text-center font-[family-name:var(--font-heading)] text-base font-bold uppercase tracking-[0.12em] text-zks-gold-mid sm:text-lg">
+        {title}
+      </h2>
+      <div className="mt-5 sm:mt-6">{children}</div>
+    </section>
+  );
+}
 
 function StepCard({
   step,
@@ -39,11 +55,11 @@ function StepCard({
   children: ReactNode;
 }) {
   return (
-    <li className="zks-card flex gap-4 p-4">
+    <li className="zks-card flex gap-4 p-4 sm:p-5">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zks-gold-mid/40 bg-zks-gold/10 font-[family-name:var(--font-heading)] text-sm font-bold text-zks-gold-bright">
         {step}
       </span>
-      <div className="min-w-0">
+      <div className="min-w-0 text-left">
         <h3 className="font-semibold text-white">{title}</h3>
         <div className="mt-1 text-sm leading-relaxed text-zks-text-muted">{children}</div>
       </div>
@@ -66,7 +82,8 @@ function IosInstructions() {
         </span>
       </StepCard>
       <StepCard step={3} title="Dodaj do ekranu początkowego">
-        Przewiń listę w dół i wybierz <strong className="text-zks-text">„Dodaj do ekranu początkowego”</strong>.
+        Przewiń listę w dół i wybierz{" "}
+        <strong className="text-zks-text">„Dodaj do ekranu początkowego”</strong>.
       </StepCard>
       <StepCard step={4} title="Potwierdź">
         Kliknij <strong className="text-zks-text">Dodaj</strong> w prawym górnym rogu. Ikona ZKS
@@ -79,23 +96,29 @@ function IosInstructions() {
   );
 }
 
-function AndroidInstructions({ canInstall, onInstall, installing }: {
+function AndroidInstructions({
+  canInstall,
+  onInstall,
+  installing,
+}: {
   canInstall: boolean;
   onInstall: () => void;
   installing: boolean;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {canInstall ? (
-        <button
-          type="button"
-          onClick={onInstall}
-          disabled={installing}
-          className="zks-btn-primary inline-flex w-full items-center justify-center gap-2 py-3 text-sm disabled:opacity-60 sm:w-auto sm:px-8"
-        >
-          <Download className="h-4 w-4" />
-          {installing ? "Instalowanie..." : "Zainstaluj aplikację"}
-        </button>
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={onInstall}
+            disabled={installing}
+            className="zks-btn-primary inline-flex w-full max-w-xs animate-pulse items-center justify-center gap-2 py-3.5 text-sm disabled:opacity-60 sm:animate-none"
+          >
+            <Download className="h-4 w-4" />
+            {installing ? "Instalowanie..." : "Zainstaluj aplikację"}
+          </button>
+        </div>
       ) : null}
 
       <ol className="space-y-3">
@@ -120,90 +143,70 @@ function AndroidInstructions({ canInstall, onInstall, installing }: {
 }
 
 function DesktopInstructions() {
+  const siteUrl = getSiteUrl();
+
   return (
-    <div className="space-y-4">
-      <div className="zks-card flex items-start gap-4 p-5">
-        <Smartphone className="mt-0.5 h-8 w-8 shrink-0 text-zks-gold-bright" />
-        <div>
-          <h3 className="font-semibold text-white">Otwórz tę stronę na telefonie</h3>
-          <p className="mt-2 text-sm leading-relaxed text-zks-text-muted">
-            Instalacja działa na smartfonie. Wejdź na telefonie na adres{" "}
-            <strong className="text-zks-text">zks-wrestling.vercel.app/pobierz</strong> albo
-            zeskanuj kod QR ze strony klubu.
-          </p>
-          <p className="mt-3 text-sm text-zks-text-muted">
-            W Chrome na komputerze też możesz kliknąć ikonę instalacji obok paska adresu (jeśli
-            przeglądarka ją pokaże).
-          </p>
-        </div>
+    <div className="zks-card mx-auto max-w-lg p-6 text-center sm:p-8">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-zks-gold-mid/30 bg-zks-gold/10">
+        <Smartphone className="h-7 w-7 text-zks-gold-bright" />
       </div>
+      <h3 className="mt-4 font-[family-name:var(--font-heading)] text-lg font-bold uppercase text-white">
+        Otwórz na telefonie
+      </h3>
+      <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zks-text-muted">
+        Instalacja działa na smartfonie. Wejdź na telefonie na adres{" "}
+        <strong className="text-zks-text">{siteUrl.replace(/^https:\/\//, "")}/pobierz</strong>{" "}
+        albo zeskanuj kod QR ze strony klubu.
+      </p>
+      <p className="mx-auto mt-4 max-w-md text-sm text-zks-text-muted">
+        Na komputerze kliknij ikonę instalacji obok paska adresu albo zakładkę{" "}
+        <strong className="text-zks-text">Pobierz Aplikację</strong> w menu.
+      </p>
     </div>
   );
 }
 
 export default function DownloadAppClient() {
-  const [platform, setPlatform] = useState<"ios" | "android" | "desktop">("desktop");
-  const [installed, setInstalled] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
-  const [installing, setInstalling] = useState(false);
+  const { platform, isInstalled, canInstall, installing, promptInstall } = usePwaInstall();
 
-  useEffect(() => {
-    setPlatform(detectInstallPlatform());
-    setInstalled(isStandalonePwa());
-
-    const onBeforeInstall = (event: Event) => {
-      event.preventDefault();
-      setDeferredPrompt(event as BeforeInstallPromptEvent);
-    };
-
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-    };
-  }, []);
-
-  const install = async () => {
-    if (!deferredPrompt) {
-      return;
-    }
-
-    setInstalling(true);
-
-    try {
-      await deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-
-      if (choice.outcome === "accepted") {
-        setInstalled(true);
-      }
-
-      setDeferredPrompt(null);
-    } finally {
-      setInstalling(false);
-    }
-  };
+  const instructionTitle =
+    platform === "ios"
+      ? "Instrukcja — iPhone"
+      : platform === "android"
+        ? "Instrukcja — Android"
+        : "Instrukcja — komputer";
 
   return (
     <main className="app-page">
-      <div className="mx-auto max-w-3xl">
-        <div className="text-center">
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-center px-4 sm:px-6">
+        <div className="download-hero zks-card w-full max-w-2xl border-zks-gold-mid/25 p-6 text-center sm:p-10">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border border-zks-gold-mid/30 bg-zks-gold/10 p-3">
             <ClubLogo size={64} glow priority />
           </div>
 
-          <h1 className="mt-6 font-[family-name:var(--font-heading)] text-4xl font-bold uppercase sm:text-5xl">
+          <h1 className="mt-6 font-[family-name:var(--font-heading)] text-3xl font-bold uppercase sm:text-4xl lg:text-5xl">
             Pobierz aplikację
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zks-text-muted sm:text-base">
+          <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-zks-text-muted sm:text-base">
             ZKS Białogard Manager — oficjalna aplikacja klubowa. Instalacja jest darmowa, bez
-            Google Play i App Store. Wystarczy dodać stronę na ekran główny telefonu.
+            Google Play i App Store.
           </p>
+
+          {!isInstalled && canInstall && platform !== "ios" ? (
+            <button
+              type="button"
+              onClick={() => void promptInstall()}
+              disabled={installing}
+              className="zks-btn-primary mx-auto mt-8 inline-flex min-w-[14rem] items-center justify-center gap-2 px-8 py-3.5 text-sm disabled:opacity-60 sm:text-base"
+            >
+              <Download className="h-5 w-5" />
+              {installing ? "Instalowanie..." : "Zainstaluj teraz"}
+            </button>
+          ) : null}
         </div>
 
-        {installed ? (
-          <div className="zks-card mt-10 border-emerald-500/30 bg-emerald-500/5 p-6 text-center">
+        {isInstalled ? (
+          <div className="zks-card mt-10 w-full max-w-2xl border-emerald-500/30 bg-emerald-500/5 p-6 text-center sm:mt-12 sm:p-8">
             <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-400" />
             <h2 className="mt-4 font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white">
               Aplikacja zainstalowana
@@ -226,61 +229,55 @@ export default function DownloadAppClient() {
             </div>
           </div>
         ) : (
-          <>
-            <section className="mt-10">
-              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold uppercase text-zks-gold-mid">
-                {platform === "ios"
-                  ? "Instrukcja — iPhone"
-                  : platform === "android"
-                    ? "Instrukcja — Android"
-                    : "Instrukcja — komputer"}
-              </h2>
-
-              <div className="mt-4">
+          <div className="mt-10 flex w-full max-w-2xl flex-col gap-10 sm:mt-12 sm:gap-12">
+            <PageSection title={instructionTitle}>
+              <div className="mx-auto w-full">
                 {platform === "ios" ? (
                   <IosInstructions />
                 ) : platform === "android" ? (
                   <AndroidInstructions
-                    canInstall={Boolean(deferredPrompt)}
-                    onInstall={install}
+                    canInstall={canInstall}
+                    onInstall={() => void promptInstall()}
                     installing={installing}
                   />
                 ) : (
                   <DesktopInstructions />
                 )}
               </div>
-            </section>
+            </PageSection>
 
-            <section className="mt-10">
-              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold uppercase text-zks-gold-mid">
-                Co zyskujesz
-              </h2>
-              <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-                {BENEFITS.map((item) => {
-                  const Icon = item.icon;
+            <PageSection title="Co zyskujesz">
+              <div className="flex justify-center">
+                <ul className="grid w-full max-w-2xl gap-3 sm:grid-cols-2 sm:gap-4">
+                  {BENEFITS.map((item) => {
+                    const Icon = item.icon;
 
-                  return (
-                    <li
-                      key={item.text}
-                      className="zks-card flex items-start gap-3 p-4 text-sm text-zks-text"
-                    >
-                      <Icon className="mt-0.5 h-5 w-5 shrink-0 text-zks-gold-bright" />
-                      {item.text}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          </>
+                    return (
+                      <li
+                        key={item.text}
+                        className="zks-card flex items-start gap-3 p-4 text-left text-sm text-zks-text sm:p-5"
+                      >
+                        <Icon className="mt-0.5 h-5 w-5 shrink-0 text-zks-gold-bright" />
+                        {item.text}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </PageSection>
+          </div>
         )}
 
-        <section className="zks-card mt-10 p-5 text-sm text-zks-text-muted">
+        <section className="zks-card mt-10 w-full max-w-xl p-5 text-center text-sm text-zks-text-muted sm:mt-12 sm:p-6">
           <p>
             <strong className="text-zks-text">Masz problem?</strong> Na iPhone używaj Safari. Po
             instalacji otwórz aplikację z ikony na pulpicie, a nie z zakładki przeglądarki.
           </p>
           <p className="mt-3">
-            <Link href="/kontakt" className="inline-flex items-center gap-1 text-zks-gold-bright hover:underline">
+            <Link
+              href="/kontakt"
+              className="inline-flex items-center gap-1 text-zks-gold-bright hover:underline"
+            >
               Kontakt z klubem
               <ExternalLink className="h-3.5 w-3.5" />
             </Link>

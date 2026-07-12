@@ -4,14 +4,14 @@ import {
   deleteGalleryImageFromSupabase,
   uploadGalleryImageToSupabase,
 } from "@/lib/gallery-supabase-storage";
-import { getAdminFromRequest } from "@/lib/verify-admin";
+import { getStaffFromRequest } from "@/lib/verify-admin";
 
 export async function POST(request: Request) {
   try {
-    const admin = await getAdminFromRequest(request);
+    const staff = await getStaffFromRequest(request);
 
-    if (!admin) {
-      return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+    if (!staff) {
+      return NextResponse.json({ error: "Brak uprawnień." }, { status: 401 });
     }
 
     const formData = await request.formData();
@@ -47,10 +47,10 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const admin = await getAdminFromRequest(request);
+    const staff = await getStaffFromRequest(request);
 
-    if (!admin) {
-      return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+    if (!staff) {
+      return NextResponse.json({ error: "Brak uprawnień." }, { status: 401 });
     }
 
     const body = await request.json();

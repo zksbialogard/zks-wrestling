@@ -4,15 +4,9 @@ import { revalidatePath } from "next/cache";
 import { notifyClubMembers } from "@/lib/notify-service";
 import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
+import { eventPayloadToRow, normalizeEventPayload } from "@/lib/event-api-payload";
 import { supabaseRestInsert, testSupabaseConnection } from "@/lib/supabase-rest";
-import { getAdminFromRequest } from "@/lib/verify-admin";
-
-type EventPayload = {
-  title: string;
-  location: string;
-  event_date: string;
-  registration_deadline: string;
-};
+import { getStaffFromRequest } from "@/lib/verify-admin";
 
 type NotifyPayload = {
   email?: boolean;
@@ -21,21 +15,8 @@ type NotifyPayload = {
   push?: boolean;
 };
 
-function validatePayload(body: unknown): EventPayload | null {
-  if (!body || typeof body !== "object") return null;
-
-  const { title, location, event_date, registration_deadline } = body as EventPayload;
-
-  if (!title?.trim() || !location?.trim() || !event_date || !registration_deadline) {
-    return null;
-  }
-
-  return {
-    title: title.trim(),
-    location: location.trim(),
-    event_date,
-    registration_deadline,
-  };
+function validatePayload(body: unknown) {
+  return normalizeEventPayload(body);
 }
 
 function hasSupabaseAdminKey() {
@@ -68,10 +49,10 @@ function mapServerError(error: unknown, context: string) {
 }
 
 export async function GET(request: Request) {
-  const admin = await getAdminFromRequest(request);
+  const staff = await getStaffFromRequest(request);
 
-  if (!admin) {
-    return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+  if (!staff) {
+    return NextResponse.json({ error: "Brak uprawnień." }, { status: 401 });
   }
 
   if (!hasSupabaseAdminKey()) {
@@ -94,10 +75,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const admin = await getAdminFromRequest(request);
+    const staff = await getStaffFromRequest(request);
 
-    if (!admin) {
-      return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+    if (!staff) {
+      return NextResponse.json({ error: "Brak uprawnień." }, { status: 401 });
     }
 
     const body = await request.json();
@@ -124,7 +105,7 @@ export async function POST(request: Request) {
     let data;
 
     try {
-      data = await supabaseRestInsert("events", payload);
+      data = await supabaseRestInsert("events", eventPayloadToRow(payload));
     } catch (insertError) {
       console.error("Supabase events insert:", insertError);
       return NextResponse.json(
@@ -137,6 +118,8 @@ export async function POST(request: Request) {
     revalidatePath("/zawody");
     revalidatePath("/zawody/najblizsze-zawody");
     revalidatePath("/admin/zawody");
+    revalidatePath("/moderator/zawody");
+    revalidatePath("/kalendarz-imprez");
 
     let notifyResult = null;
 

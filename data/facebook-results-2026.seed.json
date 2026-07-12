@@ -1,0 +1,181 @@
+{
+  "year": 2026,
+  "source": "facebook.com/zksbialogard + powiat-bialogard.pl + bialogardinfo.pl",
+  "events": [
+    {
+      "facebook_post_id": "seed-woj-olimp-2026-01-28",
+      "event_title": "Wojewódzka Olimpiada Młodzieży",
+      "event_date": "2026-01-28",
+      "location": "Kołobrzeg",
+      "source_url": "https://powiat-bialogard.pl/11,2996,kolejne-laury-zks",
+      "results": [
+        { "athlete_name": "Maja Ciesielska", "place": 2, "style": "styl wolny" },
+        { "athlete_name": "Alan Rodzoś", "place": 2, "style": "styl wolny" },
+        { "athlete_name": "Alan Rodzoś", "place": 2, "style": "styl klasyczny" },
+        { "athlete_name": "Maja Bugajczyk", "place": 3 },
+        { "athlete_name": "Szymon Piotrowski", "place": 3 }
+      ]
+    },
+    {
+      "facebook_post_id": "1442401794339881",
+      "event_title": "Międzynarodowe Mistrzostwa Polski U20",
+      "event_date": "2026-02-28",
+      "location": "Karlin",
+      "source_url": "https://www.facebook.com/zksbialogard/posts/1442401794339881",
+      "results": [
+        { "athlete_name": "Maja Ciesielska", "place": 5, "weight_class": "50" },
+        { "athlete_name": "Alan Rodzoś", "place": 8, "weight_class": "79" },
+        { "athlete_name": "Szymon Piotrowski", "place": 14, "weight_class": "74" }
+      ]
+    },
+    {
+      "facebook_post_id": "seed-puchar-kadetow-1-2026-02-01",
+      "event_title": "I Puchar Polski Kadetów i Kadetek",
+      "event_date": "2026-02-01",
+      "location": "Kielce",
+      "source_url": "https://bialogardinfo.pl/zapasnicy-z-bialogardu-na-pucharze-polski-kadetow-i-kadetek-foto/",
+      "results": [
+        { "athlete_name": "Mateusz Klus", "place": 3, "weight_class": "71" },
+        { "athlete_name": "Lena Gil", "place": 5 }
+      ]
+    },
+    {
+      "facebook_post_id": "seed-woj-mlodziki-2026-02-27",
+      "event_title": "Wojewódzkie Mistrzostwa Młodzików i Młodziczek",
+      "event_date": "2026-02-27",
+      "location": "Świdwin",
+      "source_url": "https://powiat-bialogard.pl/11,2725,zks-z-bardzo-dobrym-wynikiem",
+      "results": [
+        { "athlete_name": "Igor Kemprowski", "place": 1 },
+        { "athlete_name": "Maja Ciesielska", "place": 1 },
+        { "athlete_name": "Nadia Majtczak", "place": 1 },
+        { "athlete_name": "Mateusz Klus", "place": 2 },
+        { "athlete_name": "Maja Bugajczyk", "place": 2 },
+        { "athlete_name": "Wiktor Romejko", "place": 3 },
+        { "athlete_name": "Nikodem Paryż", "place": 5 },
+        { "athlete_name": "Olek Sengstock", "place": 5 },
+        { "athlete_name": "Oliwia Rudzińska", "place": 5 },
+        { "athlete_name": "Marcin Cabanek", "place": 5 }
+      ]
+    },
+    {
+      "facebook_post_id": "seed-mp-u15-2026-02-21",
+      "event_title": "Mistrzostwa Polski U15",
+      "event_date": "2026-02-21",
+      "location": "Koronowo",
+      "source_url": "https://powiat-bialogard.pl/11,3795,powiat-bialogardzki",
+      "results": [
+        { "athlete_name": "Lena Gil", "place": 3 },
+        { "athlete_name": "Natalia Bohdziewicz", "place": 5 },
+        { "athlete_name": "Wiwiana Wyżlic", "place": 8 }
+      ]
+    },
+    {
+      "facebook_post_id": "1446701957243198",
+      "event_title": "II Puchar Polski Kadetów i Kadetek",
+      "event_date": "2026-03-07",
+      "location": "Siedlce",
+      "source_url": "https://powiat-bialogard.pl/11,3806,braz-zks",
+      "results": [
+        { "athlete_name": "Lena Gil", "place": 3, "weight_class": "73" }
+      ]
+    },
+    {
+      "facebook_post_id": "1450794400167287",
+      "event_title": "Otwarte Mistrzostwa Gminy Osielsko",
+      "event_date": "2026-03-14",
+      "location": "Osielsko",
+      "source_url": "https://bialogardinfo.pl/bialogardzcy-zapasnicy-z-sukcesami-zobacz-wyniki-foto/",
+      "results": [
+        { "athlete_name": "Mateusz Karut", "place": 1 },
+        { "athlete_name": "Wiktor Gliwa", "place": 1 },
+        { "athlete_name": "Filip Sikora", "place": 2 },
+        { "athlete_name": "Jeremi Kosiorek", "place": 2 },
+        { "athlete_name": "Hubert Napora", "place": 3 },
+        { "athlete_name": "Artur Rakowski", "place": 3 },
+        { "athlete_name": "Borys Smorawski", "place": 7 },
+        { "athlete_name": "Michał Mróz", "place": 8 },
+        { "athlete_name": "Michał Jaworowski", "place": 8 }
+      ]
+    },
+    {
+      "facebook_post_id": "1457171626196231",
+      "event_title": "III Memoriał Trenerów Andrzeja Szwenka i Tadeusza Krawczyka",
+      "event_date": "2026-03-21",
+      "location": "Białogard",
+      "source_url": "https://www.facebook.com/zksbialogard/posts/1457171626196231",
+      "results": [
+        { "athlete_name": "Filip Sikora", "place": 1 },
+        { "athlete_name": "Tymoteusz Król", "place": 1 },
+        { "athlete_name": "Andrzej Wiedeński", "place": 1 },
+        { "athlete_name": "Nadia Dybińska", "place": 1 },
+        { "athlete_name": "Jeremi Kosiorek", "place": 1 },
+        { "athlete_name": "Marcel Gąsiorowski", "place": 1 },
+        { "athlete_name": "Szymon Szajdecki", "place": 1 },
+        { "athlete_name": "Michał Jaworowski", "place": 1 },
+        { "athlete_name": "Robert Rakowski", "place": 1 },
+        { "athlete_name": "Tymon Nowak", "place": 1 },
+        { "athlete_name": "Leon Kołotiuk", "place": 1 },
+        { "athlete_name": "Stanisław Bankowski", "place": 1 },
+        { "athlete_name": "Lila Wyżlic", "place": 1 },
+        { "athlete_name": "Alan Grygonis", "place": 2 },
+        { "athlete_name": "Michał Mróz", "place": 2 },
+        { "athlete_name": "Milena Stempniewicz", "place": 2 },
+        { "athlete_name": "Mateusz Karut", "place": 2 }
+      ]
+    },
+    {
+      "facebook_post_id": "1473497101230350",
+      "event_title": "Mistrzostwa Polski Juniorek",
+      "event_date": "2026-04-10",
+      "location": "Chęciny",
+      "source_url": "https://bialogardinfo.pl/weekend-nalezal-do-bialogardzkich-zapasnikow-mnostwo-zdobytych-medali-foto/",
+      "results": [
+        { "athlete_name": "Maja Ciesielska", "place": 2 }
+      ]
+    },
+    {
+      "facebook_post_id": "1474288814484512",
+      "event_title": "Międzynarodowe Mistrzostwa Polski Młodzików i Młodziczek",
+      "event_date": "2026-04-11",
+      "location": "Bielawa",
+      "source_url": "https://bialogardinfo.pl/weekend-nalezal-do-bialogardzkich-zapasnikow-mnostwo-zdobytych-medali-foto/",
+      "results": [
+        { "athlete_name": "Wiwiana Wyżlic", "place": 1, "weight_class": "58" },
+        { "athlete_name": "Hubert Napora", "place": 3, "weight_class": "38" },
+        { "athlete_name": "Jeremi Kosiorek", "place": 5 },
+        { "athlete_name": "Natalia Bohdziewicz", "place": 5 },
+        { "athlete_name": "Filip Sikora", "place": 5 }
+      ]
+    },
+    {
+      "facebook_post_id": "1476469840933076",
+      "event_title": "XXXII Ogólnopolska Olimpiada Młodzieży",
+      "event_date": "2026-04-13",
+      "location": "Spała",
+      "source_url": "https://lzs.pl/2026/04/16/32-ogolnopolska-olimpiada-mlodziezy-w-sportach-halowych-lodzkie-2026-28-medali-zdobyli-zapasnicy-stylu-wolnego-z-klubow-zrzeszenia/",
+      "results": [
+        { "athlete_name": "Mateusz Klus", "place": 2, "weight_class": "71", "style": "styl wolny" }
+      ]
+    },
+    {
+      "facebook_post_id": "seed-mmm-2026-04-25",
+      "event_title": "Międzywojewódzkie Mistrzostwa Młodzików i Młodziczek",
+      "event_date": "2026-04-25",
+      "location": "Stargard",
+      "source_url": "https://bialogardinfo.pl/zawodnicy-zapasniczego-klubu-sportowego-w-bialogardzie-z-bardzo-dobrym-wystepem-podczas-miedzywojewodzkich-mistrzostw-mlodzikow-i-mlodziczek/",
+      "results": [
+        { "athlete_name": "Natalia Bohdziewicz", "place": 1, "weight_class": "46" },
+        { "athlete_name": "Wiwiana Wyżlic", "place": 1, "weight_class": "58" },
+        { "athlete_name": "Nadia Dybińska", "place": 2, "weight_class": "42" },
+        { "athlete_name": "Jeremi Kosiorek", "place": 2, "weight_class": "52" },
+        { "athlete_name": "Hubert Napora", "place": 5, "weight_class": "38" },
+        { "athlete_name": "Filip Sikora", "place": 5, "weight_class": "48" },
+        { "athlete_name": "Filip Marchocki", "place": 5, "weight_class": "68" },
+        { "athlete_name": "Artur Rakowski", "place": 7, "weight_class": "57" },
+        { "athlete_name": "Milena Stempniewicz", "place": 7, "weight_class": "50" },
+        { "athlete_name": "Ksawery Gajda", "place": 10 }
+      ]
+    }
+  ]
+}

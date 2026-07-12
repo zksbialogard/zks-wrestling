@@ -2,15 +2,15 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
 import { deleteGalleryItem } from "@/lib/gallery-server";
-import { getAdminFromRequest } from "@/lib/verify-admin";
+import { getStaffFromRequest } from "@/lib/verify-admin";
 
 /** @deprecated Usuwanie odbywa się w Firestore po stronie klienta (zalogowany admin). */
 export async function DELETE(request: Request) {
   try {
-    const admin = await getAdminFromRequest(request);
+    const staff = await getStaffFromRequest(request);
 
-    if (!admin) {
-      return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+    if (!staff) {
+      return NextResponse.json({ error: "Brak uprawnień." }, { status: 401 });
     }
 
     const body = await request.json();

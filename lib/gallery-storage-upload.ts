@@ -4,7 +4,7 @@ async function getAuthHeader() {
   const user = auth.currentUser;
 
   if (!user) {
-    throw new Error("Musisz być zalogowany jako administrator.");
+    throw new Error("Musisz być zalogowany z uprawnieniami moderatora lub administratora.");
   }
 
   const token = await user.getIdToken(true);

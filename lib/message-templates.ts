@@ -6,7 +6,9 @@ export type TemplateKey =
   | "training_cancelled"
   | "training_reminder"
   | "news_published"
-  | "gallery_published";
+  | "gallery_published"
+  | "app_update"
+  | "event_upcoming";
 
 export type MessageTemplate = {
   key: TemplateKey;
@@ -105,6 +107,28 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
     sms_text: "ZKS Białogard: nowe zdjęcie w galerii — {{title}}.",
     push_title: "Nowe zdjęcie — {{title}}",
     push_body: "Zobacz galerię klubową w aplikacji.",
+  },
+  {
+    key: "app_update",
+    name: "Aktualizacja aplikacji",
+    subject: "ZKS Białogard — dostępna nowa wersja aplikacji",
+    body_text:
+      "Dostępna jest nowa wersja aplikacji klubowej ZKS Białogard. Otwórz aplikację i wybierz „Odśwież”, aby zaktualizować.",
+    body_html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#111"><h2 style="color:#d4af37">Nowa wersja aplikacji</h2><p>Dostępna jest aktualizacja aplikacji klubowej.</p><p>Otwórz aplikację i wybierz <strong>Odśwież</strong>, aby pobrać najnowszą wersję.</p><p><a href="{{link}}">Instrukcja aktualizacji</a></p></div>`,
+    sms_text: "ZKS Białogard: dostępna nowa wersja aplikacji. Otwórz ją i wybierz Odśwież.",
+    push_title: "Nowa wersja aplikacji",
+    push_body: "Otwórz aplikację i wybierz „Odśwież”, aby zaktualizować.",
+  },
+  {
+    key: "event_upcoming",
+    name: "Zbliżająca się impreza (2 tygodnie)",
+    subject: "ZKS Białogard — za 2 tygodnie: {{title}}",
+    body_text:
+      "Za 2 tygodnie startują zawody {{title}} w {{location}} ({{eventDate}}). Termin zgłoszeń: {{registrationDeadline}}. Sprawdź kalendarz imprez w aplikacji.",
+    body_html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#111"><h2 style="color:#d4af37">Za 2 tygodnie — {{title}}</h2><p>Miejsce: {{location}}</p><p>Data: {{eventDate}}</p><p>Termin zgłoszeń: {{registrationDeadline}}</p><p><a href="{{link}}">Kalendarz imprez</a></p></div>`,
+    sms_text: "ZKS Białogard: za 2 tyg. {{title}}, {{location}}, {{eventDate}}.",
+    push_title: "Za 2 tygodnie — {{title}}",
+    push_body: "{{location}} · {{eventDate}}. Zapisy do {{registrationDeadline}}.",
   },
 ];
 

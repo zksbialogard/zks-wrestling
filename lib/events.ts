@@ -1,4 +1,5 @@
 import { auth } from "./firebase";
+import type { EventType } from "./event-types";
 import { supabase } from "./supabase";
 
 export type Event = {
@@ -7,6 +8,12 @@ export type Event = {
   location: string;
   event_date: string;
   registration_deadline: string;
+  event_type?: EventType | string;
+  end_date?: string | null;
+  age_category?: string | null;
+  season?: number | null;
+  notes?: string | null;
+  registrations_enabled?: boolean | null;
 };
 
 export async function fetchEvents(): Promise<Event[]> {
@@ -42,7 +49,7 @@ async function getAuthHeader() {
   const user = auth.currentUser;
 
   if (!user) {
-    throw new Error("Musisz być zalogowany jako administrator.");
+    throw new Error("Musisz być zalogowany z uprawnieniami moderatora lub administratora.");
   }
 
   const token = await user.getIdToken();
@@ -68,6 +75,12 @@ export async function createEvent(data: {
   location: string;
   event_date: string;
   registration_deadline: string;
+  event_type?: EventType;
+  end_date?: string | null;
+  age_category?: string | null;
+  season?: number | null;
+  notes?: string | null;
+  registrations_enabled?: boolean | null;
   notify?: {
     email?: boolean;
     sms?: boolean;
@@ -126,6 +139,12 @@ export async function updateEvent(
     location: string;
     event_date: string;
     registration_deadline: string;
+    event_type?: EventType;
+    end_date?: string | null;
+    age_category?: string | null;
+    season?: number | null;
+    notes?: string | null;
+    registrations_enabled?: boolean | null;
   }
 ) {
   const headers = await getAuthHeader();

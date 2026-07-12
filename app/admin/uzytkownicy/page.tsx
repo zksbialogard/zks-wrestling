@@ -1,18 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  updateDoc,
-} from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
 import { RefreshCw, Trash2 } from "lucide-react";
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { db } from "@/lib/firebase";
+import { ROLE_LABELS, USER_ROLES, getRoleLabel } from "@/lib/user-roles";
+import { updateUserRoleAsAdmin } from "@/lib/users-admin-client";
 
 interface UserItem {
   id: string;
@@ -24,12 +21,12 @@ interface UserItem {
   rola?: string;
 }
 
-const roles = ["rodzic", "trener", "moderator", "admin"];
-
 export default function AdminUzytkownicyPage() {
+  const { user } = useAuth();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   const loadUsers = async () => {
     try {
@@ -54,13 +51,21 @@ export default function AdminUzytkownicyPage() {
   }, []);
 
   const changeRole = async (id: string, rola: string) => {
+    if (!user) {
+      toast.error("Zaloguj się ponownie jako administrator.");
+      return;
+    }
+
     try {
-      await updateDoc(doc(db, "users", id), { rola });
-      toast.success("Rola zaktualizowana.");
+      setSavingId(id);
+      await updateUserRoleAsAdmin(id, rola as (typeof USER_ROLES)[number]);
+      toast.success(`Rola zmieniona na: ${getRoleLabel(rola)}. Użytkownik zobaczy nowy panel po odświeżeniu.`);
       await loadUsers();
     } catch (error) {
       console.error(error);
-      toast.error("Nie udało się zmienić roli.");
+      toast.error(error instanceof Error ? error.message : "Nie udało się zmienić roli.");
+    } finally {
+      setSavingId(null);
     }
   };
 
@@ -77,20 +82,25 @@ export default function AdminUzytkownicyPage() {
     }
   };
 
-  const filteredUsers = users.filter((user) => {
+  const filteredUsers = users.filter((userItem) => {
+    if (userItem.rola === "zawodnik") {
+      return false;
+    }
+
     const phrase = search.toLowerCase();
     return (
-      user.imie?.toLowerCase().includes(phrase) ||
-      user.nazwisko?.toLowerCase().includes(phrase) ||
-      user.email?.toLowerCase().includes(phrase)
+      userItem.imie?.toLowerCase().includes(phrase) ||
+      userItem.nazwisko?.toLowerCase().includes(phrase) ||
+      userItem.email?.toLowerCase().includes(phrase) ||
+      getRoleLabel(userItem.rola).toLowerCase().includes(phrase)
     );
   });
 
   return (
     <>
       <AdminPageHeader
-        title="Rodzice i użytkownicy"
-        description="Zarządzaj kontami, rolami i dostępem do paneli."
+        title="Rodzice"
+        description="Konta rodziców i pozostałych użytkowników (admin, trener). Konta zawodnika zarządzaj w sekcji Zawodnicy."
         action={
           <button
             type="button"
@@ -117,38 +127,51 @@ export default function AdminUzytkownicyPage() {
         <div className="zks-card p-6 text-zks-text-muted">Nie znaleziono użytkowników.</div>
       ) : (
         <div className="grid gap-4">
-          {filteredUsers.map((user) => (
-            <div key={user.id} className="zks-card p-6">
-              <h2 className="text-xl font-bold text-white">
-                {user.imie || "Brak"} {user.nazwisko || "danych"}
-              </h2>
+          {filteredUsers.map((userItem) => (
+            <div key={userItem.id} className="zks-card p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-white">
+                    {userItem.imie || "Brak"} {userItem.nazwisko || "danych"}
+                  </h2>
+                  <p className="mt-1 text-xs uppercase tracking-wide text-zks-gold-mid">
+                    Aktualna rola: {getRoleLabel(userItem.rola)}
+                  </p>
+                </div>
+              </div>
 
               <div className="mt-3 space-y-1 text-sm text-zks-text">
-                <p>Email: {user.email || "-"}</p>
-                <p>Telefon: {user.telefon || "-"}</p>
-                {user.uid && <p className="break-all text-xs text-zks-text-muted">UID: {user.uid}</p>}
+                <p>Email: {userItem.email || "-"}</p>
+                <p>Telefon: {userItem.telefon || "-"}</p>
+                {userItem.uid && (
+                  <p className="break-all text-xs text-zks-text-muted">UID: {userItem.uid}</p>
+                )}
               </div>
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <label className="text-xs uppercase tracking-wide text-zks-gold-mid">
-                  Rola
+                  Zmień rolę
                 </label>
                 <select
-                  value={user.rola || "rodzic"}
-                  onChange={(e) => changeRole(user.id, e.target.value)}
-                  className="rounded-lg border border-zks-gold-mid/30 bg-zks-black px-3 py-2 text-sm text-white outline-none"
+                  value={userItem.rola || "rodzic"}
+                  disabled={savingId === userItem.id}
+                  onChange={(e) => changeRole(userItem.id, e.target.value)}
+                  className="rounded-lg border border-zks-gold-mid/30 bg-zks-black px-3 py-2 text-sm text-white outline-none disabled:opacity-60"
                 >
-                  {roles.map((role) => (
+                  {USER_ROLES.map((role) => (
                     <option key={role} value={role}>
-                      {role}
+                      {ROLE_LABELS[role]}
                     </option>
                   ))}
                 </select>
+                {savingId === userItem.id ? (
+                  <span className="text-xs text-zks-text-muted">Zapisywanie...</span>
+                ) : null}
               </div>
 
               <button
                 type="button"
-                onClick={() => removeUser(user.id)}
+                onClick={() => removeUser(userItem.id)}
                 className="mt-5 inline-flex items-center gap-2 rounded-lg border border-red-500/40 px-4 py-2 text-xs text-red-400 transition hover:bg-red-500/10"
               >
                 <Trash2 className="h-4 w-4" />

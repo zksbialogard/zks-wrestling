@@ -15,7 +15,14 @@ import {
   signOut,
   type User,
 } from "firebase/auth";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  type QuerySnapshot,
+  type DocumentData,
+} from "firebase/firestore";
 
 import { auth, db } from "@/lib/firebase";
 import { getPanelHref } from "@/lib/panel-routes";
@@ -44,62 +51,76 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function mapProfileSnapshot(snapshot: QuerySnapshot<DocumentData>): UserProfile | null {
+  if (snapshot.empty) {
+    return null;
+  }
+
+  const docSnap = snapshot.docs[0];
+
+  return {
+    id: docSnap.id,
+    ...(docSnap.data() as Omit<UserProfile, "id">),
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [ready, setReady] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(false);
 
-  const loadProfile = useCallback(async (uid: string) => {
-    setLoadingProfile(true);
-
-    try {
-      const snapshot = await getDocs(
-        query(collection(db, "users"), where("uid", "==", uid))
-      );
-
-      if (snapshot.empty) {
-        setProfile(null);
-        return;
-      }
-
-      const docSnap = snapshot.docs[0];
-      setProfile({
-        id: docSnap.id,
-        ...(docSnap.data() as Omit<UserProfile, "id">),
-      });
-    } catch (error) {
-      console.error(error);
-      setProfile(null);
-    } finally {
-      setLoadingProfile(false);
-    }
-  }, []);
-
   useEffect(() => {
     let active = true;
 
     void setPersistence(auth, browserLocalPersistence).catch(console.error);
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (!active) return;
 
       setUser(firebaseUser);
 
-      if (firebaseUser) {
-        await loadProfile(firebaseUser.uid);
-      } else {
+      if (!firebaseUser) {
         setProfile(null);
+        setLoadingProfile(false);
+        setReady(true);
+      } else {
+        setLoadingProfile(true);
       }
-
-      setReady(true);
     });
 
     return () => {
       active = false;
       unsubscribe();
     };
-  }, [loadProfile]);
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    setLoadingProfile(true);
+
+    const profileQuery = query(collection(db, "users"), where("uid", "==", user.uid));
+
+    const unsubscribe = onSnapshot(
+      profileQuery,
+      (snapshot) => {
+        setProfile(mapProfileSnapshot(snapshot));
+        setLoadingProfile(false);
+        setReady(true);
+      },
+      (error) => {
+        console.error(error);
+        setProfile(null);
+        setLoadingProfile(false);
+        setReady(true);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
 
   const logout = useCallback(async () => {
     await signOut(auth);
@@ -108,9 +129,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (!auth.currentUser) return;
-    await loadProfile(auth.currentUser.uid);
-  }, [loadProfile]);
+    // Profil odświeża się na żywo przez onSnapshot — zostawione dla kompatybilności.
+  }, []);
 
   const panelHref = getPanelHref(profile?.rola);
 

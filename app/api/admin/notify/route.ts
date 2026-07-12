@@ -4,7 +4,7 @@ import { notifyClubMembers, type NotifyChannels } from "@/lib/notify-service";
 import { sanitizeNotifyResult } from "@/lib/notify-result-utils";
 import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
 import { type TemplateKey } from "@/lib/message-templates";
-import { getAdminFromRequest } from "@/lib/verify-admin";
+import { getStaffFromRequest } from "@/lib/verify-admin";
 
 type NotifyBody = {
   templateKey: TemplateKey;
@@ -17,10 +17,10 @@ type NotifyBody = {
 
 export async function POST(request: Request) {
   try {
-    const admin = await getAdminFromRequest(request);
+    const staff = await getStaffFromRequest(request);
 
-    if (!admin) {
-      return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+    if (!staff) {
+      return NextResponse.json({ error: "Brak uprawnień." }, { status: 401 });
     }
 
     await seedDefaultTemplatesIfEmpty();

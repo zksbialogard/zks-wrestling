@@ -121,7 +121,26 @@ export async function verifyFirebaseToken(idToken: string) {
   }
 }
 
+type VerifiedUser = { localId: string; email?: string };
+
+type StaffUser = VerifiedUser & { profile: UserProfile; rola: string };
+
 export async function verifyAdminToken(idToken: string) {
+  try {
+    const staff = await verifyStaffToken(idToken);
+
+    if (!staff || staff.rola !== "admin") {
+      return null;
+    }
+
+    return { localId: staff.localId, email: staff.email };
+  } catch (error) {
+    console.error("verifyAdminToken:", error);
+    return null;
+  }
+}
+
+export async function verifyStaffToken(idToken: string): Promise<StaffUser | null> {
   try {
     const user = await verifyFirebaseToken(idToken);
 
@@ -131,13 +150,18 @@ export async function verifyAdminToken(idToken: string) {
 
     const profile = await getUserProfileViaRest(user.localId);
 
-    if (!profile || profile.rola !== "admin") {
+    if (!profile || (profile.rola !== "admin" && profile.rola !== "moderator")) {
       return null;
     }
 
-    return user;
+    return {
+      localId: user.localId,
+      email: user.email,
+      profile,
+      rola: profile.rola,
+    };
   } catch (error) {
-    console.error("verifyAdminToken:", error);
+    console.error("verifyStaffToken:", error);
     return null;
   }
 }
@@ -181,6 +205,22 @@ export async function getAdminFromRequest(request: Request) {
     return await verifyAdminToken(token);
   } catch (error) {
     console.error("getAdminFromRequest:", error);
+    return null;
+  }
+}
+
+export async function getStaffFromRequest(request: Request) {
+  try {
+    const authHeader = request.headers.get("authorization");
+
+    if (!authHeader?.startsWith("Bearer ")) {
+      return null;
+    }
+
+    const token = authHeader.slice(7);
+    return await verifyStaffToken(token);
+  } catch (error) {
+    console.error("getStaffFromRequest:", error);
     return null;
   }
 }

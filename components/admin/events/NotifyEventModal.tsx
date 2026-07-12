@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Modal, { ModalBody, ModalFooter, ModalHeader } from "@/components/ui/Modal";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,7 +40,11 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
     try {
       setLoading(true);
 
-      const syncedCount = await syncParentsFromFirebaseToSupabase();
+      try {
+        await syncParentsFromFirebaseToSupabase();
+      } catch (syncError) {
+        console.warn("Parent sync skipped:", syncError);
+      }
 
       const result = sanitizeNotifyResult(
         await sendAdminNotify({
@@ -61,9 +66,7 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
         })
       );
 
-      toast.success(
-        `${formatNotifyResultMessage(result)} (zsynchronizowano ${syncedCount} rodziców)`
-      );
+      toast.success(formatNotifyResultMessage(result));
 
       if (result.warnings.length) {
         toast.warning(result.warnings.slice(0, 2).join(" "));
@@ -84,9 +87,9 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
   }
 
   return (
-    <div className="zks-modal-overlay">
-      <div className="zks-modal-panel zks-card p-6 sm:p-8">
-        <div className="mb-6 flex items-center justify-between">
+    <Modal open={open}>
+      <ModalHeader>
+        <div className="flex items-center justify-between">
           <div>
             <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-white">
               Wyślij powiadomienie
@@ -104,8 +107,9 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
             <X className="h-5 w-5" />
           </button>
         </div>
+      </ModalHeader>
 
-        <div className="space-y-4">
+      <ModalBody className="space-y-4">
           <label className="block space-y-2">
             <span className="text-xs uppercase tracking-wide text-zks-gold-mid">
               Szablon wiadomości
@@ -144,23 +148,22 @@ export default function NotifyEventModal({ open, event, onClose }: Props) {
             />
             Powiadomienie w aplikacji + push
           </label>
-        </div>
+      </ModalBody>
 
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="zks-btn-outline px-5 py-2.5 text-sm">
-            Anuluj
-          </button>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={handleSend}
-            className="zks-btn-primary inline-flex items-center gap-2 px-6 py-2.5 text-sm disabled:opacity-60"
-          >
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {loading ? "Wysyłanie..." : "Wyślij"}
-          </button>
-        </div>
-      </div>
-    </div>
+      <ModalFooter>
+        <button type="button" onClick={onClose} className="zks-btn-outline px-5 py-2.5 text-sm">
+          Anuluj
+        </button>
+        <button
+          type="button"
+          disabled={loading}
+          onClick={handleSend}
+          className="zks-btn-primary inline-flex items-center gap-2 px-6 py-2.5 text-sm disabled:opacity-60"
+        >
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {loading ? "Wysyłanie..." : "Wyślij"}
+        </button>
+      </ModalFooter>
+    </Modal>
   );
 }

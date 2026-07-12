@@ -6,7 +6,7 @@ import {
   updateFirebaseNews,
 } from "@/lib/news-firebase";
 import { createSupabaseAdmin } from "@/lib/supabase";
-import { getAdminFromRequest } from "@/lib/verify-admin";
+import { getStaffFromRequest } from "@/lib/verify-admin";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -22,10 +22,10 @@ function isFirebaseId(id: string) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
-    const admin = await getAdminFromRequest(request);
+    const staff = await getStaffFromRequest(request);
 
-    if (!admin) {
-      return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+    if (!staff) {
+      return NextResponse.json({ error: "Brak uprawnień." }, { status: 401 });
     }
 
     const { id } = await context.params;
@@ -83,10 +83,10 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(request: Request, context: RouteContext) {
   try {
-    const admin = await getAdminFromRequest(request);
+    const staff = await getStaffFromRequest(request);
 
-    if (!admin) {
-      return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+    if (!staff) {
+      return NextResponse.json({ error: "Brak uprawnień." }, { status: 401 });
     }
 
     const { id } = await context.params;

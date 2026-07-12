@@ -43,7 +43,7 @@ export default function News({
     <section className="home-news-section relative w-full overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-950/90 to-black" />
 
-      <div className="home-news-inner relative mx-auto w-full max-w-6xl">
+      <div className="home-news-inner relative mx-auto w-full max-w-7xl px-4 sm:px-6">
         <header className="home-news-header">
           <p className="home-news-kicker">ZKS Białogard</p>
           <h2 className="home-news-title">Aktualności</h2>

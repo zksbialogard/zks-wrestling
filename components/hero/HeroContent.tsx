@@ -6,7 +6,7 @@ import HeroButtons from "./HeroButtons";
 
 export default function HeroContent() {
   return (
-    <div className="w-full text-left">
+    <div className="mx-auto w-full max-w-xl text-center lg:mx-0 lg:max-w-none lg:text-left">
       <motion.p
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -51,7 +51,7 @@ export default function HeroContent() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="mt-6 max-w-xl text-base leading-relaxed text-zks-text sm:text-lg"
+        className="mt-6 max-w-xl text-base leading-relaxed text-zks-text sm:text-lg lg:mx-0 mx-auto"
       >
         Klub zapaśniczy z tradycjami. Szkolimy dzieci, młodzież i seniorów.
         Tworzymy zawodników gotowych do walki nie tylko na macie, ale również

@@ -11,6 +11,14 @@
     {
       "path": "/api/cron/training-reminders/15",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/app-update-notify",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/facebook-results",
+      "schedule": "0 6 * * *"
     }
   ],
   "headers": [

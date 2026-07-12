@@ -32,7 +32,7 @@ export default function WhyUs() {
       <div className="absolute inset-0 bg-gradient-to-b from-zks-black via-zks-black-soft to-zks-black" />
       <div className="pointer-events-none absolute left-1/2 top-0 h-[min(70vw,22rem)] w-[min(70vw,22rem)] -translate-x-1/2 rounded-full bg-zks-gold/10 blur-[120px]" />
 
-      <div className="home-why-inner relative mx-auto w-full max-w-6xl">
+      <div className="home-why-inner relative mx-auto w-full max-w-7xl px-4 sm:px-6">
         <motion.header
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -50,7 +50,8 @@ export default function WhyUs() {
           </p>
         </motion.header>
 
-        <div className="home-why-grid">
+        <div className="flex w-full justify-center">
+          <div className="home-why-grid">
           {cards.map((card, index) => {
             const Icon = card.icon;
 
@@ -71,6 +72,7 @@ export default function WhyUs() {
               </motion.article>
             );
           })}
+          </div>
         </div>
       </div>
     </section>

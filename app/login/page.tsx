@@ -9,7 +9,9 @@ import { toast } from "sonner";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthField from "@/components/auth/AuthField";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { getPanelHref } from "@/lib/panel-routes";
+import { getPanelHref, isPanelPathAllowedForRole } from "@/lib/panel-routes";
+import { loginAsGuest } from "@/lib/guest-auth";
+import { isGuestRole } from "@/lib/user-roles";
 import { auth } from "@/lib/firebase";
 
 function LoginForm() {
@@ -20,13 +22,22 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
 
   const nextPath = searchParams.get("next");
 
   useEffect(() => {
     if (!ready || !user || !profile) return;
 
-    const destination = nextPath || getPanelHref(profile.rola);
+    if (isGuestRole(profile.rola)) {
+      router.replace("/");
+      return;
+    }
+
+    const destination =
+      nextPath && isPanelPathAllowedForRole(nextPath, profile.rola)
+        ? nextPath
+        : getPanelHref(profile.rola);
 
     router.replace(destination);
   }, [ready, user, profile, nextPath, router]);
@@ -49,6 +60,22 @@ function LoginForm() {
       toast.error("Błędny email lub hasło.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const continueAsGuest = async () => {
+    setGuestLoading(true);
+
+    try {
+      await loginAsGuest();
+      toast.success("Kontynuujesz jako gość — dostęp tylko do podglądu strony.");
+      router.replace("/");
+    } catch {
+      toast.error(
+        "Nie udało się wejść jako gość. W Firebase włącz Anonymous Authentication."
+      );
+    } finally {
+      setGuestLoading(false);
     }
   };
 
@@ -100,11 +127,29 @@ function LoginForm() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || guestLoading}
           className="zks-btn-primary w-full py-3.5 text-sm disabled:opacity-60"
         >
           {loading ? "Logowanie..." : "Zaloguj się"}
         </button>
+
+        <div className="relative py-2 text-center">
+          <span className="bg-zks-black px-3 text-xs uppercase tracking-wide text-zks-text-muted">
+            lub
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={continueAsGuest}
+          disabled={loading || guestLoading}
+          className="zks-btn-outline w-full py-3.5 text-sm disabled:opacity-60"
+        >
+          {guestLoading ? "Łączenie..." : "Kontynuuj jako gość"}
+        </button>
+        <p className="text-center text-xs leading-relaxed text-zks-text-muted">
+          Gość może przeglądać stronę klubu bez panelu rodzica, zawodnika i bez zapisów.
+        </p>
       </form>
     </AuthLayout>
   );

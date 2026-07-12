@@ -8,6 +8,7 @@ import { X } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { GuestAuthTiles, LoggedInAuthTiles } from "./AuthTiles";
+import PobierzNavLink, { isPobierzLink } from "./PobierzNavLink";
 import { getPanelLabel } from "@/lib/panel-routes";
 import { publicLinks } from "./navLinks";
 
@@ -96,14 +97,26 @@ export default function MobileMenu({ onLogout }: MobileMenuProps) {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.05 + index * 0.05 }}
                   >
-                    <Link
-                      href={link.href}
-                      onClick={closeMenu}
-                      className="group flex items-center rounded-xl px-4 py-4 font-[family-name:var(--font-heading)] text-base font-medium uppercase tracking-wide text-zks-text transition hover:bg-zks-charcoal hover:text-zks-gold-bright"
-                    >
-                      <span className="mr-3 h-1.5 w-1.5 rounded-full bg-zks-gold-mid opacity-0 transition group-hover:opacity-100" />
-                      {link.label}
-                    </Link>
+                    {isPobierzLink(link.href) ? (
+                      <PobierzNavLink
+                        href={link.href}
+                        label={link.label}
+                        onNavigate={closeMenu}
+                        className="group flex items-center rounded-xl px-4 py-4 font-[family-name:var(--font-heading)] text-base font-medium uppercase tracking-wide text-zks-text transition hover:bg-zks-charcoal hover:text-zks-gold-bright"
+                      >
+                        <span className="mr-3 h-1.5 w-1.5 rounded-full bg-zks-gold-mid opacity-0 transition group-hover:opacity-100" />
+                        {link.label}
+                      </PobierzNavLink>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        onClick={closeMenu}
+                        className="group flex items-center rounded-xl px-4 py-4 font-[family-name:var(--font-heading)] text-base font-medium uppercase tracking-wide text-zks-text transition hover:bg-zks-charcoal hover:text-zks-gold-bright"
+                      >
+                        <span className="mr-3 h-1.5 w-1.5 rounded-full bg-zks-gold-mid opacity-0 transition group-hover:opacity-100" />
+                        {link.label}
+                      </Link>
+                    )}
                   </motion.div>
                 ))}
               </nav>

@@ -77,6 +77,15 @@ export async function findChildByIdentityKey(db: Firestore, identityKey: string)
   return parseChildDoc(item.id, item.data());
 }
 
+function shouldSetPrimaryParent(child: ChildRecordFields, parentUid: string) {
+  const current = child.parentUid?.trim();
+  if (!current || current === "admin") {
+    return true;
+  }
+
+  return !isParentLinkedToChild(child, parentUid);
+}
+
 export async function linkParentToChild(
   db: Firestore,
   childId: string,
@@ -97,6 +106,9 @@ export async function linkParentToChild(
 
   await updateDoc(ref, {
     parentUids: arrayUnion(parentUid),
+    ...(shouldSetPrimaryParent(data as ChildRecordFields, parentUid)
+      ? { parentUid }
+      : {}),
   });
 
   const updated = await getDoc(ref);

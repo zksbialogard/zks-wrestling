@@ -4,42 +4,22 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Download, Share, X } from "lucide-react";
 
-import {
-  type BeforeInstallPromptEvent,
-  isIosDevice,
-  isStandalonePwa,
-} from "@/lib/pwa-install-utils";
+import { usePwaInstall } from "@/components/pwa/PwaInstallProvider";
 
 export default function InstallPrompt() {
+  const { canInstall, isInstalled, isIos, promptInstall } = usePwaInstall();
   const [visible, setVisible] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
-  const [iosHint, setIosHint] = useState(false);
 
   useEffect(() => {
-    if (isStandalonePwa()) return;
+    if (isInstalled) return;
 
     const dismissed = sessionStorage.getItem("zks-pwa-dismissed");
     if (dismissed) return;
 
-    if (isIosDevice()) {
-      setIosHint(true);
+    if (isIos || canInstall) {
       setVisible(true);
-      return;
     }
-
-    const onBeforeInstall = (event: Event) => {
-      event.preventDefault();
-      setDeferredPrompt(event as BeforeInstallPromptEvent);
-      setVisible(true);
-    };
-
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-    };
-  }, []);
+  }, [isInstalled, isIos, canInstall]);
 
   const dismiss = () => {
     sessionStorage.setItem("zks-pwa-dismissed", "1");
@@ -47,12 +27,10 @@ export default function InstallPrompt() {
   };
 
   const install = async () => {
-    if (!deferredPrompt) return;
-
-    await deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
-    setVisible(false);
+    const accepted = await promptInstall();
+    if (accepted) {
+      setVisible(false);
+    }
   };
 
   if (!visible) return null;
@@ -62,7 +40,7 @@ export default function InstallPrompt() {
       <div className="zks-card mx-auto max-w-md border-zks-gold-mid/40 p-4 shadow-gold-glow-sm">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zks-gold-mid/30 bg-zks-gold/10">
-            {iosHint ? (
+            {isIos ? (
               <Share className="h-5 w-5 text-zks-gold-bright" />
             ) : (
               <Download className="h-5 w-5 text-zks-gold-bright" />
@@ -74,12 +52,12 @@ export default function InstallPrompt() {
               Zainstaluj aplikację ZKS
             </p>
             <p className="mt-1 text-xs leading-relaxed text-zks-text-muted">
-              {iosHint
+              {isIos
                 ? "Dotknij Udostępnij, potem „Dodaj do ekranu początkowego”, aby uruchamiać klub jak aplikację."
                 : "Dodaj ZKS Manager na ekran główny telefonu — szybki dostęp do panelu i aktualności."}
             </p>
 
-            {!iosHint && deferredPrompt && (
+            {!isIos && canInstall && (
               <button
                 type="button"
                 onClick={install}

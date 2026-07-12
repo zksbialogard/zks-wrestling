@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 
 import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
 import { notifyClubMembers } from "@/lib/notify-service";
-import { getAdminFromRequest } from "@/lib/verify-admin";
+import { getStaffFromRequest } from "@/lib/verify-admin";
 
 async function notifyGalleryPublished(title: string) {
   await seedDefaultTemplatesIfEmpty();
@@ -23,10 +23,10 @@ async function notifyGalleryPublished(title: string) {
 
 export async function POST(request: Request) {
   try {
-    const admin = await getAdminFromRequest(request);
+    const staff = await getStaffFromRequest(request);
 
-    if (!admin) {
-      return NextResponse.json({ error: "Brak uprawnień administratora." }, { status: 401 });
+    if (!staff) {
+      return NextResponse.json({ error: "Brak uprawnień." }, { status: 401 });
     }
 
     const body = await request.json();

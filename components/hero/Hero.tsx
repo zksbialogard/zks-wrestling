@@ -13,8 +13,8 @@ export default function Hero() {
     <section className="relative min-h-screen overflow-hidden bg-zks-black">
       <HeroBackground />
 
-      <div className="relative z-20 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 pb-12 pt-28 lg:pt-32">
-        <div className="grid flex-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
+      <div className="relative z-20 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pb-12 pt-28 sm:px-6 lg:pt-32">
+        <div className="grid flex-1 items-center gap-10 lg:grid-cols-2 lg:items-center lg:gap-12 xl:gap-16">
           <HeroContent />
           <HeroShield />
         </div>
