@@ -17,7 +17,7 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import PlacePicker from "@/components/admin/PlacePicker";
 import AuthField from "@/components/auth/AuthField";
 import Modal, { ModalBody, ModalFooter, ModalHeader } from "@/components/ui/Modal";
-import ConfirmModal from "@/components/ui/confirmModal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { formatEventDate } from "@/lib/event-utils";
 import { joinAthleteName, splitAthleteName } from "@/lib/athlete-name-utils";
 import { clubPlaceLabel, placeLabel } from "@/lib/place-utils";

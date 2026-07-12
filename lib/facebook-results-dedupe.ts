@@ -19,7 +19,14 @@ function normalizeStyle(style?: string | null) {
   return "";
 }
 
-function athleteResultKey(row: Pick<ResultRow, "event_title" | "event_date" | "athlete_name" | "place" | "style" | "weight_class">) {
+function athleteResultKey(row: {
+  event_title: string;
+  event_date?: string | null;
+  athlete_name: string;
+  place?: number | null;
+  style?: string | null;
+  weight_class?: string | null;
+}) {
   return [
     extractEventSignature(row.event_title),
     normalizeAthleteNameKey(row.athlete_name),
@@ -114,7 +121,14 @@ export function groupFacebookEvents(events: FacebookEventResults[]) {
   return mergeEventGroups(events);
 }
 
-export function buildSemanticResultKey(row: FacebookResultInput | ResultRow) {
+export function buildSemanticResultKey(row: {
+  event_title: string;
+  event_date?: string | null;
+  athlete_name: string;
+  place?: number | null;
+  style?: string | null;
+  weight_class?: string | null;
+}) {
   return athleteResultKey(row);
 }
 
