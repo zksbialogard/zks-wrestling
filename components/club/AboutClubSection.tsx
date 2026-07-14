@@ -437,6 +437,18 @@ export default function AboutClubSection({ variant = "home" }: AboutClubSectionP
 
               <Link
 
+                href="/wideo"
+
+                className="zks-btn-outline inline-flex items-center justify-center gap-2 px-7 py-3.5 text-sm sm:px-8"
+
+              >
+
+                Wideo
+
+              </Link>
+
+              <Link
+
                 href="/kontakt"
 
                 className="zks-btn-outline inline-flex items-center justify-center gap-2 px-7 py-3.5 text-sm sm:px-8"

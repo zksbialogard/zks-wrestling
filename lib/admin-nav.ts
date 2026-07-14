@@ -3,6 +3,7 @@ import {
   ClipboardList,
   Bell,
   Dumbbell,
+  Film,
   Images,
   LayoutDashboard,
   Medal,
@@ -30,6 +31,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: "aktualnosci", name: "Aktualności", href: "/admin/aktualnosci", icon: Newspaper },
   { id: "szablony", name: "Powiadomienia", href: "/admin/szablony", icon: Bell },
   { id: "galeria", name: "Galeria", href: "/admin/galeria", icon: Images },
+  { id: "wideo", name: "Wideo", href: "/admin/wideo", icon: Film },
 ];
 
 export const ADMIN_BOTTOM_PRIMARY: AdminNavItem[] = [
@@ -45,6 +47,7 @@ export const ADMIN_BOTTOM_MORE: AdminNavItem[] = [
   ADMIN_NAV_ITEMS[5],
   ADMIN_NAV_ITEMS[7],
   ADMIN_NAV_ITEMS[9],
+  ADMIN_NAV_ITEMS[10],
   ADMIN_NAV_ITEMS[8],
 ];
 

@@ -14,6 +14,7 @@ export const PUBLIC_INDEXABLE_PATHS = [
   "/",
   "/aktualnosci",
   "/galeria",
+  "/wideo",
   "/kontakt",
   "/klub/o-klubie",
   "/zawody",

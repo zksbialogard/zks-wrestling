@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Images, LayoutDashboard, Newspaper, Trophy } from "lucide-react";
+import { Images, Film, LayoutDashboard, Newspaper, Trophy } from "lucide-react";
 
 export type ModeratorNavItem = {
   id: string;
@@ -30,6 +30,13 @@ export const MODERATOR_NAV_ITEMS: ModeratorNavItem[] = [
     href: "/moderator/galeria",
     icon: Images,
     description: "Publikuj zdjęcia z wydarzeń",
+  },
+  {
+    id: "wideo",
+    name: "Wideo",
+    href: "/moderator/wideo",
+    icon: Film,
+    description: "Dodawaj filmy z YouTube lub krótkie nagrania",
   },
   {
     id: "zawody",

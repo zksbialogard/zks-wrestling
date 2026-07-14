@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   CalendarPlus,
   ChevronRight,
+  Film,
   Image as ImageIcon,
   Newspaper,
   UserPlus,
@@ -27,6 +28,12 @@ const actions = [
     description: "Uzupełnij galerię klubową.",
     href: "/admin/galeria",
     icon: ImageIcon,
+  },
+  {
+    title: "Dodaj wideo",
+    description: "Opublikuj film z YouTube lub pliku.",
+    href: "/admin/wideo",
+    icon: Film,
   },
   {
     title: "Dodaj zawodnika",

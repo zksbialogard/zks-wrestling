@@ -9,6 +9,7 @@ export const publicLinks: NavLink[] = [
   { label: "Kalendarz imprez", href: "/kalendarz-imprez" },
   { label: "Wyniki zawodów", href: "/zawody/wyniki-zawodow" },
   { label: "Aktualności", href: "/aktualnosci" },
+  { label: "Wideo", href: "/wideo" },
   { label: "Pobierz Aplikację", href: "/pobierz" },
   { label: "Kontakt", href: "/kontakt" },
 ];
