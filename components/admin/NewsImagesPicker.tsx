@@ -87,7 +87,7 @@ export default function NewsImagesPicker({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 rounded-xl border border-zks-gold-mid/25 bg-zks-black/20 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-xs font-medium uppercase tracking-[0.15em] text-zks-gold-mid">
           Zdjęcia (opcjonalnie)

@@ -124,7 +124,7 @@ export default function AdminAktualnosciPage() {
     <>
       <AdminPageHeader
         title="Aktualności"
-        description="Dodawaj, edytuj i usuwaj komunikaty widoczne dla rodziców i na stronie klubu."
+        description="Dodawaj komunikaty z wieloma zdjęciami naraz — widoczne dla rodziców i na stronie klubu."
       />
 
       <form ref={formRef} onSubmit={saveNews} className="zks-card mb-8 space-y-4 p-6">
