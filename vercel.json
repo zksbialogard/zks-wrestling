@@ -5,12 +5,20 @@
       "schedule": "0 16 * * *"
     },
     {
-      "path": "/api/cron/training-reminders/11",
-      "schedule": "0 9,10 * * *"
+      "path": "/api/cron/training-reminders/11/cet",
+      "schedule": "0 10 * * *"
     },
     {
-      "path": "/api/cron/training-reminders/14",
-      "schedule": "0 12,13 * * *"
+      "path": "/api/cron/training-reminders/11/cest",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/training-reminders/14/cet",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/training-reminders/14/cest",
+      "schedule": "0 12 * * *"
     },
     {
       "path": "/api/cron/app-update-notify",
