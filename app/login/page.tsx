@@ -12,6 +12,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { getPanelHref, isPanelPathAllowedForRole } from "@/lib/panel-routes";
 import { loginAsGuest } from "@/lib/guest-auth";
 import { isGuestRole } from "@/lib/user-roles";
+import { requestPasswordReset } from "@/lib/password-reset-client";
 import { auth } from "@/lib/firebase";
 
 function LoginForm() {
@@ -23,6 +24,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [guestLoading, setGuestLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const nextPath = searchParams.get("next");
 
@@ -60,6 +62,42 @@ function LoginForm() {
       toast.error("Błędny email lub hasło.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      router.push("/zapomnialem-hasla");
+      return;
+    }
+
+    if (resetLoading) {
+      return;
+    }
+
+    setResetLoading(true);
+
+    try {
+      await requestPasswordReset(trimmedEmail);
+      toast.success(`Wysłaliśmy link do resetu hasła na ${trimmedEmail}.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+
+      if (message === "INVALID_EMAIL") {
+        toast.error("Nieprawidłowy adres email.");
+        return;
+      }
+
+      if (message === "RATE_LIMIT") {
+        toast.error("Zbyt wiele prób. Spróbuj ponownie za chwilę.");
+        return;
+      }
+
+      toast.error("Nie udało się wysłać linku. Spróbuj ponownie.");
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -117,17 +155,19 @@ function LoginForm() {
         />
 
         <div className="text-right">
-          <Link
-            href="/zapomnialem-hasla"
-            className="text-sm text-zks-gold-mid transition hover:text-zks-gold-bright"
+          <button
+            type="button"
+            onClick={handleForgotPassword}
+            disabled={loading || guestLoading || resetLoading}
+            className="text-sm text-zks-gold-mid transition hover:text-zks-gold-bright disabled:opacity-60"
           >
-            Zapomniałem hasła
-          </Link>
+            {resetLoading ? "Wysyłanie linku..." : "Zapomniałem hasła"}
+          </button>
         </div>
 
         <button
           type="submit"
-          disabled={loading || guestLoading}
+          disabled={loading || guestLoading || resetLoading}
           className="zks-btn-primary w-full py-3.5 text-sm disabled:opacity-60"
         >
           {loading ? "Logowanie..." : "Zaloguj się"}
@@ -142,7 +182,7 @@ function LoginForm() {
         <button
           type="button"
           onClick={continueAsGuest}
-          disabled={loading || guestLoading}
+          disabled={loading || guestLoading || resetLoading}
           className="zks-btn-outline w-full py-3.5 text-sm disabled:opacity-60"
         >
           {guestLoading ? "Łączenie..." : "Kontynuuj jako gość"}

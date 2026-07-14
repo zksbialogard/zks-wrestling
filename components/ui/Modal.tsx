@@ -41,7 +41,7 @@ export default function Modal({ children, open = true }: ModalProps) {
 
   return createPortal(
     <div className="zks-modal-overlay" role="dialog" aria-modal="true">
-      <div className="zks-modal-panel zks-card">{children}</div>
+      <div className="zks-modal-panel">{children}</div>
     </div>,
     document.body
   );

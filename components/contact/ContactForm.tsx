@@ -163,7 +163,7 @@ export default function ContactForm() {
       <button
         type="submit"
         disabled={sending}
-        className="zks-btn-primary inline-flex w-full items-center justify-center gap-2 py-3.5 text-sm disabled:opacity-60 sm:w-auto sm:px-8"
+        className="zks-btn-primary inline-flex w-full items-center justify-center gap-2 px-10 py-3.5 text-sm disabled:opacity-60"
       >
         {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         Wyślij wiadomość

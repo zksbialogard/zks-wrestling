@@ -40,10 +40,14 @@
     var(--zks-gold-deep)
   );
 
-  /* Cienie / glow */
-  --zks-glow: 0 0 30px rgba(247, 209, 84, 0.35);
-  --zks-glow-sm: 0 0 20px rgba(247, 209, 84, 0.2);
-  --zks-glow-lg: 0 0 50px rgba(247, 209, 84, 0.45);
+  /* Cienie / glow — warstwowe, bez „rozmazanego” halo */
+  --zks-glow: 0 0 0 1px rgba(197, 160, 89, 0.28), 0 8px 28px rgba(247, 209, 84, 0.14);
+  --zks-glow-sm: 0 0 0 1px rgba(197, 160, 89, 0.22), 0 4px 18px rgba(247, 209, 84, 0.1);
+  --zks-glow-lg: 0 0 0 1px rgba(247, 209, 84, 0.35), 0 12px 36px rgba(247, 209, 84, 0.2);
+  --zks-glow-danger: 0 0 0 1px rgba(248, 113, 113, 0.35), 0 6px 22px rgba(239, 68, 68, 0.12);
+  --zks-border-gold: color-mix(in srgb, var(--zks-gold-mid) 52%, transparent);
+  --zks-border-gold-soft: color-mix(in srgb, var(--zks-gold-mid) 28%, transparent);
+  --zks-border-danger: color-mix(in srgb, #f87171 48%, transparent);
 
   /* shadcn — mapowanie na paletę klubu */
   --gold: var(--zks-gold);
@@ -186,10 +190,12 @@ img {
 }
 
 .zks-card {
-  background: var(--zks-charcoal);
-  border: 1px solid rgba(197, 160, 89, 0.25);
-  border-radius: var(--radius);
-  box-shadow: var(--zks-glow-sm);
+  background: linear-gradient(165deg, #111111 0%, var(--zks-charcoal) 55%, #0d0d0d 100%);
+  border: 1.5px solid var(--zks-border-gold-soft);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow:
+    inset 0 1px 0 rgba(247, 209, 84, 0.06),
+    var(--zks-glow-sm);
 }
 
 .zks-card-pad {
@@ -1012,8 +1018,14 @@ img {
   flex: 0 1 auto;
   flex-direction: column;
   overflow: hidden;
+  border: 1.5px solid var(--zks-border-gold);
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
+  background: linear-gradient(165deg, #121212 0%, var(--zks-charcoal) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(247, 209, 84, 0.08),
+    0 24px 48px rgba(0, 0, 0, 0.55),
+    var(--zks-glow);
 }
 
 @media (min-width: 640px) {
@@ -1098,33 +1110,123 @@ img {
   color: var(--zks-black);
   font-family: var(--font-heading), "Oswald", sans-serif;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  border-radius: var(--radius);
-  box-shadow: var(--zks-glow);
-  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid color-mix(in srgb, var(--zks-gold-highlight) 65%, transparent);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(61, 43, 31, 0.25),
+    var(--zks-glow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .zks-btn-primary:hover {
-  box-shadow: var(--zks-glow-lg);
-  transform: translateY(-2px);
+  border-color: var(--zks-gold-highlight);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    var(--zks-glow-lg);
+  transform: translateY(-1px);
+}
+
+.zks-btn-primary:active {
+  transform: translateY(0);
 }
 
 .zks-btn-outline {
-  background: transparent;
+  background: color-mix(in srgb, var(--zks-gold-mid) 7%, transparent);
   color: var(--zks-white);
-  border: 1px solid var(--zks-gold-mid);
+  border: 1.5px solid var(--zks-border-gold);
+  font-family: var(--font-heading), "Oswald", sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow:
+    inset 0 1px 0 rgba(247, 209, 84, 0.07),
+    0 0 0 1px rgba(0, 0, 0, 0.2);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.zks-btn-outline:hover {
+  background: color-mix(in srgb, var(--zks-gold) 16%, transparent);
+  border-color: var(--zks-gold-bright);
+  color: var(--zks-gold-bright);
+  box-shadow:
+    inset 0 1px 0 rgba(247, 209, 84, 0.12),
+    var(--zks-glow-sm);
+  transform: translateY(-1px);
+}
+
+.zks-btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 55%, #b91c1c 100%);
+  color: #fff;
+  font-family: var(--font-heading), "Oswald", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid color-mix(in srgb, #fca5a5 55%, transparent);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    var(--zks-glow-danger);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.zks-btn-danger:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 0 0 1px rgba(248, 113, 113, 0.4),
+    0 10px 28px rgba(239, 68, 68, 0.22);
+  transform: translateY(-1px);
+}
+
+.zks-btn-danger-outline {
+  background: color-mix(in srgb, #ef4444 8%, transparent);
+  color: #fca5a5;
+  border: 1.5px solid var(--zks-border-danger);
   font-family: var(--font-heading), "Oswald", sans-serif;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  border-radius: var(--radius);
-  transition: background 0.2s, color 0.2s;
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow:
+    inset 0 1px 0 rgba(248, 113, 113, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.18);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.zks-btn-outline:hover {
-  background: var(--zks-gold);
-  color: var(--zks-black);
+.zks-btn-danger-outline:hover {
+  background: color-mix(in srgb, #ef4444 16%, transparent);
+  border-color: #f87171;
+  color: #fecaca;
+  box-shadow: var(--zks-glow-danger);
+}
+
+.zks-btn-danger-ghost {
+  color: #f87171;
+  border: 1.5px solid transparent;
+  border-radius: calc(var(--radius) + 2px);
+  background: transparent;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.zks-btn-danger-ghost:hover {
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  border-color: var(--zks-border-danger);
+  color: #fecaca;
 }
 
 @theme inline {

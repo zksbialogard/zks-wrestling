@@ -1,5 +1,13 @@
 import { canAccessPanel, isGuestRole } from "./user-roles";
 
+export function hasParentPanelAccess(rola?: string): boolean {
+  return rola === "rodzic" || rola === "trener" || rola === "moderator";
+}
+
+export function hasModeratorPanelAccess(rola?: string): boolean {
+  return rola === "moderator";
+}
+
 export function getPanelHref(rola?: string): string {
   if (isGuestRole(rola) || !canAccessPanel(rola)) {
     return "/";
@@ -80,7 +88,7 @@ export function isPanelPathAllowedForRole(pathname: string, rola?: string): bool
   }
 
   if (pathname.startsWith("/panel-rodzica") || pathname.startsWith("/moje-dzieci")) {
-    return rola === "rodzic" || rola === "trener";
+    return hasParentPanelAccess(rola);
   }
 
   return true;

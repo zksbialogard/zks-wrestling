@@ -4,10 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Calendar,
+  CheckSquare,
   Loader2,
   Pencil,
   Plus,
   RefreshCw,
+  Square,
   Trash2,
   Trophy,
   X,
@@ -25,6 +27,7 @@ import {
   createAdminFacebookResult,
   deleteAdminFacebookEventGroup,
   deleteAdminFacebookResult,
+  deleteAdminFacebookResults,
   fetchAdminFacebookResults,
   syncAdminFacebookResults,
   updateAdminFacebookEventGroup,
@@ -63,6 +66,10 @@ type ResultNameForm = {
   lastName: string;
 };
 
+function buildEventCardKey(event: FacebookEventResults) {
+  return `${event.facebook_post_id}::${event.event_title}`;
+}
+
 export default function FacebookResultsAdminPage() {
   const [year, setYear] = useState(DEFAULT_RESULTS_YEAR);
   const [events, setEvents] = useState<FacebookEventResults[]>([]);
@@ -90,9 +97,13 @@ export default function FacebookResultsAdminPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<
     | { type: "result"; id: string; label: string }
+    | { type: "bulk"; ids: string[]; label: string }
     | { type: "event"; facebookPostId: string; eventTitle: string; label: string }
     | null
   >(null);
+
+  const [selectionModeEventKey, setSelectionModeEventKey] = useState<string | null>(null);
+  const [selectedResultIds, setSelectedResultIds] = useState<Set<string>>(new Set());
 
   const loadResults = useCallback(async (showLoading = true) => {
     try {
@@ -156,6 +167,7 @@ export default function FacebookResultsAdminPage() {
   };
 
   const openEditEvent = (event: FacebookEventResults) => {
+    exitSelectionMode();
     setEditingEvent(event);
     setEventForm({
       event_title: event.event_title,
@@ -250,15 +262,35 @@ export default function FacebookResultsAdminPage() {
     if (!deleteTarget) return;
 
     try {
+      let newsAction: string | undefined;
+
       if (deleteTarget.type === "result") {
-        await deleteAdminFacebookResult(deleteTarget.id);
+        const result = await deleteAdminFacebookResult(deleteTarget.id);
+        newsAction = result.news?.action;
         toast.success("Wynik usunięty.");
+      } else if (deleteTarget.type === "bulk") {
+        const result = await deleteAdminFacebookResults(deleteTarget.ids);
+        newsAction = result.news?.action;
+        toast.success(
+          result.deletedCount === 1
+            ? "Usunięto 1 wynik."
+            : `Usunięto ${result.deletedCount} wyników.`
+        );
+        exitSelectionMode();
       } else {
-        await deleteAdminFacebookEventGroup(
+        const result = await deleteAdminFacebookEventGroup(
           deleteTarget.facebookPostId,
           deleteTarget.eventTitle
         );
+        newsAction = result.news?.action;
         toast.success("Zawody i wszystkie wyniki usunięte.");
+        exitSelectionMode();
+      }
+
+      if (newsAction === "deleted") {
+        toast.success("Powiązana aktualność została usunięta.");
+      } else if (newsAction === "updated") {
+        toast.success("Powiązana aktualność została zaktualizowana.");
       }
 
       setDeleteTarget(null);
@@ -285,6 +317,64 @@ export default function FacebookResultsAdminPage() {
   };
 
   const totalResults = events.reduce((sum, event) => sum + event.results.length, 0);
+
+  const exitSelectionMode = () => {
+    setSelectionModeEventKey(null);
+    setSelectedResultIds(new Set());
+  };
+
+  const toggleSelectionMode = (event: FacebookEventResults) => {
+    const eventKey = buildEventCardKey(event);
+
+    if (selectionModeEventKey === eventKey) {
+      exitSelectionMode();
+      return;
+    }
+
+    setSelectionModeEventKey(eventKey);
+    setSelectedResultIds(new Set());
+  };
+
+  const toggleResultSelection = (resultId: string) => {
+    setSelectedResultIds((current) => {
+      const next = new Set(current);
+      if (next.has(resultId)) {
+        next.delete(resultId);
+      } else {
+        next.add(resultId);
+      }
+      return next;
+    });
+  };
+
+  const selectAllInEvent = (event: FacebookEventResults) => {
+    setSelectedResultIds(new Set(event.results.map((result) => result.id)));
+  };
+
+  const requestBulkDelete = (event: FacebookEventResults) => {
+    const ids = event.results
+      .map((result) => result.id)
+      .filter((id) => selectedResultIds.has(id));
+
+    if (!ids.length) {
+      toast.error("Zaznacz co najmniej jeden wynik do usunięcia.");
+      return;
+    }
+
+    const labels = event.results
+      .filter((result) => selectedResultIds.has(result.id))
+      .map((result) => `${result.athlete_name} (${placeLabel(result.place)})`)
+      .slice(0, 5);
+
+    const suffix =
+      ids.length > labels.length ? ` i ${ids.length - labels.length} więcej` : "";
+
+    setDeleteTarget({
+      type: "bulk",
+      ids,
+      label: `${labels.join(", ")}${suffix}`,
+    });
+  };
 
   return (
     <>
@@ -316,7 +406,7 @@ export default function FacebookResultsAdminPage() {
             await loadResults(false);
           }}
           disabled={syncing || loading}
-          className="zks-btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm disabled:opacity-60"
+          className="zks-btn-primary inline-flex items-center gap-2 px-5 py-2.5 text-sm disabled:opacity-60"
         >
           <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
           {syncing ? "Pobieranie..." : "Pobierz z Facebooka"}
@@ -326,7 +416,7 @@ export default function FacebookResultsAdminPage() {
           type="button"
           onClick={() => loadResults()}
           disabled={syncing}
-          className="zks-btn-outline inline-flex items-center gap-2 px-4 py-2 text-sm disabled:opacity-60"
+          className="zks-btn-outline inline-flex items-center gap-2 px-5 py-2.5 text-sm disabled:opacity-60"
         >
           Odśwież listę
         </button>
@@ -334,7 +424,7 @@ export default function FacebookResultsAdminPage() {
         <button
           type="button"
           onClick={() => openAddResult()}
-          className="zks-btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm"
+          className="zks-btn-primary inline-flex items-center gap-2 px-5 py-2.5 text-sm"
         >
           <Plus className="h-4 w-4" />
           Dodaj wynik
@@ -353,8 +443,17 @@ export default function FacebookResultsAdminPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {events.map((event) => (
-            <article key={`${event.facebook_post_id}-${event.event_title}`} className="zks-card p-6">
+          {events.map((event) => {
+            const eventKey = buildEventCardKey(event);
+            const isSelecting = selectionModeEventKey === eventKey;
+            const selectedCount = event.results.filter((result) =>
+              selectedResultIds.has(result.id)
+            ).length;
+            const allSelected =
+              event.results.length > 0 && selectedCount === event.results.length;
+
+            return (
+            <article key={eventKey} className="zks-card p-6">
               <div className="flex flex-col gap-4 border-b border-zks-gold-mid/15 pb-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex gap-3">
                   <Trophy className="mt-1 h-5 w-5 shrink-0 text-zks-gold-bright" />
@@ -397,15 +496,27 @@ export default function FacebookResultsAdminPage() {
                   <button
                     type="button"
                     onClick={() => openAddResult(event)}
-                    className="zks-btn-outline inline-flex items-center gap-1.5 px-3 py-1.5 text-xs"
+                    disabled={isSelecting}
+                    className="zks-btn-outline inline-flex items-center gap-1.5 px-3 py-1.5 text-xs disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Wynik
                   </button>
                   <button
                     type="button"
+                    onClick={() => toggleSelectionMode(event)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs ${
+                      isSelecting ? "zks-btn-primary" : "zks-btn-outline"
+                    }`}
+                  >
+                    <CheckSquare className="h-3.5 w-3.5" />
+                    {isSelecting ? "Anuluj wybór" : "Edytuj wyniki"}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => openEditEvent(event)}
-                    className="zks-btn-outline inline-flex items-center gap-1.5 px-3 py-1.5 text-xs"
+                    disabled={isSelecting}
+                    className="zks-btn-outline inline-flex items-center gap-1.5 px-3 py-1.5 text-xs disabled:opacity-50"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                     Edytuj zawody
@@ -420,7 +531,8 @@ export default function FacebookResultsAdminPage() {
                         label: event.event_title,
                       })
                     }
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/40 px-3 py-1.5 text-xs text-red-400 transition hover:bg-red-500/10"
+                    disabled={isSelecting}
+                    className="zks-btn-danger-outline inline-flex items-center gap-1.5 px-4 py-2 text-xs disabled:opacity-50"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Usuń zawody
@@ -428,13 +540,67 @@ export default function FacebookResultsAdminPage() {
                 </div>
               </div>
 
+              {isSelecting && (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zks-gold-mid/25 bg-zks-gold/5 px-4 py-3">
+                  <p className="text-sm text-zks-text-muted">
+                    Zaznacz wyniki do usunięcia ({selectedCount}/{event.results.length})
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        allSelected ? setSelectedResultIds(new Set()) : selectAllInEvent(event)
+                      }
+                      className="zks-btn-outline px-3 py-1.5 text-xs"
+                    >
+                      {allSelected ? "Odznacz wszystkie" : "Zaznacz wszystkie"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => requestBulkDelete(event)}
+                      disabled={selectedCount === 0}
+                      className="zks-btn-danger-outline inline-flex items-center gap-1.5 px-4 py-2 text-xs disabled:opacity-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Usuń zaznaczone{selectedCount > 0 ? ` (${selectedCount})` : ""}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <ul className="mt-4 space-y-2">
-                {event.results.map((result) => (
+                {event.results.map((result) => {
+                  const isSelected = selectedResultIds.has(result.id);
+
+                  return (
                   <li
                     key={result.id}
-                    className="flex flex-col gap-2 rounded-xl border border-zks-gold-mid/10 bg-zks-black/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                    className={`flex flex-col gap-2 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
+                      isSelecting && isSelected
+                        ? "border-zks-gold-mid/40 bg-zks-gold/10"
+                        : "border-zks-gold-mid/10 bg-zks-black/40"
+                    }`}
                   >
-                    <div className="text-sm">
+                    <div className="flex items-start gap-3 text-sm">
+                      {isSelecting && (
+                        <button
+                          type="button"
+                          onClick={() => toggleResultSelection(result.id)}
+                          className="mt-0.5 shrink-0 text-zks-gold-bright"
+                          aria-label={
+                            isSelected
+                              ? `Odznacz wynik ${result.athlete_name}`
+                              : `Zaznacz wynik ${result.athlete_name}`
+                          }
+                        >
+                          {isSelected ? (
+                            <CheckSquare className="h-5 w-5" />
+                          ) : (
+                            <Square className="h-5 w-5" />
+                          )}
+                        </button>
+                      )}
+                      <div>
                       <span className="font-medium text-white">{result.athlete_name}</span>
                       {result.weight_class && (
                         <span className="ml-2 text-zks-text-muted">({result.weight_class} kg)</span>
@@ -447,12 +613,15 @@ export default function FacebookResultsAdminPage() {
                           Ukryty
                         </span>
                       )}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-zks-gold-bright">
                         {placeLabel(result.place)}
                       </span>
+                      {!isSelecting && (
+                        <>
                       <button
                         type="button"
                         onClick={() => openEditResult(result, event)}
@@ -471,17 +640,21 @@ export default function FacebookResultsAdminPage() {
                             label: `${result.athlete_name} — ${placeLabel(result.place)}`,
                           })
                         }
-                        className="rounded-lg p-1.5 text-red-400 transition hover:bg-red-500/10"
+                        className="zks-btn-danger-ghost p-2"
                         aria-label="Usuń wynik"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
+                        </>
+                      )}
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -724,11 +897,19 @@ export default function FacebookResultsAdminPage() {
 
       {deleteTarget && (
         <ConfirmModal
-          title={deleteTarget.type === "result" ? "Usunąć wynik?" : "Usunąć zawody?"}
+          title={
+            deleteTarget.type === "result"
+              ? "Usunąć wynik?"
+              : deleteTarget.type === "bulk"
+                ? "Usunąć zaznaczone wyniki?"
+                : "Usunąć zawody?"
+          }
           description={
             deleteTarget.type === "result"
               ? `Czy na pewno chcesz usunąć wynik: ${deleteTarget.label}?`
-              : `Czy na pewno chcesz usunąć wszystkie wyniki zawodów „${deleteTarget.label}"? Tej operacji nie można cofnąć.`
+              : deleteTarget.type === "bulk"
+                ? `Czy na pewno chcesz usunąć ${deleteTarget.ids.length} wyników: ${deleteTarget.label}? Tej operacji nie można cofnąć.`
+                : `Czy na pewno chcesz usunąć wszystkie wyniki zawodów „${deleteTarget.label}"? Tej operacji nie można cofnąć.`
           }
           onConfirm={confirmDelete}
           onCancel={() => setDeleteTarget(null)}

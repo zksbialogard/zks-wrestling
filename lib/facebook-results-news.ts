@@ -1,15 +1,24 @@
 import { formatEventDate } from "./event-utils";
 import { buildFacebookEventGroupKey } from "./facebook-event-utils";
+import { getFacebookEventGroup } from "./facebook-results-db";
+import { isValidAthleteName } from "./athlete-name-utils";
 import { createSupabaseAdmin } from "./supabase";
 import { placeLabel, clubPlaceLabel } from "./place-utils";
 import { seedDefaultTemplatesIfEmpty } from "./notifications-db";
 import { notifyClubMembers } from "./notify-service";
 import type { FacebookEventResults } from "./facebook-results-types";
 
-function buildResultsNews(event: FacebookEventResults) {
-  const publishedResults = event.results
-    .filter((result) => result.published && result.place)
+function getPublishableResults(event: FacebookEventResults) {
+  return event.results
+    .filter(
+      (result) =>
+        result.published && result.place && isValidAthleteName(result.athlete_name)
+    )
     .sort((a, b) => (a.place || 99) - (b.place || 99));
+}
+
+function buildResultsNews(event: FacebookEventResults) {
+  const publishedResults = getPublishableResults(event);
 
   const resultLines = publishedResults.map((result) => {
     const weight = result.weight_class ? ` (${result.weight_class} kg)` : "";
@@ -53,18 +62,127 @@ function buildResultsNews(event: FacebookEventResults) {
   };
 }
 
+async function findLinkedNewsId(eventTitle: string, eventDate?: string | null) {
+  if (!eventDate) {
+    return null;
+  }
+
+  const supabase = createSupabaseAdmin();
+  const { data: newsCandidates } = await supabase
+    .from("aktualnosci")
+    .select("id,title")
+    .ilike("title", "Wyniki zawodów:%")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  const eventKey = buildFacebookEventGroupKey(eventTitle, eventDate);
+  const match = (newsCandidates || []).find((item) => {
+    const candidateTitle = item.title.replace(/^wyniki zawodów:\s*/i, "").trim();
+    return buildFacebookEventGroupKey(candidateTitle, eventDate) === eventKey;
+  });
+
+  return match?.id || null;
+}
+
+export async function deleteLinkedResultsNews(options: {
+  newsPostId?: string | null;
+  eventTitle: string;
+  eventDate?: string | null;
+}) {
+  const supabase = createSupabaseAdmin();
+  let newsPostId = options.newsPostId || null;
+
+  if (!newsPostId) {
+    newsPostId = await findLinkedNewsId(options.eventTitle, options.eventDate);
+  }
+
+  if (!newsPostId) {
+    return { deleted: false as const };
+  }
+
+  const { error } = await supabase.from("aktualnosci").delete().eq("id", newsPostId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await supabase
+    .from("facebook_competition_results")
+    .update({ news_post_id: null, updated_at: new Date().toISOString() })
+    .eq("news_post_id", newsPostId);
+
+  return { deleted: true as const, newsPostId };
+}
+
+export async function refreshResultsNewsAfterChange(
+  facebookPostId: string,
+  eventTitle: string,
+  fallback?: {
+    newsPostId?: string | null;
+    eventDate?: string | null;
+    year?: number;
+  }
+) {
+  const event = await getFacebookEventGroup(facebookPostId, eventTitle);
+  const publishableResults = event ? getPublishableResults(event) : [];
+
+  if (publishableResults.length > 0 && event) {
+    const syncResult = await syncResultsNewsForEvent(
+      { ...event, results: publishableResults },
+      { notify: false }
+    );
+
+    if (syncResult.updated) {
+      return { action: "updated" as const, newsPostId: syncResult.newsPostId };
+    }
+
+    if (syncResult.created) {
+      return { action: "created" as const, newsPostId: syncResult.newsPostId };
+    }
+
+    return { action: "unchanged" as const, newsPostId: syncResult.newsPostId };
+  }
+
+  const deleteResult = await deleteLinkedResultsNews({
+    newsPostId:
+      fallback?.newsPostId ||
+      event?.news_post_id ||
+      event?.results.find((row) => row.news_post_id)?.news_post_id ||
+      null,
+    eventTitle,
+    eventDate: fallback?.eventDate || event?.event_date || null,
+  });
+
+  return deleteResult.deleted
+    ? { action: "deleted" as const, newsPostId: deleteResult.newsPostId }
+    : { action: "none" as const };
+}
+
 export async function syncResultsNewsForEvent(
   event: FacebookEventResults,
   options?: { notify?: boolean }
 ) {
   const supabase = createSupabaseAdmin();
-  const publishedCount = event.results.filter((result) => result.published && result.place).length;
+  const publishedResults = getPublishableResults(event);
 
-  if (!publishedCount) {
-    return { created: false, updated: false, skipped: true as const };
+  if (!publishedResults.length) {
+    const deleted = await deleteLinkedResultsNews({
+      newsPostId:
+        event.news_post_id || event.results.find((row) => row.news_post_id)?.news_post_id || null,
+      eventTitle: event.event_title,
+      eventDate: event.event_date,
+    });
+
+    return {
+      created: false,
+      updated: false,
+      deleted: deleted.deleted,
+      skipped: !deleted.deleted,
+    };
   }
 
-  const { title, content } = buildResultsNews(event);
+  const eventForNews = { ...event, results: publishedResults };
+  const { title, content } = buildResultsNews(eventForNews);
   let existingNewsId =
     event.news_post_id || event.results.find((row) => row.news_post_id)?.news_post_id;
 
@@ -81,20 +199,7 @@ export async function syncResultsNewsForEvent(
   }
 
   if (!existingNewsId && event.event_date) {
-    const { data: newsCandidates } = await supabase
-      .from("aktualnosci")
-      .select("id,title")
-      .ilike("title", "Wyniki zawodów:%")
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    const eventKey = buildFacebookEventGroupKey(event.event_title, event.event_date);
-    const match = (newsCandidates || []).find((item) => {
-      const candidateTitle = item.title.replace(/^wyniki zawodów:\s*/i, "").trim();
-      return buildFacebookEventGroupKey(candidateTitle, event.event_date) === eventKey;
-    });
-
-    existingNewsId = match?.id || null;
+    existingNewsId = await findLinkedNewsId(event.event_title, event.event_date);
   }
 
   if (existingNewsId) {

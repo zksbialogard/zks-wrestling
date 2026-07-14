@@ -64,7 +64,7 @@ export default function MobileMenu({ onLogout }: MobileMenuProps) {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 320, damping: 32 }}
-              className="fixed inset-y-0 right-0 z-[58] flex w-full max-w-sm flex-col border-l border-zks-gold-mid/20 bg-zks-black shadow-[-20px_0_60px_rgba(247,209,84,0.08)]"
+              className="fixed inset-y-0 right-0 z-[58] flex w-full max-w-[420px] flex-col border-l border-zks-gold-mid/20 bg-zks-black shadow-[-20px_0_60px_rgba(247,209,84,0.08)]"
             >
               <div className="flex items-center justify-between border-b border-zks-gold-mid/15 px-6 py-5">
                 <div className="flex items-center gap-3">

@@ -1,4 +1,4 @@
-import { normalizeAthleteNameFromFacebook, isValidAthleteName } from "./athlete-name-utils";
+import { normalizeAthleteNameFromFacebook, isValidAthleteName, isNonAthleteName } from "./athlete-name-utils";
 import type { FacebookPost, ParsedFacebookResult } from "./facebook-results-types";
 
 const RESULT_KEYWORDS =
@@ -193,7 +193,7 @@ type PatternSpec = {
 };
 
 export function parseResultsFromMessage(message: string): ParsedFacebookResult[] {
-  const text = normalizeResultMessage(message);
+  const text = stripAcknowledgmentBlocks(normalizeResultMessage(message));
   const results: ParsedFacebookResult[] = [];
   const seen = new Set<string>();
 
@@ -348,7 +348,16 @@ function parseMedalListSections(text: string, seen: Set<string>) {
       continue;
     }
 
+    if (/podziękow|dziękuj|burmistrz|starost|wicestarost|zastępca|zastepca|gratulacj|oficjal|sponsor|patron|partner|fundac|fundusz|organizator|kurator|osir|mosir|federac|związek|zwiazek|wsparc|wspier|urząd|starostwo|samorząd|dotac|grant|hotel|media|marki/i.test(line)) {
+      currentPlace = 0;
+      continue;
+    }
+
     if (!currentPlace) continue;
+
+    if (!/(kg|styl|woln|klasyczn|medal|miejsce|\d+\.|\-|•|\*)/i.test(line) && extractNamesFromLine(line).length === 0) {
+      continue;
+    }
 
     const names = extractNamesFromLine(line);
     for (const name of names) {
@@ -382,7 +391,7 @@ function parseInlinePlaceLines(text: string, seen: Set<string>) {
       const athleteName = normalizeAthleteName(match[1] || "");
       const place = parsePlaceToken(match[2] || "");
 
-      if (!athleteName || !place || isIgnoredAthleteName(athleteName)) continue;
+      if (!athleteName || !place || isIgnoredAthleteName(athleteName) || !isValidAthleteName(athleteName)) continue;
 
       const key = `${athleteName}::${place}::`;
       if (seen.has(key)) continue;
@@ -434,7 +443,7 @@ function isIgnoredAthleteName(name: string) {
     return true;
   }
 
-  if (/^(miasto|powiat|emilia|paweł|wicestarosta|liderzy)\b/i.test(normalized)) {
+  if (isNonAthleteName(name)) {
     return true;
   }
 
@@ -460,6 +469,28 @@ function normalizeResultMessage(message: string) {
     .replace(/\bSrebro\b/g, "srebro")
     .replace(/\bBrąz\b/g, "brąz")
     .replace(/[🥇🥈🥉❗️🏆]/g, " ");
+}
+
+function stripAcknowledgmentBlocks(message: string) {
+  const lines = message.split(/\n+/);
+  const kept: string[] = [];
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    if (
+      /podziękow|dziękuj|burmistrz|starost|wicestarost|zastępca|zastepca|marszałek|prezydent|urząd|starostwo|samorząd|wsparcie finansowe|wsparcie organizacyjne|gratulacj|oficjal|sponsor|patron|partner|fundac|fundusz|organizator|kurator|osir|mosir|federac|związek|zwiazek|minister|dotac|grant|biuro podróży|hotel|media|marki|wspieraj|wspier/i.test(
+        line
+      )
+    ) {
+      continue;
+    }
+
+    kept.push(line);
+  }
+
+  return kept.join("\n");
 }
 
 function normalizeAthleteName(value: string) {

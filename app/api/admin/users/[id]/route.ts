@@ -44,7 +44,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const updated = await updateUserRole(id, rola);
 
     if (updated.uid) {
-      if (rola === "rodzic" || rola === "zawodnik") {
+      if (rola === "rodzic" || rola === "zawodnik" || rola === "moderator") {
         await upsertParentUser({
           uid: updated.uid,
           email: updated.email,

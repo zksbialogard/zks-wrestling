@@ -42,10 +42,10 @@ export default function KalendarzImprezPage() {
         {loading ? <EventsLoadingState /> : <EventsCalendarView events={events} />}
 
         <div className="mt-12 flex flex-wrap justify-center gap-3">
-          <Link href="/plan-wakacyjny" className="zks-btn-outline px-5 py-2.5 text-xs">
+          <Link href="/plan-wakacyjny" className="zks-btn-outline px-6 py-3 text-xs sm:text-sm">
             Plan treningów wakacyjnych
           </Link>
-          <Link href="/zawody/wyniki-zawodow" className="zks-btn-outline px-5 py-2.5 text-xs">
+          <Link href="/zawody/wyniki-zawodow" className="zks-btn-outline px-6 py-3 text-xs sm:text-sm">
             Wyniki zawodów
           </Link>
         </div>

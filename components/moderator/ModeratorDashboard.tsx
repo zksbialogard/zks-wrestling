@@ -14,9 +14,15 @@ export default function ModeratorDashboard() {
           Szybki dostęp
         </h1>
         <p className="mt-3 max-w-2xl text-sm text-zks-text-muted sm:text-base">
-          Wybierz sekcję, w której chcesz dodać treść. Masz dostęp tylko do aktualności,
-          galerii i zawodów.
+          Wybierz sekcję, w której chcesz dodać treść. Jako moderator masz też dostęp do
+          panelu rodzica — dzieci, zgłoszenia i powiadomienia pozostają bez zmian.
         </p>
+        <Link
+          href="/panel-rodzica"
+          className="zks-btn-outline mt-5 inline-flex items-center gap-2 px-6 py-3 text-sm"
+        >
+          Mój Panel rodzica
+        </Link>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

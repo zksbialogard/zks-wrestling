@@ -90,6 +90,28 @@ export async function deleteAdminFacebookResult(id: string) {
   if (!response.ok) {
     throw new Error(result.error || "Nie udało się usunąć wyniku.");
   }
+
+  return result;
+}
+
+export async function deleteAdminFacebookResults(ids: string[]) {
+  const headers = await getAuthHeader();
+  const response = await fetch("/api/admin/facebook-results/bulk-delete", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ ids }),
+  });
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "Nie udało się usunąć wyników.");
+  }
+
+  return result as {
+    ok: boolean;
+    deletedCount: number;
+    news?: { action: "none" | "updated" | "deleted" };
+  };
 }
 
 export async function deleteAdminFacebookEventGroup(facebookPostId: string, eventTitle: string) {
@@ -104,6 +126,8 @@ export async function deleteAdminFacebookEventGroup(facebookPostId: string, even
   if (!response.ok) {
     throw new Error(result.error || "Nie udało się usunąć zawodów.");
   }
+
+  return result;
 }
 
 export async function updateAdminFacebookEventGroup(

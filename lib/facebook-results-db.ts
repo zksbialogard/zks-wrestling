@@ -179,6 +179,10 @@ export async function listFacebookResultsGrouped(year: number): Promise<Facebook
   const grouped = new Map<string, FacebookEventResults>();
 
   for (const row of data as FacebookResultRecord[]) {
+    if (!isValidAthleteName(row.athlete_name)) {
+      continue;
+    }
+
     const key = buildFacebookEventGroupKey(row.event_title, row.event_date);
     const existing = grouped.get(key);
 
@@ -202,10 +206,12 @@ export async function listFacebookResultsGrouped(year: number): Promise<Facebook
     }
   }
 
-  return groupFacebookEvents(Array.from(grouped.values())).map((group) => ({
-    ...group,
-    results: [...group.results].sort((a, b) => (a.place || 99) - (b.place || 99)),
-  }));
+  return filterValidEvents(
+    groupFacebookEvents(Array.from(grouped.values())).map((group) => ({
+      ...group,
+      results: [...group.results].sort((a, b) => (a.place || 99) - (b.place || 99)),
+    }))
+  );
 }
 
 export async function countFacebookResults(year: number) {
@@ -235,10 +241,23 @@ function requireAdminClient() {
   return createSupabaseAdmin();
 }
 
+function filterValidEvents(events: FacebookEventResults[]): FacebookEventResults[] {
+  return events
+    .map((event) => ({
+      ...event,
+      results: event.results.filter((row) => isValidAthleteName(row.athlete_name)),
+    }))
+    .filter((event) => event.results.length > 0);
+}
+
 function groupRowsIntoEvents(rows: FacebookResultRecord[]): FacebookEventResults[] {
   const grouped = new Map<string, FacebookEventResults>();
 
   for (const row of rows) {
+    if (!isValidAthleteName(row.athlete_name)) {
+      continue;
+    }
+
     const key = buildFacebookEventGroupKey(row.event_title, row.event_date);
     const existing = grouped.get(key);
 
@@ -262,7 +281,7 @@ function groupRowsIntoEvents(rows: FacebookResultRecord[]): FacebookEventResults
     }
   }
 
-  return groupFacebookEvents(Array.from(grouped.values()));
+  return filterValidEvents(groupFacebookEvents(Array.from(grouped.values())));
 }
 
 export async function listFacebookResultsForAdmin(year: number): Promise<FacebookEventResults[]> {
@@ -395,15 +414,114 @@ export async function updateFacebookResult(id: string, row: Partial<FacebookResu
 
 export async function deleteFacebookResult(id: string) {
   const supabase = requireAdminClient();
+
+  const { data: row, error: fetchError } = await supabase
+    .from("facebook_competition_results")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError) {
+    throw new Error(fetchError.message);
+  }
+
   const { error } = await supabase.from("facebook_competition_results").delete().eq("id", id);
 
   if (error) {
     throw new Error(error.message);
   }
+
+  return (row || null) as FacebookResultRecord | null;
+}
+
+export type FacebookResultEventGroupMeta = {
+  facebookPostId: string;
+  eventTitle: string;
+  newsPostId: string | null;
+  eventDate: string | null;
+  year: number | undefined;
+};
+
+export async function deleteFacebookResults(ids: string[]) {
+  const uniqueIds = [...new Set(ids.filter(Boolean))];
+
+  if (!uniqueIds.length) {
+    return { deletedCount: 0, eventGroups: [] as FacebookResultEventGroupMeta[] };
+  }
+
+  const supabase = requireAdminClient();
+
+  const { data: rows, error: fetchError } = await supabase
+    .from("facebook_competition_results")
+    .select("*")
+    .in("id", uniqueIds);
+
+  if (fetchError) {
+    throw new Error(fetchError.message);
+  }
+
+  if (!rows?.length) {
+    return { deletedCount: 0, eventGroups: [] as FacebookResultEventGroupMeta[] };
+  }
+
+  const { error } = await supabase
+    .from("facebook_competition_results")
+    .delete()
+    .in("id", rows.map((row) => row.id));
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const eventGroups = new Map<string, FacebookResultEventGroupMeta>();
+
+  for (const row of rows as FacebookResultRecord[]) {
+    const key = `${row.facebook_post_id}::${row.event_title}`;
+    const existing = eventGroups.get(key);
+
+    if (!existing) {
+      eventGroups.set(key, {
+        facebookPostId: row.facebook_post_id,
+        eventTitle: row.event_title,
+        newsPostId: row.news_post_id ?? null,
+        eventDate: row.event_date ?? null,
+        year: row.year,
+      });
+      continue;
+    }
+
+    if (!existing.newsPostId && row.news_post_id) {
+      existing.newsPostId = row.news_post_id;
+    }
+  }
+
+  return {
+    deletedCount: rows.length,
+    eventGroups: Array.from(eventGroups.values()),
+  };
 }
 
 export async function deleteFacebookEventGroup(facebookPostId: string, eventTitle: string) {
   const supabase = requireAdminClient();
+
+  const { data: rows, error: fetchError } = await supabase
+    .from("facebook_competition_results")
+    .select("news_post_id,event_date,year")
+    .eq("facebook_post_id", facebookPostId)
+    .eq("event_title", eventTitle);
+
+  if (fetchError) {
+    throw new Error(fetchError.message);
+  }
+
+  const meta = {
+    facebookPostId,
+    eventTitle,
+    newsPostId: rows?.find((row) => row.news_post_id)?.news_post_id || null,
+    eventDate: rows?.[0]?.event_date || null,
+    year: rows?.[0]?.year as number | undefined,
+  };
+
   const { error } = await supabase
     .from("facebook_competition_results")
     .delete()
@@ -413,6 +531,8 @@ export async function deleteFacebookEventGroup(facebookPostId: string, eventTitl
   if (error) {
     throw new Error(error.message);
   }
+
+  return meta;
 }
 
 export async function updateFacebookEventGroup(

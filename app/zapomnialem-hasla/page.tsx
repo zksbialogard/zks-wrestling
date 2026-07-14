@@ -1,23 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { sendPasswordResetEmail } from "firebase/auth";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthField from "@/components/auth/AuthField";
-import { auth } from "@/lib/firebase";
+import { requestPasswordReset } from "@/lib/password-reset-client";
 
-export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
+function ForgotPasswordForm() {
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState(searchParams.get("email") || "");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
   const resetPassword = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!email) {
+    if (!email.trim()) {
       toast.error("Podaj adres email.");
       return;
     }
@@ -25,22 +26,16 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      await requestPasswordReset(email.trim());
       setSent(true);
       toast.success("Wysłaliśmy link do resetu hasła na podany email.");
-    } catch (error: unknown) {
-      const code =
-        typeof error === "object" &&
-        error !== null &&
-        "code" in error &&
-        typeof error.code === "string"
-          ? error.code
-          : "";
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
 
-      if (code === "auth/user-not-found") {
-        toast.error("Nie znaleziono konta z tym adresem email.");
-      } else if (code === "auth/invalid-email") {
+      if (message === "INVALID_EMAIL") {
         toast.error("Nieprawidłowy adres email.");
+      } else if (message === "RATE_LIMIT") {
+        toast.error("Zbyt wiele prób. Spróbuj ponownie za chwilę.");
       } else {
         toast.error("Nie udało się wysłać wiadomości. Spróbuj ponownie.");
       }
@@ -101,5 +96,13 @@ export default function ForgotPasswordPage() {
         </form>
       )}
     </AuthLayout>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zks-black" />}>
+      <ForgotPasswordForm />
+    </Suspense>
   );
 }

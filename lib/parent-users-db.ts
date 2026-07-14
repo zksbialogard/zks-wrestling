@@ -22,7 +22,7 @@ export async function listParentUsersFromDb(): Promise<ParentUser[]> {
   const { data, error } = await supabase
     .from("parent_users")
     .select("uid, email, telefon, imie, rola")
-    .eq("rola", "rodzic");
+    .in("rola", ["rodzic", "moderator"]);
 
   if (error) {
     console.error("listParentUsersFromDb:", error);
@@ -47,7 +47,7 @@ export async function listClubMembersFromDb(): Promise<ParentUser[]> {
   const { data, error } = await supabase
     .from("parent_users")
     .select("uid, email, telefon, imie, rola")
-    .in("rola", ["rodzic", "zawodnik"]);
+    .in("rola", ["rodzic", "zawodnik", "moderator"]);
 
   if (error) {
     console.error("listClubMembersFromDb:", error);

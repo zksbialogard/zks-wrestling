@@ -1,37 +1,19 @@
-import { NextResponse, after } from "next/server";
-import { revalidatePath } from "next/cache";
+import { NextResponse } from "next/server";
 
 import {
   createFacebookResult,
-  getFacebookEventGroup,
   listFacebookResultsForAdmin,
 } from "@/lib/facebook-results-db";
-import { syncResultsNewsForEvent } from "@/lib/facebook-results-news";
+import {
+  revalidateResultsPaths,
+  syncResultsNewsImmediately,
+} from "@/lib/facebook-results-revalidate";
 import type { FacebookResultInput } from "@/lib/facebook-results-types";
 import { getAdminFromRequest } from "@/lib/verify-admin";
 
 function parseYear(value: string | null) {
   const year = Number(value);
   return Number.isFinite(year) && year > 2000 ? year : new Date().getFullYear();
-}
-
-function revalidateResultsPaths() {
-  revalidatePath("/zawody/wyniki-zawodow");
-  revalidatePath("/panel-rodzica/wyniki");
-  revalidatePath("/aktualnosci");
-  revalidatePath("/");
-}
-
-async function publishResultsNews(facebookPostId: string, eventTitle: string) {
-  const event = await getFacebookEventGroup(facebookPostId, eventTitle);
-
-  if (!event) {
-    return;
-  }
-
-  await syncResultsNewsForEvent(event);
-  revalidatePath("/aktualnosci");
-  revalidatePath("/");
 }
 
 export async function GET(request: Request) {
@@ -74,17 +56,16 @@ export async function POST(request: Request) {
     const data = await createFacebookResult(body);
     revalidateResultsPaths();
 
-    const shouldPublishNews = body.published !== false;
+    const news =
+      body.published !== false
+        ? await syncResultsNewsImmediately(data.facebook_post_id, data.event_title, {
+            newsPostId: data.news_post_id,
+            eventDate: data.event_date,
+            year: data.year,
+          })
+        : { action: "none" as const };
 
-    if (shouldPublishNews) {
-      after(
-        publishResultsNews(data.facebook_post_id, data.event_title).catch((error) => {
-          console.error("Auto news after result create:", error);
-        })
-      );
-    }
-
-    return NextResponse.json({ ok: true, data, newsScheduled: shouldPublishNews });
+    return NextResponse.json({ ok: true, data, news });
   } catch (error) {
     console.error(error);
     const message = error instanceof Error ? error.message : "Nie udało się dodać wyniku.";

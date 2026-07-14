@@ -1,32 +1,14 @@
-import { NextResponse, after } from "next/server";
-import { revalidatePath } from "next/cache";
+import { NextResponse } from "next/server";
 
 import {
   deleteFacebookEventGroup,
-  getFacebookEventGroup,
   updateFacebookEventGroup,
 } from "@/lib/facebook-results-db";
-import { syncResultsNewsForEvent } from "@/lib/facebook-results-news";
+import {
+  revalidateResultsPaths,
+  syncResultsNewsImmediately,
+} from "@/lib/facebook-results-revalidate";
 import { getAdminFromRequest } from "@/lib/verify-admin";
-
-function revalidateResultsPaths() {
-  revalidatePath("/zawody/wyniki-zawodow");
-  revalidatePath("/panel-rodzica/wyniki");
-  revalidatePath("/aktualnosci");
-  revalidatePath("/");
-}
-
-async function refreshResultsNews(facebookPostId: string, eventTitle: string) {
-  const event = await getFacebookEventGroup(facebookPostId, eventTitle);
-
-  if (!event) {
-    return;
-  }
-
-  await syncResultsNewsForEvent(event);
-  revalidatePath("/aktualnosci");
-  revalidatePath("/");
-}
 
 export async function PATCH(request: Request) {
   try {
@@ -60,14 +42,12 @@ export async function PATCH(request: Request) {
     revalidateResultsPaths();
 
     const nextEventTitle = body.new_event_title?.trim() || eventTitle;
+    const news = await syncResultsNewsImmediately(facebookPostId, nextEventTitle, {
+      eventDate: body.event_date,
+      year: body.year,
+    });
 
-    after(
-      refreshResultsNews(facebookPostId, nextEventTitle).catch((error) => {
-        console.error("Auto news after event update:", error);
-      })
-    );
-
-    return NextResponse.json({ ok: true, newsScheduled: true });
+    return NextResponse.json({ ok: true, news });
   } catch (error) {
     console.error(error);
     const message =
@@ -95,10 +75,14 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await deleteFacebookEventGroup(facebookPostId, eventTitle);
-    revalidateResultsPaths();
+    const deleted = await deleteFacebookEventGroup(facebookPostId, eventTitle);
+    const news = await syncResultsNewsImmediately(facebookPostId, eventTitle, {
+      newsPostId: deleted.newsPostId,
+      eventDate: deleted.eventDate,
+      year: deleted.year,
+    });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, news });
   } catch (error) {
     console.error(error);
     const message = error instanceof Error ? error.message : "Nie udało się usunąć zawodów.";

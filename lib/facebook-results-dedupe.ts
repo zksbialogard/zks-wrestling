@@ -6,7 +6,7 @@ import {
   preferCanonicalEventTitle,
   preferCanonicalFacebookPostId,
 } from "./facebook-event-utils";
-import { normalizeAthleteNameKey, normalizeAthleteNameFromFacebook } from "./athlete-name-utils";
+import { normalizeAthleteNameKey, normalizeAthleteNameFromFacebook, isValidAthleteName } from "./athlete-name-utils";
 import { createSupabaseAdmin } from "./supabase";
 import type { FacebookEventResults, FacebookResultInput, FacebookResultRecord } from "./facebook-results-types";
 
@@ -98,6 +98,10 @@ function dedupeResultsInEvent(results: ResultRow[]) {
   const unique = new Map<string, ResultRow>();
 
   for (const row of results) {
+    if (!isValidAthleteName(row.athlete_name)) {
+      continue;
+    }
+
     const key = athleteResultKey(row);
     const existing = unique.get(key);
     if (!existing) {
@@ -149,17 +153,35 @@ export async function dedupeFacebookResultsInDatabase(year: number) {
   }
 
   const rows = (data || []) as ResultRow[];
+  let deletedRows = 0;
+  let updatedRows = 0;
+
+  const invalidIds = rows
+    .filter((row) => !isValidAthleteName(row.athlete_name))
+    .map((row) => row.id);
+
+  if (invalidIds.length) {
+    const { error: invalidDeleteError } = await supabase
+      .from("facebook_competition_results")
+      .delete()
+      .in("id", invalidIds);
+
+    if (invalidDeleteError) {
+      throw new Error(invalidDeleteError.message);
+    }
+
+    deletedRows += invalidIds.length;
+  }
+
+  const validRows = rows.filter((row) => !invalidIds.includes(row.id));
   const groups = new Map<string, ResultRow[]>();
 
-  for (const row of rows) {
+  for (const row of validRows) {
     const key = athleteResultKey(row);
     const existing = groups.get(key) || [];
     existing.push(row);
     groups.set(key, existing);
   }
-
-  let deletedRows = 0;
-  let updatedRows = 0;
 
   for (const groupRows of groups.values()) {
     if (groupRows.length <= 1) {

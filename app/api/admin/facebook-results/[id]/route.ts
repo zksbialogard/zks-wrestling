@@ -1,37 +1,19 @@
-import { NextResponse, after } from "next/server";
-import { revalidatePath } from "next/cache";
+import { NextResponse } from "next/server";
 
 import {
   deleteFacebookResult,
-  getFacebookEventGroup,
   updateFacebookResult,
 } from "@/lib/facebook-results-db";
-import { syncResultsNewsForEvent } from "@/lib/facebook-results-news";
+import {
+  revalidateResultsPaths,
+  syncResultsNewsImmediately,
+} from "@/lib/facebook-results-revalidate";
 import type { FacebookResultInput } from "@/lib/facebook-results-types";
 import { getAdminFromRequest } from "@/lib/verify-admin";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
-
-function revalidateResultsPaths() {
-  revalidatePath("/zawody/wyniki-zawodow");
-  revalidatePath("/panel-rodzica/wyniki");
-  revalidatePath("/aktualnosci");
-  revalidatePath("/");
-}
-
-async function refreshResultsNews(facebookPostId: string, eventTitle: string) {
-  const event = await getFacebookEventGroup(facebookPostId, eventTitle);
-
-  if (!event) {
-    return;
-  }
-
-  await syncResultsNewsForEvent(event);
-  revalidatePath("/aktualnosci");
-  revalidatePath("/");
-}
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
@@ -55,15 +37,16 @@ export async function PATCH(request: Request, context: RouteContext) {
     const data = await updateFacebookResult(id, body);
     revalidateResultsPaths();
 
-    if (data.published !== false) {
-      after(
-        refreshResultsNews(data.facebook_post_id, data.event_title).catch((error) => {
-          console.error("Auto news after result update:", error);
-        })
-      );
-    }
+    const news =
+      data.published !== false
+        ? await syncResultsNewsImmediately(data.facebook_post_id, data.event_title, {
+            newsPostId: data.news_post_id,
+            eventDate: data.event_date,
+            year: data.year,
+          })
+        : { action: "none" as const };
 
-    return NextResponse.json({ ok: true, data, newsScheduled: data.published !== false });
+    return NextResponse.json({ ok: true, data, news });
   } catch (error) {
     console.error(error);
     const message =
@@ -81,10 +64,24 @@ export async function DELETE(request: Request, context: RouteContext) {
     }
 
     const { id } = await context.params;
-    await deleteFacebookResult(id);
-    revalidateResultsPaths();
+    const deleted = await deleteFacebookResult(id);
 
-    return NextResponse.json({ ok: true });
+    if (!deleted) {
+      revalidateResultsPaths();
+      return NextResponse.json({ ok: true, news: { action: "none" as const } });
+    }
+
+    const news = await syncResultsNewsImmediately(
+      deleted.facebook_post_id,
+      deleted.event_title,
+      {
+        newsPostId: deleted.news_post_id,
+        eventDate: deleted.event_date,
+        year: deleted.year,
+      }
+    );
+
+    return NextResponse.json({ ok: true, news });
   } catch (error) {
     console.error(error);
     const message = error instanceof Error ? error.message : "Nie udało się usunąć wyniku.";

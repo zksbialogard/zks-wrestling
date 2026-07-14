@@ -16,19 +16,21 @@ export default function ConfirmModal({
   return (
     <Modal>
       <ModalHeader>
-        <h2 className="text-3xl font-bold text-yellow-400">{title}</h2>
+        <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase tracking-wide text-zks-gold-bright sm:text-3xl">
+          {title}
+        </h2>
       </ModalHeader>
 
       <ModalBody>
-        <p className="text-gray-400">{description}</p>
+        <p className="text-sm leading-relaxed text-zks-text-muted sm:text-base">{description}</p>
       </ModalBody>
 
       <ModalFooter>
-        <button onClick={onCancel} className="rounded-xl bg-zinc-800 px-5 py-2">
+        <button type="button" onClick={onCancel} className="zks-btn-outline px-6 py-2.5 text-sm">
           Anuluj
         </button>
 
-        <button onClick={onConfirm} className="rounded-xl bg-red-600 px-5 py-2">
+        <button type="button" onClick={onConfirm} className="zks-btn-danger px-6 py-2.5 text-sm">
           Usuń
         </button>
       </ModalFooter>
