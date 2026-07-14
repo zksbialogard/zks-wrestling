@@ -34,7 +34,7 @@ export const TEMPLATE_WHEN: Record<TemplateKey, string> = {
   registration_accepted: "Automatycznie po akceptacji zgłoszenia dziecka.",
   registration_rejected: "Automatycznie po odrzuceniu zgłoszenia.",
   training_cancelled: "Przy zgłoszeniu wyjątku treningowego w panelu admina.",
-  training_reminder: "Automatycznie w dniu treningu o 12:00 i 15:00 (cron) — osobno dla każdej grupy.",
+  training_reminder: "Automatycznie w dniu treningu o 11:00 i 14:00 (cron) — osobno dla każdej grupy.",
   news_published: "Przy publikacji aktualności z włączonym powiadomieniem.",
   gallery_published: "Po dodaniu zdjęcia do galerii z włączonym powiadomieniem.",
   app_update: "Automatycznie po wdrożeniu nowej wersji aplikacji (cron / wykrycie aktualizacji PWA).",
@@ -45,7 +45,7 @@ export const NOTIFICATION_AUTO_TRIGGERS = [
   "Zgłoszenie dziecka — powiadomienie w aplikacji + push (automatycznie)",
   "Akceptacja / odrzucenie zgłoszenia — aplikacja + push (automatycznie)",
   "Nowe zawody / przypomnienie — aplikacja + push przy wysyłce z panelu",
-  "Treningi — automatyczne przypomnienia o 12:00 i 15:00 w dniu treningu (cron, per grupa)",
+  "Treningi — automatyczne przypomnienia o 11:00 i 14:00 w dniu treningu (cron, per grupa)",
   "Aktualizacja aplikacji — push + powiadomienie w aplikacji dla rodziców i zawodników po nowym wdrożeniu",
   "Kalendarz imprez — przypomnienie 14 dni przed zawodami dla rodziców i zawodników (cron)",
 ] as const;

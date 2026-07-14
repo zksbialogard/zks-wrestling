@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import NewsImagesPicker from "@/components/admin/NewsImagesPicker";
 import AuthField from "@/components/auth/AuthField";
 import {
   createNews,
@@ -12,12 +13,14 @@ import {
   getNews,
   updateNews,
   type NewsItem,
+  type NewsImage,
 } from "@/lib/news";
 
 export default function AdminAktualnosciPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [notifyParents, setNotifyParents] = useState(true);
+  const [images, setImages] = useState<NewsImage[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -50,6 +53,7 @@ export default function AdminAktualnosciPage() {
     setTitle("");
     setContent("");
     setNotifyParents(true);
+    setImages([]);
     setEditingId(null);
   };
 
@@ -65,15 +69,15 @@ export default function AdminAktualnosciPage() {
 
     try {
       if (editingId) {
-        await updateNews(editingId, { title, content });
+        await updateNews(editingId, { title, content, images });
         setNews((prev) =>
           prev.map((item) =>
-            item.id === editingId ? { ...item, title, content } : item
+            item.id === editingId ? { ...item, title, content, images } : item
           )
         );
         toast.success("Aktualność zaktualizowana.");
       } else {
-        await createNews({ title, content, notify: notifyParents });
+        await createNews({ title, content, notify: notifyParents, images });
         toast.success(
           notifyParents
             ? "Aktualność dodana. Powiadomienia w aplikacji wysłane do rodziców."
@@ -96,6 +100,7 @@ export default function AdminAktualnosciPage() {
     setEditingId(item.id);
     setTitle(item.title);
     setContent(item.content);
+    setImages(item.images || []);
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -147,6 +152,13 @@ export default function AdminAktualnosciPage() {
           />
         </label>
 
+        <NewsImagesPicker
+          value={images}
+          onChange={setImages}
+          disabled={saving}
+          cleanupStorageOnRemove={!editingId}
+        />
+
         {!editingId && (
           <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zks-gold-mid/20 bg-zks-black/40 p-4">
             <input
@@ -177,7 +189,11 @@ export default function AdminAktualnosciPage() {
           </button>
 
           {editingId && (
-            <button type="button" onClick={resetForm} className="zks-btn-outline px-6 py-2.5 text-sm">
+            <button
+              type="button"
+              onClick={resetForm}
+              className="zks-btn-outline px-6 py-2.5 text-sm"
+            >
               Anuluj edycję
             </button>
           )}

@@ -29,7 +29,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
   if (!isTrainingReminderSlot(slot)) {
     return NextResponse.json(
-      { error: "Nieprawidłowy slot. Dozwolone: 12 lub 15." },
+      { error: "Nieprawidłowy slot. Dozwolone: 11 lub 14." },
       { status: 400 }
     );
   }

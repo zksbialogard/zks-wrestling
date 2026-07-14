@@ -16,6 +16,11 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const file = formData.get("file");
+    const folderValue = formData.get("folder");
+    const folder =
+      typeof folderValue === "string" && folderValue.trim()
+        ? folderValue.trim().replace(/[^a-z0-9/-]/gi, "")
+        : "gallery";
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "Brak pliku zdjęcia." }, { status: 400 });
@@ -32,7 +37,8 @@ export async function POST(request: Request) {
     const result = await uploadGalleryImageToSupabase(
       buffer,
       file.name || "photo.jpg",
-      file.type || "image/jpeg"
+      file.type || "image/jpeg",
+      { folder }
     );
 
     return NextResponse.json({ ok: true, ...result });

@@ -14,10 +14,11 @@ async function getAuthHeader() {
   };
 }
 
-export async function uploadGalleryFileViaApi(file: File) {
+export async function uploadGalleryFileViaApi(file: File, folder = "gallery") {
   const headers = await getAuthHeader();
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("folder", folder);
 
   const response = await fetch("/api/admin/gallery/upload", {
     method: "POST",

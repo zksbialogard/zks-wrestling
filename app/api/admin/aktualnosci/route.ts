@@ -6,6 +6,7 @@ import {
   deleteFirebaseNews,
   updateFirebaseNews,
 } from "@/lib/news-firebase";
+import { normalizeNewsImages, deleteNewsImagesFromStorage } from "@/lib/news-images";
 import { seedDefaultTemplatesIfEmpty } from "@/lib/notifications-db";
 import { notifyClubMembers } from "@/lib/notify-service";
 import { createSupabaseAdmin } from "@/lib/supabase";
@@ -13,6 +14,10 @@ import { getStaffFromRequest } from "@/lib/verify-admin";
 
 function hasSupabaseAdminKey() {
   return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
+}
+
+function isMissingImagesColumnError(message: string) {
+  return /images|schema cache|column.*does not exist|could not find the/i.test(message);
 }
 
 export async function POST(request: Request) {
@@ -24,7 +29,8 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { title, content, notify } = body;
+    const { title, content, notify, images } = body;
+    const normalizedImages = normalizeNewsImages(images);
 
     if (!title || !content) {
       return NextResponse.json(
@@ -35,11 +41,25 @@ export async function POST(request: Request) {
 
     if (hasSupabaseAdminKey()) {
       const supabase = createSupabaseAdmin();
-      const { data, error } = await supabase
+      const insertPayload: Record<string, unknown> = {
+        title,
+        content,
+        images: normalizedImages,
+      };
+
+      let { data, error } = await supabase
         .from("aktualnosci")
-        .insert([{ title, content }])
+        .insert([insertPayload])
         .select("*")
         .single();
+
+      if (error && isMissingImagesColumnError(error.message)) {
+        ({ data, error } = await supabase
+          .from("aktualnosci")
+          .insert([{ title, content }])
+          .select("*")
+          .single());
+      }
 
       if (error) {
         console.error("Supabase insert error:", error);
@@ -76,7 +96,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, data, source: "supabase", notifyResult });
     }
 
-    await createFirebaseNews({ title, content });
+    await createFirebaseNews({ title, content, images: normalizedImages });
     revalidatePath("/aktualnosci");
     revalidatePath("/");
 

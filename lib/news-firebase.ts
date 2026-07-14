@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "./firebase";
+import { normalizeNewsImages } from "./news-images";
 
 export type FirebaseNewsItem = {
   id: string;
@@ -19,6 +20,7 @@ export type FirebaseNewsItem = {
   content: string;
   created_at?: string;
   source: "firebase";
+  images?: { url: string; storagePath?: string }[];
 };
 
 export async function getFirebaseNews(options?: {
@@ -42,6 +44,7 @@ export async function getFirebaseNews(options?: {
         content: data.content || "",
         created_at: createdAt,
         source: "firebase" as const,
+        images: normalizeNewsImages(data.images),
       };
     });
   } catch (error) {
@@ -53,21 +56,28 @@ export async function getFirebaseNews(options?: {
 export async function createFirebaseNews(data: {
   title: string;
   content: string;
+  images?: { url: string; storagePath?: string }[];
 }) {
   await addDoc(collection(db, "news"), {
     title: data.title,
     content: data.content,
+    images: data.images || [],
     createdAt: serverTimestamp(),
   });
 }
 
 export async function updateFirebaseNews(
   id: string,
-  data: { title: string; content: string }
+  data: {
+    title: string;
+    content: string;
+    images?: { url: string; storagePath?: string }[];
+  }
 ) {
   await updateDoc(doc(db, "news", id), {
     title: data.title,
     content: data.content,
+    ...(data.images !== undefined ? { images: data.images } : {}),
   });
 }
 

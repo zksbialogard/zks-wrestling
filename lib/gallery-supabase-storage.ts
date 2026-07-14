@@ -9,7 +9,8 @@ function hasServiceRole() {
 export async function uploadGalleryImageToSupabase(
   file: Buffer,
   fileName: string,
-  contentType: string
+  contentType: string,
+  options?: { folder?: string }
 ) {
   if (!hasServiceRole()) {
     throw new Error(
@@ -19,7 +20,8 @@ export async function uploadGalleryImageToSupabase(
 
   const supabase = createSupabaseAdmin();
   const safeName = fileName.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9._-]/g, "");
-  const storagePath = `gallery/${Date.now()}-${safeName || "photo.jpg"}`;
+  const folder = (options?.folder || "gallery").replace(/^\/+|\/+$/g, "");
+  const storagePath = `${folder}/${Date.now()}-${safeName || "photo.jpg"}`;
 
   const { error } = await supabase.storage.from(BUCKET).upload(storagePath, file, {
     contentType: contentType || "image/jpeg",

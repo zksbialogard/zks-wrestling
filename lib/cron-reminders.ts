@@ -33,9 +33,9 @@ export type CronReminderResult = {
   errors: string[];
 };
 
-export type TrainingReminderSlot = "12" | "15";
+export type TrainingReminderSlot = "11" | "14";
 
-const TRAINING_SLOTS: TrainingReminderSlot[] = ["12", "15"];
+const TRAINING_SLOTS: TrainingReminderSlot[] = ["11", "14"];
 
 function eventDateKey(eventDate: string): string {
   return eventDate.slice(0, 10);
@@ -257,7 +257,9 @@ export async function runEventReminders(): Promise<CronReminderResult> {
   return result;
 }
 
-/** Przypomnienia o treningu dziś — slot 12:00 lub 15:00 czasu warszawskiego. */
+/** Przypomnienia o treningu dziś — slot 11:00 lub 14:00 czasu warszawskiego (Europe/Warsaw).
+ *  Vercel Cron działa w UTC; w vercel.json każdy slot ma dwa wyzwalacze (CET/CEST),
+ *  a poniższa kontrola godziny gwarantuje wysyłkę tylko o właściwej porze w Polsce. */
 export async function runTrainingSlotReminders(
   slot: TrainingReminderSlot
 ): Promise<CronReminderResult> {

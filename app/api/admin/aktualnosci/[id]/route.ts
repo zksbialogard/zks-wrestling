@@ -5,6 +5,7 @@ import {
   deleteFirebaseNews,
   updateFirebaseNews,
 } from "@/lib/news-firebase";
+import { normalizeNewsImages, deleteNewsImagesFromStorage } from "@/lib/news-images";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { getStaffFromRequest } from "@/lib/verify-admin";
 
@@ -14,6 +15,10 @@ type RouteContext = {
 
 function hasSupabaseAdminKey() {
   return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
+}
+
+function isMissingImagesColumnError(message: string) {
+  return /images|schema cache|column.*does not exist|could not find the/i.test(message);
 }
 
 function isFirebaseId(id: string) {
@@ -30,7 +35,9 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const { id } = await context.params;
     const body = await request.json();
-    const { title, content } = body;
+    const { title, content, images } = body;
+    const normalizedImages =
+      images !== undefined ? normalizeNewsImages(images) : undefined;
 
     if (!title || !content) {
       return NextResponse.json(
@@ -40,7 +47,11 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     if (isFirebaseId(id)) {
-      await updateFirebaseNews(id.replace(/^fb_/, ""), { title, content });
+      await updateFirebaseNews(id.replace(/^fb_/, ""), {
+        title,
+        content,
+        images: normalizedImages,
+      });
       revalidatePath("/aktualnosci");
       revalidatePath("/");
       return NextResponse.json({ ok: true, source: "firebase" });
@@ -57,12 +68,55 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const supabase = createSupabaseAdmin();
-    const { data, error } = await supabase
+
+    if (normalizedImages !== undefined) {
+      const { data: existingRow, error: fetchError } = await supabase
+        .from("aktualnosci")
+        .select("images")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (!fetchError && existingRow) {
+        const previousImages = normalizeNewsImages(existingRow.images);
+        const nextPaths = new Set(
+          normalizedImages
+            .map((image) => image.storagePath)
+            .filter((path): path is string => Boolean(path))
+        );
+        const removedImages = previousImages.filter(
+          (image) => image.storagePath && !nextPaths.has(image.storagePath)
+        );
+
+        if (removedImages.length) {
+          await deleteNewsImagesFromStorage(removedImages);
+        }
+      }
+    }
+
+    const updatePayload: Record<string, unknown> = {
+      title,
+      content,
+    };
+
+    if (normalizedImages !== undefined) {
+      updatePayload.images = normalizedImages;
+    }
+
+    let { data, error } = await supabase
       .from("aktualnosci")
-      .update({ title, content })
+      .update(updatePayload)
       .eq("id", id)
       .select("*")
       .single();
+
+    if (error && isMissingImagesColumnError(error.message)) {
+      ({ data, error } = await supabase
+        .from("aktualnosci")
+        .update({ title, content })
+        .eq("id", id)
+        .select("*")
+        .single());
+    }
 
     if (error) {
       console.error("Supabase update error:", error);
@@ -109,11 +163,27 @@ export async function DELETE(request: Request, context: RouteContext) {
     }
 
     const supabase = createSupabaseAdmin();
+
+    const { data: existingRow, error: fetchError } = await supabase
+      .from("aktualnosci")
+      .select("images")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (fetchError && !isMissingImagesColumnError(fetchError.message)) {
+      console.error("Supabase fetch before delete error:", fetchError);
+      return NextResponse.json({ error: fetchError.message }, { status: 500 });
+    }
+
     const { error } = await supabase.from("aktualnosci").delete().eq("id", id);
 
     if (error) {
       console.error("Supabase delete error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (existingRow) {
+      await deleteNewsImagesFromStorage(normalizeNewsImages(existingRow.images));
     }
 
     revalidatePath("/aktualnosci");

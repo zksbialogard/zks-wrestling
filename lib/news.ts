@@ -1,6 +1,9 @@
 import { supabase } from "./supabase";
 import { auth } from "./firebase";
 import { getFirebaseNews } from "./news-firebase";
+import { normalizeNewsImages, type NewsImage } from "./news-images";
+
+export type { NewsImage };
 
 export type NewsItem = {
   id: string;
@@ -8,6 +11,7 @@ export type NewsItem = {
   content: string;
   created_at?: string;
   source?: "supabase" | "firebase";
+  images?: NewsImage[];
 };
 
 async function getAuthHeader() {
@@ -49,6 +53,7 @@ export async function getNews(options?: {
     : (data || []).map((item) => ({
         ...item,
         source: "supabase" as const,
+        images: normalizeNewsImages(item.images),
       }));
 
   if (!error && !options?.includeFirebase) {
@@ -61,6 +66,7 @@ export async function getNews(options?: {
     ...item,
     id: `fb_${item.id}`,
     source: "firebase" as const,
+    images: normalizeNewsImages(item.images),
   }));
 
   if (error) {
@@ -74,6 +80,7 @@ export async function createNews(data: {
   title: string;
   content: string;
   notify?: boolean;
+  images?: NewsImage[];
 }) {
   const headers = await getAuthHeader();
 
@@ -94,7 +101,7 @@ export async function createNews(data: {
 
 export async function updateNews(
   id: string,
-  data: { title: string; content: string }
+  data: { title: string; content: string; images?: NewsImage[] }
 ) {
   const headers = await getAuthHeader();
 

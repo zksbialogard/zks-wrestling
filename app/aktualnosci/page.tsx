@@ -1,6 +1,7 @@
 import { getNews } from "@/lib/news";
 import { createPageMetadata } from "@/lib/site-config";
 
+import NewsImagesGallery from "@/components/news/NewsImagesGallery";
 import { PublicPageShell, PublicPageStack } from "@/components/layout/PublicPageShell";
 
 export const metadata = createPageMetadata({
@@ -40,6 +41,7 @@ export default async function AktualnosciPage() {
                 </p>
               ) : null}
               <p className="app-article-card-text">{item.content}</p>
+              <NewsImagesGallery images={item.images || []} title={item.title} />
             </article>
           ))}
         </PublicPageStack>
